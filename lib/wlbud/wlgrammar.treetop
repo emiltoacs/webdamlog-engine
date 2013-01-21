@@ -1,0 +1,173 @@
+####License####
+ #  File name wlgrammar.treetop
+ #  Copyright © by INRIA
+ #
+ #  Contributors : Webdam Team <webdam.inria.fr>
+ #       Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
+ #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
+ #
+ #   WebdamLog - 30 juin 2011
+ #
+ #   Encoding - UTF-8
+####License####
+
+module WLBud
+
+    # This WebdamLogGrammar is strongly linked with the wlvocabulary class that
+    # takes the name generated here to define supplementary methods.
+    grammar WebdamLogGrammar
+
+      ### Root program ###
+      #### Each line is either a comment or it describe either a peer a fact a collection or a rule
+      rule root
+        comment
+        /
+        ( (fact / collection / rul / peer_dec) (' '/"\n")* ';' (' '/"\n")* )
+      end
+
+      ### Comment ###
+            rule comment
+        '#' .* <WLComment>
+      end
+
+      ### The generic white space killer
+      rule sep
+        ' '*
+      end
+
+      ### The generic filter for words ###
+      rule word
+        [a-zA-Z0-9!?]+ ('_'* [a-zA-Z0-9!?]+)*
+      end
+
+      ### Type of entry (peername, fact, collection or rul) ###
+      #
+        #### peername extended with WLPeerName module
+        rule peer_dec
+          'peer ' sep peer_name sep '=' sep peer_address <WLPeerName>
+        end
+        
+        #### fact extended with WLFact module
+        rule fact
+          'fact ' sep relation_name '@' peer_name '(' sep fields sep ')' <WLFact>
+        end
+        
+        #### collection extended with WLCollection module
+        rule collection
+          'collection ' sep rel_type:relation_type
+          sep relation_name '@' peer_name  sep '(' sep col_fields sep ')' <WLCollection>
+        end
+        rule relation_type
+          extensional / intermediary / intensional 
+        end
+        rule extensional
+          ('extensional ' / 'ext ') persistent:(sep persistent)? <WLExtensional>
+        end        
+        rule intermediary
+          ('intermediary ' / 'inter ') persistent:(sep persistent)? <WLIntermediary>
+        end
+        rule intensional
+          'intensional ' <WLIntensional>
+          /
+          'int ' <WLIntensional>
+        end
+        rule persistent
+           'persistent'
+           /
+           'per'
+        end
+
+        #### rule extended with WLRule module
+        rule rul
+          'rule ' sep atom sep ':-' sep atoms <WLRule>
+        end
+          #### atoms is a list of atom
+          rule atoms
+            (atom ',' / atom)*
+          end
+
+      ### for peer ###
+        ### define peer ###
+        rule peer_name
+          word
+        end
+        rule peer_address
+          (ip ':' port)
+        end
+        ### Rules for type of item ###
+        rule ip
+          ([0-9]1..3 '.' [0-9]1..3 '.' [0-9]1..3 '.' [0-9]1..3) / 'localhost'
+        end
+        rule port
+          [0-9]1..6
+        end
+      ### for fact ###
+        #### relation name ####
+        rule relation_name
+          ( '_' / word )
+        end
+        #### fields ####
+        rule fields
+           items* item / [ ]* <WLFields>
+        end
+        rule col_fields
+          keys values / [ ]* <WLFields>
+        end
+        # value+ for key fields in relations
+        rule keys
+          key+
+        end
+        #value* for non-key fields in relations
+        rule values
+          value*
+        end
+        rule key
+          item '*' ',' / item '*'
+        end
+        rule value
+          item ',' / item
+        end
+        rule item
+          ( word / ('"' (word ' '*)* '"') / '_' ) <WLItem>
+        end
+        rule items
+          item ','
+        end
+            
+      ### for rules ###
+        #### atom in rules ####
+        rule atom
+          rrelation '@' rpeer '(' rfields ')' <WLAtom>
+        end
+          ###### relation name in atom #####
+          rule rrelation
+            (relation_name / variable) {
+            def variable
+              if self.is_a?(WLBud::WLVar) then return self else return nil end
+            end
+            }
+          end
+          ###### peer name in atom #####
+          rule rpeer
+            peer_name / variable {
+            def variable
+              if self.is_a?(WLBud::WLVar) then return self else return nil end
+            end
+            }
+          end
+          ###### attributes name in atom #####
+          rule rfields
+            rtokens rtoken <WLRfields>
+          end
+            ####### attributes name in atom ######
+            rule rtokens
+              (rtoken ',')*
+            end
+            rule rtoken
+              (variable / item)
+            end
+            rule variable
+              '$' [a-zA-Z0-9] <WLVar>
+            end
+   end
+end
