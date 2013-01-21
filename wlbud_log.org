@@ -1,0 +1,110 @@
+* TODO Improvement
+
+** TODO goes to minitest and more
+
+design test with dependency graph in the spirit of google test
+
+see for exemple gem:
+https://github.com/ooyala/scope
+
+
+
+* Bug
+
+** Channel stop receiving
+Testing multiple wlbud instance fails because it makes communication via
+channel broke. Message are not received at the right time or not at all.
+#+begin_src ruby
+(init stuff)...
+wl_peer.reverse_each do |p|
+	p.tick
+end
+... (some tests)
+#+end_src
+in this case it may happen that the thread that run the test take the
+priority on the thread launched for the tick by the event machine.
+
+Solution is to slow down a bit your test thread *sleep(0.4)*
+
+Seen in =tc_wl_wlbudl_send_packet=
+
+#+begin_src ruby
+  while wl_peer[1].inbound.empty?
+    sleep 0.2
+    cpt += 1
+    if cpt>7
+      assert(false, "it seems that peer1 is not receiving the message from peer 0")
+    end
+  end
+#+end_src
+
+
+** Netbeans freeze
+Netbeans freeze because of a bg in ruby plugins
+auto-completion mechanism.
+: pkill -KILL -f netbeans
+
+** Ruby event machine mess-up
+Eventmachine is going messy because of some non-regular stop, It
+generates some error about unregistered callback in bud.
+: pkill -KILL -f ruby
+
+
+* Update from bud 0.9.1 to 0.9.5
+
+** BudCollection.pro method changed
+
+To iterate on tuples in the buffers of the collections, this method pro
+can be used with a block but the interpretation of the block has now
+changed. It was previoulsy delegated to map which had a pretty
+unconventional behavior on tuples. Take care of the facts that tuples
+are ruby Struct.
+
+-> 0.9.1
+#+begin_src
+def pro(the_name=tabname, the_schema=schema, &blk)
+      if @bud_instance.wiring?
+        pusher = to_push_elem(the_name, the_schema)
+        pusher_pro = pusher.pro(&blk)
+        pusher_pro.elem_name = the_name
+        pusher_pro.tabname = the_name
+        pusher_pro
+      else
+        @storage.map(&blk)
+      end
+    end
+#+end_src
+
+-> 0.9.5
+#+begin_src
+def pro(the_name=tabname, the_schema=schema, &blk)
+      if @bud_instance.wiring?
+        pusher = to_push_elem(the_name, the_schema)
+        # If there is no code block evaluate, use the scanner directly
+        return pusher if blk.nil?
+        pusher_pro = pusher.pro(&blk)
+        pusher_pro.elem_name = the_name
+        pusher_pro.tabname = the_name
+        pusher_pro
+      else
+        rv = []
+        self.each do |t|
+          t = blk.call(t)
+          rv << t unless t.nil?
+        end
+        rv
+      end
+    end
+#+end_src
+
+
+** Channel changed
+
++ bug :: WLBud.aggregate_facts
++ svn version :: 3486
+
+#+begin_quote
+		 Change behavior of BudChannel#payloads for channels with two
+		 columns. Previously we returned a single *column* (scalar) value in
+		 this case; now we always return a tuple with k-1 columns
+#+end_quote

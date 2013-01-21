@@ -1,0 +1,14 @@
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+collection ext persistent local@p1(atom1*);
+collection ext persistent local2@p1(atom1*);
+collection ext persistent local3@p1(atom1*);
+collection ext join_delegated@p1(atom1*);
+fact local@p1(1);
+fact local@p1(2);
+fact local@p1(3);
+fact local@p1(4);
+rule join_delegated@p1($x):- local@p1($x),delegated@p2($x);
+rule join_delegated@p1($x):- local2@p1($x),delegated@p2($x);
+rule join_delegated@p1($x):- local3@p1($x),delegated@p2($x);
+end

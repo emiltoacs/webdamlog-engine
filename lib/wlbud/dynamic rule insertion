@@ -1,0 +1,137 @@
+To dynamically add rules to our program
+we would need :
+
+Create bloom blocks for each WLrule we create.
+These bloom blocks become methods that can already be dynamically added and/or 
+removed in ruby. 
+
+Rewrite our stratification at each turn of WLBud, such that each new rule 
+would generate a new strata.
+
+Classes in rewrite.rb :
+
+RuleRewriter
+TempExpander
+AttrNameRewriter
+CallRewriter
+DefnRenamer
+ModuleRewriter
+NestedRefRewriter
+
+Classes in BudMeta :
+BudMeta
+
+Classes in DepAnalysis :
+Declaration
+
+======================================================================
+Bud Stratification :
+======================================================================
+Rules are loaded as a closure. Each element of @strata is an array of
+lambdas, one for each rewritten rule in that strata. Note that legacy Bud
+code (with user-specified stratification) assumes that @strata is a simple
+array, so we need to convert it before loading the rewritten strata.
+
+Bud has several attributes to take care of stratification (n order of apparition):
+
+    @rewritten_strata
+    @declarations
+    @strata
+    @rule_src
+    @rule_orig_src
+
+And several tables :
+
+    # for BUD reflection
+    table :t_rules, [:rule_id] => [:lhs, :op, :src, :orig_src]
+    table :t_depends, [:rule_id, :lhs, :op, :body] => [:nm]
+    table :t_depends_tc, [:head, :body, :via, :neg, :temporal]
+    table :t_provides, [:interface] => [:input]
+    table :t_underspecified, t_provides.schema
+    table :t_stratum, [:predicate] => [:stratum]
+    table :t_cycle, [:predicate, :via, :neg, :temporal]
+    table :t_table_info, [:tab_name, :tab_type]
+    table :t_table_schema, [:tab_name, :col_name, :ord, :loc]
+
+Method requirements graph:
+
+@rewritten_strata <= do_rewrite
+    do_rewrite <= @meta_parser.new
+    #meta_rewrite hands in the rewritten strata.
+    do_rewrite <= @meta_parser.meta_rewrite 
+        #shred_rules creates a rulebag containing all the rules rewritten in rewrite_rule_blcok.
+        #fills in t_rules and t_depends
+        meta_rewrite <= shred_rules
+            shred_rules <= rewrite_rule_block #rewrite_rule_block rewrites the entire block line by line using check rule ast.
+                rewrite_rule_block <= check_rule_ast (abstract syntax tree) #Check_rule_ast parses bud code and returns nil unless error occurs.
+                rewrite_rule_block <= RuleRewriter.new #rewritten rule send to shred rules
+        meta_rewrite <= stratify
+            
+        meta_rewrite <= shred rules
+
+t_stratum, t_depends and t_rules need to be emptied if we are to rewrite the rules.
+How do we empty a table Collection in Bud? is it possible?
+
+choice #1 :
+Create WLTable type and create a empty() method that cleans the table.
+Rewrite builtin_state to change types of t_stratum, t_depends and t_rules to WLTable instead of table.
+empty() these tables in the rewrite_strata method.
+
+choice #2 :
+Create a special bloom block that executes when strata is rewritten.
+put inside this block negation statements <- to empty the tables.
+
+
+Use of different builtin tables :
+
+T_rules : NEED TO ERASE FOR REWRITE STRATA
+Used in bud_meta::meta_rewrite to translate bud rules into executable ruby code.
+Used in bud_meta::shred_rules to extract rules from blocks and put them into t_rules
+Used for viz and rebl.
+
+T_depends_tc : NEED TO ERASE FOR REWRITE STRATA
+Used in bud_meta::meta_rewrite to evaluate dependencies (using depanalysis)
+
+T_depends: NEED TO ERASE FOR REWRITE STRATA
+Used in bud_meta::stratify in order to insert the dependencies in the stratification process.
+
+T_stratum : NEED TO ERASE FOR REWRITE STRATA
+used in bud_meta::stratify 
+
+T_provides : NEED TO ERASE FOR REWRITE STRATA
+Used in bud_meta::meta_rewrite to see what the dependency analysis is providing.
+!!!!!! T_provides is used for interfaces. Need to erase only non-interface fields.
+
+T_underspecified : NEED TO ERASE FOR REWRITE STRATA
+Used in bud_meta::meta_rewrite for underspecified data flows.
+
+T_cycle : NEED TO ERASE FOR REWRITE STRATA
+Used in bud_meta::stratify to check for cycles in the stratifications.
+
+T_table_info : 
+No need to rewrite it, used in bust, viz and viz_utils.
+
+T_table_schema :
+Same is T_table_info.
+
+======================================================================
+
+Bud_meta::rewrite_rule_block returns a Rule rewriter objects that has several 
+fields, including rules and depends
+
+je veux faire des delegations.
+je veux utiliser l interface classique de Bud : rewrite_strata <= do_rewrite,declarations,lambda_eval
+Creer un bloc iter qui s execute a chaque nouvelle declaration.
+nettoyer TOUTES LES tables de declaration.
+
+
+Comment 
+
+1. reperer quelles sont les pb qui font qu aucune erreur ne se produit lorsque load program est lance
+avec le iter_block actif, alors qu il devrait y en avoir une.
+2. Regarder quels elements de rewrite_strata font que le code ne peut s'executer que dans le constructeur
+de Bud. Cela peut etre pour plusieurs raisons :
+- table ou array contenant des infos a propos de la stratification remplie lors du constructeur de Bud
+mais qui n'est pas videe, ce qu il faudrait faire s il on veut executer le code a nouveau.
+3. Rajouter l'objet WLTable < BudTable avec la fonction empty.
+
