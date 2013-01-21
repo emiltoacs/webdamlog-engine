@@ -25,7 +25,7 @@ class TcWlLocal1Evaluation < Test::Unit::TestCase
   class Peer1Local < WLBud::WL
   
     STR0 = <<EOF
-peer p1=localhost:11111;
+peer p1=localhost:11110;
 collection ext persistent local@p1(atom1*);
 collection ext persistent local2@p1(atom1*);
 collection ext persistent local3@p1(atom1*);
@@ -44,8 +44,8 @@ rule join@p1($x):- local@p1($x),local2@p1($x);
 end
 EOF
     def initialize(peername, options={})
-      File.open("#{TEST_FILENAME}1","w"){ |file| file.write STR0}
-      super(peername, "#{TEST_FILENAME}1", options)
+      File.open("#{TEST_FILENAME}0","w"){ |file| file.write STR0}
+      super(peername, "#{TEST_FILENAME}0", options)
     end
   end
 
@@ -61,7 +61,7 @@ EOF
     @wloptions = Struct.new :ip, :port
     #    end
     (0..NUMBER_OF_TEST_PG-1).each do |i|
-      #eval("#{TEST_FILENAME}#{i} = \"prog_#{i}\"")
+      eval("#{TEST_FILENAME}#{i} = \"prog_#{i}\"")
       eval("@tcoption#{i} = @wloptions.new \"localhost\", \"#{PREFIX_PORT_NUMBER}#{i}\"")
     end
     assert_equal(0,

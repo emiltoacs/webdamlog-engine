@@ -80,6 +80,7 @@ EOF
 peer p0=localhost:11110;
 peer p1=localhost:11111;
 collection ext persistent local@p0(atom1*);
+collection ext persistent join_ext@p0(atom1*);
 fact local@p0(1);
 fact local@p0(2);
 fact local@p0(3);
