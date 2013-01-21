@@ -42,8 +42,8 @@ rule join_delegated@p1($x):- local3@p1($x),delegated@p2($x);
 end
 EOF
     def initialize(peername, options={})
-      File.open("#{TEST_FILENAME}1","w"){ |file| file.write STR0 }
-      super(peername, "#{TEST_FILENAME}1", options)
+      File.open("#{TEST_FILENAME}0","w"){ |file| file.write STR0 }
+      super(peername, "#{TEST_FILENAME}0", options)
     end
   end
 
@@ -53,7 +53,7 @@ EOF
     @wloptions = Struct.new :ip, :port, :wl_test
     #    end
     (0..NUMBER_OF_TEST_PG-1).each do |i|
-      eval("@#{TEST_FILENAME}#{i} = \"prog_#{i}\"")
+      eval("#{TEST_FILENAME}#{i} = \"prog_#{i}\"")
       eval("@tcoption#{i} = @wloptions.new \"localhost\",
  \"#{PREFIX_PORT_NUMBER}#{i}\", \"true\"")
     end
@@ -65,7 +65,7 @@ EOF
       #      p Dir.entries((File.dirname("TEST_FILENAME#{i}"))).inspect+" in dir"
       #      p File.exist?(eval("TEST_FILENAME#{i}")).to_s+" exists?"
       #      p File.expand_path(File.dirname("TEST_FILENAME#{i}")).to_s+" dirname"
-      eval("File.delete @#{TEST_FILENAME}#{i} if File.exist? @#{TEST_FILENAME}#{i}")
+      eval("File.delete \"#{TEST_FILENAME}#{i}\" if File.exist? \"#{TEST_FILENAME}#{i}\"")
       #      p File.exist?(eval("TEST_FILENAME#{i}")).to_s+" exists?"
     end
   end

@@ -30,7 +30,7 @@ class TcWlLocal2AddSourceRelation < Test::Unit::TestCase
   class Peer1Local2 < WLBud::WL
 
     STR1 = <<EOF
-peer p1=localhost:11111;
+peer p1=localhost:11110;
 collection ext persistent local@p1(atom1*);
 collection ext persistent local2@p1(atom1*);
 collection ext join@p1(atom1*);
@@ -48,8 +48,8 @@ end
 EOF
 
     def initialize(peername, options={})
-      File.open("#{VAR_FILENAME}1","w"){ |file| file.write STR1}
-      super(peername, "#{VAR_FILENAME}1", options)
+      File.open("#{VAR_FILENAME}0","w"){ |file| file.write STR1}
+      super(peername, "#{VAR_FILENAME}0", options)
     end
   end
 
@@ -61,7 +61,7 @@ EOF
     @wloptions = Struct.new :ip, :port
     #    end
     (0..NUMBER_OF_TEST_PG-1).each do |i|
-      eval("@#{VAR_FILENAME}#{i} = \"prog_#{create_name}_#{i}\"")
+      eval("#{VAR_FILENAME}#{i} = \"prog_#{create_name}_#{i}\"")
       eval("@tcoption#{i} = @wloptions.new \"localhost\", \"#{PREFIX_PORT_NUMBER}#{i}\"")
     end
   end
@@ -72,7 +72,7 @@ EOF
       #      p Dir.entries((File.dirname("VAR_FILENAME#{i}"))).inspect+" in dir"
       #      p File.exist?(eval("VAR_FILENAME#{i}")).to_s+" exists?"
       #      p File.expand_path(File.dirname("VAR_FILENAME#{i}")).to_s+" dirname"
-      eval("File.delete @#{VAR_FILENAME}#{i} if File.exist? @#{VAR_FILENAME}#{i}")
+      eval("File.delete \"#{VAR_FILENAME}#{i}\" if File.exist? \"#{VAR_FILENAME}#{i}\"")
       #      p File.exist?(eval("VAR_FILENAME#{i}")).to_s+" exists?"
     end
   end
