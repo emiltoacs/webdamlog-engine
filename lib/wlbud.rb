@@ -839,8 +839,11 @@ module WLBud
         rel_name = k.to_s
         tuples = v
       end
-      
-      facts.each_pair {|k,v| eval("#{k.to_s} <= #{v.inspect}")}
+      # TODO test if the name is a relation name and transform otherwise: ie. change @ into _at_
+      facts.each_pair do |k,v|
+        raise WLErrorProgram, "relation name #{k.to_s} is not conforme to bud collection name restriction check if the @ if present you should change for _at_" if k.to_s.include?'@'
+        eval("#{k.to_s} <= #{v.inspect}")
+        end
     end
 
     # Read incoming packets on the channels and format them into an array of
