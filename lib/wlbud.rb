@@ -17,6 +17,7 @@ module WLBud
   LIB = "wlbud/"
   CONFIG = "config/"
   # Add the default directory to look for ruby source file
+  # TODO Remove that to make a proper inclusion when inserted in another project
   $:.push File.expand_path(File.dirname(__FILE__))
   $:.push File.join(WLBUD_DIR_PATH, LIB)
   $:.unshift File.join(PROJECT_PATH, CONFIG)
