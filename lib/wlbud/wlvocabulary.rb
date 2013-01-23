@@ -301,14 +301,14 @@ module WLBud
     
     #This method gives the name of the relation.
     def name
-      WLCollection.create_name_string(self)
+      WLCollection.create_relation_name_string(self)
     end
 
     # Create a string for the name of the relation that fits bud restriction
     #
     # It substitute @ by '_at_'
     #
-    def self.create_name_string (a_WLCollection)
+    def self.create_relation_name_string (a_WLCollection)
       raise WLErrorTyping, "try to create a name for an atom: #{a_WLCollection.class} which is not a WLCollection object." unless a_WLCollection.is_a?(WLCollection)
       "#{a_WLCollection.relation_name.text_value}_at_#{a_WLCollection.peer}"
     end

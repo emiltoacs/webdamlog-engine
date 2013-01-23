@@ -27,7 +27,7 @@ peer p1=localhost:11111;
 peer p2=localhost:11112;
 peer p3=localhost:11113;
 collection ext persistent local@p0(atom1*);
-collection int join_delegated@p0(atom1*);
+collection ext per join_delegated@p0(atom1*);
 fact local@p0(1);
 fact local@p0(2);
 fact local@p0(3);
@@ -94,6 +94,9 @@ EOF
     end
   end
 
+  # TODO intensional not supported in non-local check with join
+  # collection int join_delegated@p0(atom1*);
+  #
   def test_1
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|
