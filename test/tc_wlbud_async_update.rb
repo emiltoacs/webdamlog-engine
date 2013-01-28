@@ -5,6 +5,9 @@ require 'header_test'
 
 require 'test/unit'
 
+# Test class for methods to add relations, facts and rules dynamically in a
+# wlbud instance running
+#
 class TcWlbudAsyncUpdate < Test::Unit::TestCase
   include MixinTcWlTest
 
@@ -100,7 +103,4 @@ EOF
       end
     end
   end
-
-
-
 end
