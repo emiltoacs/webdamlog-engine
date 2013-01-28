@@ -9,7 +9,7 @@
 # 
 #   Encoding - UTF-8
 # ####License####
-$:.unshift File.join(File.dirname(__FILE__),"../lib")
+$:.unshift File.expand_path("../lib")
 require 'wlbud'
 #stdlib
 require 'test/unit'
@@ -18,7 +18,7 @@ require 'ruby2ruby'
 require 'parse_tree_extensions'
 require 'yaml'
 #custom
-require 'wlextendsbud.rb'
+require 'wlbud/wlextendsbud'
 
 # Mixin with some code common to most of my tc_wl_* tests
 #
@@ -38,12 +38,14 @@ module MixinTcWlTest
   #    }
   #  end
 
-  # self.included is a callback method triggered when this module is included
+  # self.included is a callback method triggered when this module is included.
+  #
+  # self reference MixinTcWlTest and klass is the module which include this one.
   #
   # Allow to use the verbose options when running tests
   # Allow to use the $BUD_DEBUG options when running tests
   #
-  def self.included klass
+  def self.included othermod
     if ARGV.include?("verbose")
       $test_verbose = true
     end
