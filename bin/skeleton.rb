@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 
 begin
-  require 'mygem'
+  require 'wlbud'
 rescue LoadError
   require 'rubygems'
-  require 'mygem'
+  require 'wlbud'
 end
 
 #more code goes here

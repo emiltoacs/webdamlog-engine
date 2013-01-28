@@ -1,3 +1,11 @@
-== RubyApplication1
+# WLBud
 
-You should document your project here.
+## Installation
+
+    gem install wlbud
+
+## Usage
+
+    require 'wlbud'
+
+    # Some more documentation here
