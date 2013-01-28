@@ -3,12 +3,14 @@
 require 'rubygems'
 require 'rake'
 require 'rake/clean'
-require 'rake/gempackagetask'
-require 'rake/rdoctask'
+require 'rake/packagetask'
+require 'rdoc/task'
 require 'rake/testtask'
 
-$:.push File.expand_path("lib", __FILE__)
-require "wlbud/version"
+require "./lib/wlbud/version"
+
+# FIXME this rakefile has be inspired by an obsolete code and should be rebuild
+# from scratch
 
 # Possibly merge the following with the next version
 # spec = Gem::Specification.new do |s|
@@ -29,22 +31,27 @@ require "wlbud/version"
 spec = Gem::Specification.new do |s|
   s.name        = "wlbud"
   s.version     = WLBud::VERSION
+  s.extra_rdoc_files = ['README', 'LICENSE']
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Émilien Antoine", "Jules Testard"]
   s.email       = []
   s.homepage    = ""
   s.summary     = %q{TODO: Write a gem summary}
   s.description = %q{TODO: Write a gem description}
-
+  s.required_ruby_version = '>= 1.8.7'
   s.rubyforge_project = "none"
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
+#  s.default_executable = 'rebl'
   s.require_paths = ["lib"]
+  s.bindir = "bin"
+
+  s.add_dependency 'bud', ">= #{WLBud::BUD_GEM_VERSION}"
 end
 
-Rake::GemPackageTask.new(spec) do |p|
+Rake::PackageTask.new(spec) do |p|
   p.gem_spec = spec
   p.need_tar = true
   p.need_zip = true
@@ -54,7 +61,7 @@ Rake::RDocTask.new do |rdoc|
   files =['README', 'LICENSE', 'lib/**/*.rb']
   rdoc.rdoc_files.add(files)
   rdoc.main = "README" # page to start on
-  rdoc.title = "RubyApplication1 Docs"
+  rdoc.title = "WLBud Docs"
   rdoc.rdoc_dir = 'doc/rdoc' # rdoc output folder
   rdoc.options << '--line-numbers'
 end
