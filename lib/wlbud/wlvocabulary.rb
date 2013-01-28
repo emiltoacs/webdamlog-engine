@@ -60,7 +60,7 @@ module WLBud
       @dic_made=false
       # TODO add self-join detection and think of the structure to use to create
       # the symbolic predicates of linkage during joins instead of named
-      # perspective. See functionmake_combos in wlprogram
+      # perspective. See function make_combos in wlprogram
       # @has_self_join=false
       @index=@@index+=1
       @body=nil      
@@ -89,9 +89,14 @@ module WLBud
     #return the body atoms of the rule in an array
     def body
       if @body.nil?
-        array=[];        
-        self.atoms.elements.each {|rf| if rf.is_a?(WLBud::WLAtom) then array << rf else 
-            if rf.elements.first.is_a?(WLBud::WLAtom) then array << rf.elements.first else raise WLErrorGrammarParsing end end}
+        array=[];
+        self.atoms.get_atoms.each do |ato|
+          if ato.is_a? WLBud::WLAtom
+            array << ato
+          else
+            raise WLErrorGrammarParsing, "errror while parsing body atoms of #{self.show}"
+          end
+        end
         @body = array
       end
       return @body
@@ -179,9 +184,9 @@ module WLBud
         if rf.is_a?(WLBud::WLAtom)
           s << rf.show
         else
-          if rf.elements.first.is_a?(WLBud::WLAtom) 
+          if rf.elements.first.is_a?(WLBud::WLAtom)
             s << rf.elements.first.show
-          else 
+          else
             raise WLErrorGrammarParsing
           end
         end
@@ -202,9 +207,9 @@ module WLBud
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
-      puts "Relation name : #{self.name}" 
+      puts "Relation name : #{self.name}"
       puts "Peer name: #{self.peer_name.text_value}"
-      puts "Data content : #{self.fields.text_value}"      
+      puts "Data content : #{self.fields.text_value}"
       puts "--------------------------------------------------------"
     end
     #return an array of strings containing each element of the Fact.
@@ -238,11 +243,11 @@ module WLBud
     end
 
     public
-    #prints to the screen information about the extensional fact.    
+    #prints to the screen information about the extensional fact.
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
-      puts "Relation name : #{self.name}" 
+      puts "Relation name : #{self.name}"
       puts "Schema key(s) : #{self.col_fields.keys.text_value}"
       puts "Schema value(s) : #{self.col_fields.values.text_value}"
       puts "--------------------------------------------------------"
@@ -275,7 +280,7 @@ module WLBud
     #
     def local?(budinstance=nil)
       if budinstance.nil?
-        self.peer.eql?('me') 
+        self.peer.eql?('me')
       else
         self.peer.eql?('me') or self.peer.eql?(budinstance.peername)
       end
@@ -315,7 +320,7 @@ module WLBud
   end
 
   class WLRelType < WLVocabulary
-    attr_reader :type    
+    attr_reader :type
     def initialize (a1,a2,a3)
       super(a1,a2,a3)
       @type=nil
@@ -359,11 +364,11 @@ module WLBud
     end
     public
     def persistent?
-#      p "self here: #{self.text_value}"
-#      p "self from #{self.input} interval #{self.interval}"
-#      puts self.parent
-#      p "self here: #{self.inspect}"
-#      p "per elem : #{persistent.elements}"
+      #      p "self here: #{self.text_value}"
+      #      p "self from #{self.input} interval #{self.interval}"
+      #      puts self.parent
+      #      p "self here: #{self.inspect}"
+      #      p "per elem : #{persistent.elements}"
       if @persistent.nil?
         @persistent = (not persistent.elements.nil?)
       else
@@ -385,11 +390,11 @@ module WLBud
   end
   
   #WebdamLog Atom, element of a WLrule.
-  class WLAtom < WLVocabulary    
+  class WLAtom < WLVocabulary
     def initialize (a1,a2,a3)
       @name_choice=false
       @variables=nil
-      super(a1,a2,a3)      
+      super(a1,a2,a3)
     end
     public
     #return true if the atom is local, false otherwise
@@ -462,7 +467,7 @@ module WLBud
       @fields=nil
       @variables=nil
       super(a1,a2,a3)
-    end    
+    end
     #this methods gives only variable fields (in text value)
     def variables
       if @variables.nil?
@@ -473,7 +478,7 @@ module WLBud
       end
       return @variables
     end
-    #this methods hands in all fields (in text value) 
+    #this methods hands in all fields (in text value)
     def fields
       if @fields.nil?
         f = []
