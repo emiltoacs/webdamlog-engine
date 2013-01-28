@@ -35,9 +35,7 @@ end
 #
 # The problem is to think to add the new test files in the list when created.
 #
-if  ARGV.include?("alpha")
-  files.each { |file| require file }
-else
+if  ARGV.include?("ordered")
   require "tc_bud_collection.rb"
   require "tc_bud_delete_fact.rb"
   require "tc_meta_test.rb"
@@ -51,5 +49,8 @@ else
   require "tc_wl_wlbudl_send_packet.rb"
   require "tc_wl_wlbud_delegation_1_simple.rb"
   require "tc_wl_wlbud_delegation_2_complex.rb"
+  require "tc_wlbud_async_update.rb"
+else
+  files.each { |file| require file }  
 end
 
