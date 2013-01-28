@@ -30,9 +30,9 @@ module WLBud
         '#' .* <WLComment>
       end
 
-      ### The generic white space killer
+      ### The generic white break line and white space killer
       rule sep
-        ' '*
+        (' '/"\n")*
       end
 
       ### The generic filter for words ###
@@ -82,9 +82,22 @@ module WLBud
           'rule ' sep atom sep ':-' sep atoms <WLRule>
         end
           #### atoms is a list of atom
-          rule atoms
-            (atom ',' / atom)*
-          end
+          #rule atoms
+          #  (atom ',' / atom)*
+          #end
+        
+        rule atoms            
+            first_atom:atom list_atoms:( sep ',' sep other_atom:atom )* {
+                def get_atoms
+                  [first_atom] + list_atoms
+                end
+                # remove the comma and return an array of atoms
+                def list_atoms
+                  super.elements.map { |comma_and_atom| comma_and_atom.other_atom }
+                end
+             }
+        end
+
 
       ### for peer ###
         ### define peer ###

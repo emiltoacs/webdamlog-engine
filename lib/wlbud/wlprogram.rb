@@ -100,7 +100,7 @@ module WLBud
       #
       @nonlocalrules=[]
       # The list of delegation needed to send after having processed the
-      # wlprogram at initialization. Ie. the non-local part of rules usually
+      # wlprogram at initialization. Ie. the non-local part of rules should
       # start with an intermediary relation that control it triggering.
       #
       # Array:(WLBud:WLRule)
@@ -150,8 +150,8 @@ module WLBud
       # Parse lines to be read
       parse_lines(IO.readlines(@programfile))
       # process non-local rules
-      @nonlocalrules.each do |r|
-        rewrite_non_local r
+      @nonlocalrules.each do |rule|
+        rewrite_non_local rule
       end
     end
 
@@ -279,7 +279,10 @@ module WLBud
     def rewrite_non_local(rule)
       raise WLError, "\npeername is not defined yet." if @peername.nil?  
       intermediary_relation_declaration_for_local_peer = nil
-      localstack=[]; nonlocalstack=[]; destination_peer="" ; local_vars=[]
+      localstack=[]
+      nonlocalstack=[]
+      destination_peer=""
+      local_vars=[]
       to_delegate=false
 
       # Scan atoms and divide body in local and non-local
@@ -299,10 +302,10 @@ module WLBud
         addr_destination_peer = @wlpeers[destination_peer]
       
         # RULE REWRITING If local atoms are present at the beginning of the non
-        # local rule, then we have to add a local rule to the program. Otherwise,
-        # the nonlocal rule can be sent as is to its destination. Create a
-        # relation for this declaration and that has an arity corresponding to the
-        # number of distinct variables present in the stack.
+        # local rule, then we have to add a local rule to the program.
+        # Otherwise, the nonlocal rule can be sent as is to its destination.
+        # Create a relation for this declaration that has an arity corresponding
+        # to the number of distinct variables present in the local stack.
         #
         if localstack.empty? or !(localstack.empty? or nonlocalstack.empty?)
           if !(localstack.empty? or nonlocalstack.empty?) # if the rule must be cut in two part

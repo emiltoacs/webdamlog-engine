@@ -10,7 +10,9 @@
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.expand_path("../lib")
-require 'wlbud'
+# full path to specify that you want the current version in the project and not
+# the gem
+require '../lib/wlbud'
 #stdlib
 require 'test/unit'
 #lib
@@ -109,7 +111,6 @@ module MixinTcWlTest
     end
     return true
   end
-
 end
 
 

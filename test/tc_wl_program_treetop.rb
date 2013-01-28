@@ -11,7 +11,7 @@
 # ####License####
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
-
+  
 # Test the treetop parser implementation in WLProgram and WLVocabulary objects
 # instantiation.
 #
@@ -21,7 +21,7 @@ require 'header_test'
 # This test can be followed by tc_wl_wlbud_parse_program id succeed
 #
 class TcWlProgramTreetop < Test::Unit::TestCase
-  include MixinTcWlTest  
+  include MixinTcWlTest
 
   #  test regex in ruby
   def test_regex_match
