@@ -18,6 +18,7 @@ require 'test/unit'
 #lib
 require 'ruby2ruby'
 require 'parse_tree_extensions'
+require 'pp'
 require 'yaml'
 #custom
 require 'wlbud/wlextendsbud'

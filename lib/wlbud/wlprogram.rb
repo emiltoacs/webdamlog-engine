@@ -88,7 +88,9 @@ module WLBud
       # The original rules before the rewritting used for evaluation. It gives
       # the original semantic of the program.
       #
-      @original_rules=[]
+      # Original rules are stored as key and rewrittings of these ones as value in an array
+      #
+      @original_rules = Hash.new{ |h,k| h[k]=Set.new }
       # The local rules straightforward to convert into bud (simple syntax
       # translation)
       # === data struct
@@ -232,7 +234,7 @@ module WLBud
     # the type is not important.
     #
     def parse (line,add_to_program=false,rewritten=false, options={})
-      raise WLErrorTyping, "in parse the parameter must be a string representing a valid wlgrammar expression" unless line.is_a?(String)
+      raise WLErrorTyping, "I could only parse string not #{line.class}" unless line.is_a?(String)
       unless (output=@parser.parse(line))
         line_nb = options[:line_nb] ||= "unknown"
         raise WLErrorGrammarParsing, <<-MSG
@@ -260,6 +262,7 @@ module WLBud
                 @delegations << result
               end
             else
+              @original_rules[result] << []
               if local?(result)
                 @localrules << result
               else
