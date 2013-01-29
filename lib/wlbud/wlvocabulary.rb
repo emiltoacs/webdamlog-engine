@@ -101,21 +101,23 @@ module WLBud
       end
       return @body
     end
-    
+
+    # REMOVE
     #return true if head is local, false otherwise.
-    def head_local?
-      return self.head.local?
-    end
-    
+#    def head_local?
+#      return self.head.local?
+#    end
+
+    # REMOVE
     #Checks if a rule is a delegation
-    def nonlocal?(peername)
-      self.body.each { |atom|
-        unless atom.local?(peername)
-          return true
-        end
-      }
-      return false
-    end
+#    def nonlocal?(peername)
+#      self.body.each { |atom|
+#        unless atom.local?(peername)
+#          return true
+#        end
+#      }
+#      return false
+#    end
 
     #returns all atoms of the rule in an array (head + body).
     def atoms
@@ -158,15 +160,15 @@ module WLBud
         # TODO list all the useful relation, a relation is useless if it's arity
         # is more than zero and none variable and constant inside aren't used in
         # other relation of this rule insert here the function
-        if self.dic_relation_name.has_key?(atom.name)
-          self.dic_relation_name[atom.name] << n
+        if self.dic_relation_name.has_key?(atom.relname)
+          self.dic_relation_name[atom.relname] << n
         else
-          self.dic_relation_name[atom.name]=[n]
+          self.dic_relation_name[atom.relname]=[n]
         end
         if self.dic_invert_relation_name.has_key?(n)
-          self.dic_invert_relation_name[n] << atom.name
+          self.dic_invert_relation_name[n] << atom.relname
         else
-          self.dic_invert_relation_name[n]=[atom.name]
+          self.dic_invert_relation_name[n]=[atom.relname]
         end
       end
       @dic_made = true
@@ -207,7 +209,7 @@ module WLBud
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
-      puts "Relation name : #{self.name}"
+      puts "Relation name : #{self.relname}"
       puts "Peer name: #{self.peer_name.text_value}"
       puts "Data content : #{self.fields.text_value}"
       puts "--------------------------------------------------------"
@@ -222,8 +224,8 @@ module WLBud
       return @contents
     end
     #returns the name of the relation of the fact.
-    def name
-      "#{self.relation_name.text_value}_at_#{self.peer_name.text_value}"
+    def relname
+      return "#{self.relation_name.text_value}_at_#{self.peer_name.text_value}"
     end
   end
   
@@ -247,7 +249,7 @@ module WLBud
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
-      puts "Relation name : #{self.name}"
+      puts "Relation name : #{self.relname}"
       puts "Schema key(s) : #{self.col_fields.keys.text_value}"
       puts "Schema value(s) : #{self.col_fields.values.text_value}"
       puts "--------------------------------------------------------"
@@ -280,17 +282,17 @@ module WLBud
     #
     # me is the
     #
-    def local?(budinstance=nil)
-      if budinstance.nil?
-        self.peer.eql?('me')
-      else
-        self.peer.eql?('me') or self.peer.eql?(budinstance.peername)
-      end
-    end
+#    def local?(budinstance=nil)
+#      if budinstance.nil?
+#        self.peer.eql?('me')
+#      else
+#        self.peer.eql?('me') or self.peer.eql?(budinstance.peername)
+#      end
+#    end
 
     # Return the name of the peer
     #
-    def peer
+    def peername
       self.peer_name.text_value
     end
     
@@ -307,17 +309,19 @@ module WLBud
     end
     
     #This method gives the name of the relation.
-    def name
-      WLCollection.create_relation_name_string(self)
+    def relname
+      self.relation_name.text_value
     end
 
+    # Return the name of this atom in the format "relation_at_peer"
+    # 
     # Create a string for the name of the relation that fits bud restriction
     #
     # It substitute @ by '_at_'
     #
-    def self.create_relation_name_string (a_WLCollection)
-      raise WLErrorTyping, "try to create a name for an atom: #{a_WLCollection.class} which is not a WLCollection object." unless a_WLCollection.is_a?(WLCollection)
-      "#{a_WLCollection.relation_name.text_value}_at_#{a_WLCollection.peer}"
+    def atom_name
+      raise WLErrorTyping, "try to create a name for an atom: #{self.class} which is not a WLCollection object." unless self.is_a?(WLCollection)
+      return "#{self.relation_name.text_value}_at_#{self.peername}"
     end
   end
 
@@ -339,7 +343,7 @@ module WLBud
       @type = :Extensional
       @persistent = nil
     end
-    public
+    
     def persistent?
       if @persistent.nil?
         @persistent = (not persistent.elements.nil?)
@@ -364,7 +368,7 @@ module WLBud
       @type = :Intermediary
       @persistent = nil
     end
-    public
+    
     def persistent?
       #      p "self here: #{self.text_value}"
       #      p "self from #{self.input} interval #{self.interval}"
@@ -401,10 +405,16 @@ module WLBud
     public
     #return true if the atom is local, false otherwise
     #
-    def local?(peername)
-      self.rpeer.text_value.eql?('me') or self.rpeer.text_value.eql?(peername)
+#    def local?(peername)
+#      self.rpeer.text_value.eql?('me') or self.rpeer.text_value.eql?(peername)
+#    end
+
+    # Return peer name
+    #
+    def peername
+      return self.rpeer.text_value
     end
-   
+
     #return the variables included in the atom in an array format.
     #e.g. : [relation_var,peer_var,[field_var1,field_var2,...]]
     #
@@ -431,7 +441,7 @@ module WLBud
     # This method gives the name of the relation. It may also change the name
     # of the relation on this rule only, in order to implement renaming
     # strategies for self joins.
-    def name(newname=nil)
+    def relname(newname=nil)
       if !@name_choice then @name = "#{self.rrelation.text_value}_at_#{self.rpeer.text_value}" end
       unless newname.nil?
         @name = newname

@@ -24,13 +24,13 @@ class TcWlProgramTreetop < Test::Unit::TestCase
   include MixinTcWlTest
 
   #  test regex in ruby
-  def test_regex_match
+  def test_010_regex_match
     assert_match(/[^\$][a-zA-Z0-9!?][a-zA-Z0-9!?_]*/, "this")
     assert_match(/[^\$][a-zA-Z0-9!?][a-zA-Z0-9!?_]*/, "this_is")
   end
 
   # Test collection
-  def test_string_1
+  def test_020_string_1
     program = nil
     File.open('test_string_1',"w"){ |file| file.write "collection ext persistent local@p1(atom1*);"}
     assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_1', 'localhost', '11111', {:debug => true})}
@@ -40,7 +40,7 @@ class TcWlProgramTreetop < Test::Unit::TestCase
 
   # word accept _ only in the middle of a name
   #
-  def test_string_word
+  def test_030_string_word
     program = nil
     File.open('test_string_word',"w"){ |file| file.write "collection ext persistent local_1@p1(atom1*);"}
     assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_word', 'localhost', '11111', {:debug => true})}
@@ -51,7 +51,7 @@ class TcWlProgramTreetop < Test::Unit::TestCase
 
   # collection type
   #
-  def test_string_rel_type
+  def test_040_string_rel_type
     program = nil
     begin
       File.open('test_string_rel_type',"w"){ |file| file.write "collection ext persistent local_1@p1(atom1*);"}
@@ -67,6 +67,11 @@ class TcWlProgramTreetop < Test::Unit::TestCase
       File.delete('test_string_rel_type') if File.exists?('test_string_rel_type')
     end
   end
+
+  def test_100_wlvocabulary
+    
+  end
+
 
   # This is just a test file, in regular use it is forbidden to declare
   # intermediary relation 
@@ -88,7 +93,7 @@ rule joindelegated@p1($x):- local@p1($x),delegated@p2($x),delegated@p3($x),deleg
 end
 EOF
   # Test parsing and WLVocabulary instantiation of a simple init program file
-  def test_program_1
+  def test_200_program_1
     begin
       File.open('test_program_1',"w"){ |file| file.write STR1}
       program = nil

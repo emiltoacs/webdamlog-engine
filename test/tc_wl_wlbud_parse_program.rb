@@ -204,7 +204,8 @@ EOF
       super(peername, TEST_FILENAME1, options)
     end
   end
-  def test_relation_initialisation_with_fact    
+  def test_relation_initialisation_with_fact
+    puts "START"
     wl_peer = []
     assert_nothing_raised {wl_peer[0] = WlPeer0TestRelationInitialisationWithFact.new('p1', Hash[WLOPTIONS0.each_pair.to_a])}
     assert_nothing_raised {wl_peer[1] = WlPeer1TestRelationInitialisationWithFact.new('p2', Hash[WLOPTIONS1.each_pair.to_a])}

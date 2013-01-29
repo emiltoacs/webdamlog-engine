@@ -10,7 +10,7 @@
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
 
-# Test the deletion of facts according ot the type of relations in which it
+# TODO Test the deletion of facts according ot the type of relations in which it
 # spreads
 #
 class TcWlWlbudDeletion < Test::Unit::TestCase
@@ -103,7 +103,6 @@ EOF
     (0..NUMBER_OF_TEST_PG-1).each do |i|
       wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', str#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
     end
-    p wl_peer[0].tables
 
     wl_peer.reverse_each do |p|
       p.tick

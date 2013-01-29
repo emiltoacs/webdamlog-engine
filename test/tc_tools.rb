@@ -12,7 +12,7 @@
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
 
-class TcWlTools < Test::Unit::TestCase
+class TcTools < Test::Unit::TestCase
 
   # Test tool group arrays by given field
   # === Scenario
@@ -110,4 +110,9 @@ class TcWlTools < Test::Unit::TestCase
     assert_equal({"localhost:11112"=>{"other_at_p2"=>[["3"]], "join_at_p2"=>[["3"], ["4"]]}, "localhost:11113"=>{"join_at_p3"=>[["5"], ["27"]]}},
     sb_by_rel)
   end
+
+  def test_5_sanitize
+    assert_equal("truc_bidule", WLTools.sanitize!("TruC ' \"   Bidule"))
+  end
+  
 end

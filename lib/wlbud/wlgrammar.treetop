@@ -81,10 +81,6 @@ module WLBud
         rule rul
           'rule ' sep atom sep ':-' sep atoms <WLRule>
         end
-          #### atoms is a list of atom
-          #rule atoms
-          #  (atom ',' / atom)*
-          #end
         
         rule atoms            
             first_atom:atom list_atoms:( sep ',' sep other_atom:atom )* {
