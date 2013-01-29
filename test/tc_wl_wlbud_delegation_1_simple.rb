@@ -167,7 +167,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     if $test_verbose
       puts "should have one BLOOM rules now, see bloom method:"
       puts methname=wl_peer[1].class.instance_methods.select {|m| m =~ /^__bloom__.+$/}
-      puts "ruby code inside:\n #{wl_peer[1].method(methname.first.to_sym).to_ruby}"
+      pp "ruby code inside:\n #{wl_peer[1].method(methname.first.to_sym).inspect}"
       puts "content of t_rules table:"
       wl_peer[1].tables[:t_rules].each { |v| puts " #{v.inspect}" }
     end

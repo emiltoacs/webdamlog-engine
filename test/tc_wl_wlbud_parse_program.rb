@@ -215,7 +215,7 @@ EOF
         if /^__bootstrap__/.match m
           assert_equal(wl_peer[0].class, wl_peer[0].method(m.to_sym).owner,
             "bootstrap is defined in class #{wl_peer[0].method(m.to_sym).owner} instead of #{wl_peer[0].class}")
-          # puts wl_peer[0].method(m.to_sym).to_ruby
+            #puts wl_peer[0].method(m.to_sym).to_ruby
         end
       end
     end

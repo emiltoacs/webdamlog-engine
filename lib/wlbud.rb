@@ -337,6 +337,7 @@ module WLBud
             puts "---------"
           end
           # Declare all the new relations and insert the rules
+#          pp "peer #{@peername} will process the content of a package #{packet_value.to_s}"
           packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
           packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?          
           insert_updates(packet_value.facts) unless packet_value.facts.nil?
@@ -833,13 +834,12 @@ module WLBud
     # inserted
     #
     def insert_updates(facts)
-      facts.each_pair do |k,v|
-        rel_name = k.to_s
-        tuples = v
-      end
       # TODO test if the name is a relation name and transform otherwise: ie. change @ into _at_
       facts.each_pair do |k,v|
         raise WLErrorProgram, "relation name #{k.to_s} is not conforme to bud collection name restriction check if the @ if present you should change for _at_" if k.to_s.include?'@'
+#        p "try to eval #{k.to_s} <= #{v.inspect} at peer #{self.peername}"
+#        pp "tables in peer #{self.peername} are"
+#        tables.each { |t| pp "#{t}" }
         eval("#{k.to_s} <= #{v.inspect}")
         end
     end

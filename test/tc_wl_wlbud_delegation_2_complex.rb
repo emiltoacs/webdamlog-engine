@@ -98,13 +98,16 @@ EOF
   # collection int join_delegated@p0(atom1*);
   #
   def test_1
+    
+    p "===START of test_1===" if $test_verbose
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|
       wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
     end
     p "===all wl_peer tick 1 in reverse order===" if $test_verbose
-    p " such that p0 is sending its message after everyone has been initialized" if $test_verbose
+    p " such that p0 is sending its message after everyone has been initialized" if $test_verbose    
     wl_peer.reverse_each do |p|
+      p " peer #{p.peername} start a tick" if $test_verbose
       p.tick
     end
     p "check table bootstrap content" if $test_verbose
@@ -118,7 +121,7 @@ EOF
     assert_equal [["1"], ["2"], ["3"], ["4"]], wl_peer[0].sbuffer.to_a.sort.map{ |obj| obj.fact }, "p0 send its local relation content to p1"
     assert_equal 1, wl_peer[0].rules_to_delegate.length
     assert_equal 1, wl_peer[0].relation_to_declare.length
-    assert_equal 1, wl_peer[0].relation_to_declare.values.first.length    
+    assert_equal 1, wl_peer[0].relation_to_declare.values.length    
     new_declaration = wl_peer[0].relation_to_declare.values.first.to_s
     /(deleg.*)\(/ =~ new_declaration
     new_rel_at_p1 = Regexp.last_match(1).gsub('@', '_at_')
@@ -136,7 +139,7 @@ EOF
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
       "p0 must have sent a packet with new rule declaration and facts"
     p "check inbound queue at p1" if $test_verbose
-    assert(wait_inbound(wl_peer[1]), "TIMEOUT it seems that #{wl_peer[2].peername} is not receiving any message")
+    assert(wait_inbound(wl_peer[1]), "TIMEOUT it seems that #{wl_peer[1].peername} is not receiving any message")
     assert_equal 1, wl_peer[1].inbound.length, "one packet pending to be processed"
     packet = nil
     assert_nothing_raised { packet = WLBud::WLPacket.deserialize_from_channel_sorted(wl_peer[1].inbound[:chan].first) }
@@ -164,8 +167,8 @@ EOF
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
       "p0 should have sent again the list of facts but not the declaratiosn or rules"
 
-    assert(wait_inbound(wl_peer[1]), "TIMEOUT it seems that #{wl_peer[2].peername} is not receiving any message")
-    assert_equal 1, wl_peer[1].inbound.length, "one packet pending to be processed"
+    assert(wait_inbound(wl_peer[1]), "TIMEOUT it seems that #{wl_peer[1].peername} is not receiving any message")
+    assert_equal 2, wl_peer[1].inbound[:chan].first.length, "two packets pending to be processed"
     p "data at p1" if $test_verbose
     wl_peer[1].tick
     assert_equal [["localhost:11112",
