@@ -11,6 +11,7 @@
 # ####License####
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
+require 'generator'
   
 # Test the treetop parser implementation in WLProgram and WLVocabulary objects
 # instantiation.
@@ -29,7 +30,7 @@ class TcWlProgramTreetop < Test::Unit::TestCase
     assert_match(/[^\$][a-zA-Z0-9!?][a-zA-Z0-9!?_]*/, "this_is")
   end
 
-  # Test collection
+  # Test creation of empty WLProgram
   def test_020_string_1
     program = nil
     File.open('test_string_1',"w"){ |file| file.write "collection ext persistent local@p1(atom1*);"}
@@ -49,7 +50,7 @@ class TcWlProgramTreetop < Test::Unit::TestCase
     File.delete('test_string_word')
   end
 
-  # collection type
+  # Test if the collection type is well interpreted
   #
   def test_040_string_rel_type
     program = nil
@@ -63,6 +64,30 @@ class TcWlProgramTreetop < Test::Unit::TestCase
       assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
       assert_kind_of WLBud::WLExtensional, program.wlcollections.first[1].rel_type
       assert (not program.wlcollections.first[1].persistent?)
+      File.open('test_string_rel_type',"w"){ |file| file.write "collection intensional local_1@p1(atom1*);"}
+      assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert_kind_of WLBud::WLIntensional, program.wlcollections.first[1].rel_type
+      assert (not program.wlcollections.first[1].persistent?)
+      File.open('test_string_rel_type',"w"){ |file| file.write "collection int local_1@p1(atom1*);"}
+      assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert_kind_of WLBud::WLIntensional, program.wlcollections.first[1].rel_type
+      assert (not program.wlcollections.first[1].persistent?)
+      File.open('test_string_rel_type',"w"){ |file| file.write "collection intermediary local_1@p1(atom1*);"}
+      assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert_kind_of WLBud::WLIntermediary, program.wlcollections.first[1].rel_type
+      assert (not program.wlcollections.first[1].persistent?)
+      File.open('test_string_rel_type',"w"){ |file| file.write "collection inter local_1@p1(atom1*);"}
+      assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert_kind_of WLBud::WLIntermediary, program.wlcollections.first[1].rel_type
+      assert (not program.wlcollections.first[1].persistent?)
+      File.open('test_string_rel_type',"w"){ |file| file.write "collection intermediary persistent local_1@p1(atom1*);"}
+      assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert_kind_of WLBud::WLIntermediary, program.wlcollections.first[1].rel_type
+      assert (program.wlcollections.first[1].persistent?)
+      File.open('test_string_rel_type',"w"){ |file| file.write "collection inter per local_1@p1(atom1*);"}
+      assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert_kind_of WLBud::WLIntermediary, program.wlcollections.first[1].rel_type
+      assert (program.wlcollections.first[1].persistent?)
     ensure
       File.delete('test_string_rel_type') if File.exists?('test_string_rel_type')
     end
@@ -117,6 +142,12 @@ EOF
       assert (not program.wlcollections["relintermed_at_p1"].persistent?)
       assert_equal :Intermediary, program.wlcollections["relintermed_2_at_p1"].get_type
       assert program.wlcollections["relintermed_2_at_p1"].persistent?
+      assert_equal 4, program.wlfacts.length
+      program.wlfacts.each { |fact| assert_equal "local_at_p1",fact.relname }
+      SyncEnumerator.new(program.wlfacts,1..4).each { |fact,num|
+        assert_equal [num.to_s], fact.content
+      }
+      #assert_equal 1, program.wl
     ensure
       File.delete('test_program_1') if File.exists?('test_program_1')
     end

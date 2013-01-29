@@ -226,6 +226,7 @@ module WLBud
       else
         raise WLError, "the program is empty, impossible to generate corresponding facts and rules"
       end
+      @fist_tick_after_make_program=true
       ### WLBud:End adding to Bud
       
       resolve_imports
@@ -727,7 +728,7 @@ module WLBud
       @collection_added=true
     end
 
-    # Takes in a string representing a WLrule, parses it and adds it directly
+    # Takes in a string representing a WLRule, parses it and adds it directly
     # into the WLBud instance.
     #
     def add_rule(wlpg_rule)
@@ -774,8 +775,7 @@ module WLBud
       generate_bootstrap(@wl_program.wlfacts,@wl_program.wlcollections)
       #WLTools::Debug_messages.h3 "make_program translate" if @options[:debug]
       WLTools::Debug_messages.h2(WLTools::Debug_messages.end_comment comment) if @options[:debug]
-      create_rule_blocks
-      @fist_tick_after_make_program=true
+      create_rule_blocks      
     end
 
     # The generate_bootstrap method creates an array containing all extensional
@@ -795,7 +795,7 @@ module WLBud
       str="{\n"
       collections.each_value {|wlcollection|
         tbl=[]
-        facts.each {|wlf| tbl << wlf.contents if wlf.relname.eql?(wlcollection.atom_name)}
+        facts.each {|wlf| tbl << wlf.content if wlf.relname.eql?(wlcollection.atom_name)}
         str << "#{wlcollection.atom_name} <= " + tbl.inspect + ";\n"
       }
       str << "}"
