@@ -671,21 +671,21 @@ module WLBud
     def schema_init(wlcollection, colltype=nil, *args)
       if colltype.nil?
         if wlcollection.persistent? then
-          self.table(wlcollection.name.to_sym,wlcollection.schema)
+          self.table(wlcollection.atom_name.to_sym,wlcollection.schema)
         else
-          self.scratch(wlcollection.name.to_sym,wlcollection.schema)
+          self.scratch(wlcollection.atom_name.to_sym,wlcollection.schema)
         end
       else
         # Force the type of the collection to declare (non-conventional policy for test)
         if colltype=="table"
-          self.table(wlcollection.name.to_sym,wlcollection.schema)
+          self.table(wlcollection.atom_name.to_sym,wlcollection.schema)
         else if colltype=="scratch"
-            self.scratch(wlcollection.name.to_sym,wlcollection.schema)
+            self.scratch(wlcollection.atom_name.to_sym,wlcollection.schema)
           else if colltype=="channel"
               if args.first=="loopback"
-                self.channel(wlcollection.name.to_sym,wlcollection.schema,true)
+                self.channel(wlcollection.atom_name.to_sym,wlcollection.schema,true)
               else
-                self.channel(wlcollection.name.to_sym,wlcollection.schema)
+                self.channel(wlcollection.atom_name.to_sym,wlcollection.schema)
               end
             else
               raise WLError, "trying to force the type of a collection to a non-supported format"
@@ -733,7 +733,7 @@ module WLBud
     def add_rule(wlpg_rule)
       rule = @wl_program.parse(wlpg_rule, true)
       raise WLErrorProgram, "parse rule and get #{rule.class}" unless rule.is_a?(WLBud::WLRule)
-      if rule.nonlocal?(@peername)
+      unless @wl_program.local?(rule)
         @wl_program.rewrite_non_local(rule)
         localcolls = @wl_program.flush_new_local_declaration
         raise WLError, "exactly one intermediary collection should have been generated while splitting a non-local rule an nt #{localcolls.length}" unless localcolls.length == 1
@@ -793,10 +793,10 @@ module WLBud
       if collections.empty? then puts "no relations yet..." if @options[:debug]; return; end
       if facts.empty? then puts "no facts yet..." if @options[:debug]; return; end
       str="{\n"
-      collections.each_value {|wlst|
+      collections.each_value {|wlcollection|
         tbl=[]
-        facts.each {|wlf| tbl << wlf.contents if wlf.name.eql?(wlst.name)}
-        str << "#{wlst.name} <= " + tbl.inspect + ";\n"
+        facts.each {|wlf| tbl << wlf.contents if wlf.relname.eql?(wlcollection.atom_name)}
+        str << "#{wlcollection.atom_name} <= " + tbl.inspect + ";\n"
       }
       str << "}"
       #if @options[:debug] then puts "bootstrap block : #{str}" end

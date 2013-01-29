@@ -3,21 +3,19 @@
 
 module WLTools
 
-  module SerializeObjState
-    # ===return
-    # a hash with variable name as key with their value as hash value
-    #
-    # ===option
-    # change the key_type for something else than "string" which is set by
-    # default to get symbol instead of string as key of the returned hash
-    #
-    def self.obj_to_hash (obj, key_type="string")
-      if key_type=="string"
-        Hash[obj.instance_variables.map {|var| [var[1..-1].to_s, obj.instance_variable_get(var)]}]
-      else
-        Hash[obj.instance_variables.map {|var| [var[1..-1].to_sym, obj.instance_variable_get(var)]}]
-      end
-    end
+  # Sanitize the string ie.
+  # + Remove leading and trailing whitespace
+  # + Downcase
+  # + Replace internal space by _
+  # + Remove " or '
+  #
+  def self.sanitize!(string)
+    string.strip!
+    string.downcase!
+    string.delete!('"')
+    string.delete!("'")
+    string.gsub!(/\s+/, '_')    
+    return string
   end
 
   # Transform *filename* into a nice *NIX filename
@@ -33,7 +31,7 @@ module WLTools
   #
   def self.friendly_filename(filename)
     filename.gsub(/[^\w\s_-]+/, '').gsub(/(^|\b\s)\s+($|\s?\b)/, '\\1\\2').gsub(/\s+/, '_')
-  end  
+  end
 
   # The classic group by method that group a list of array by the field in
   # position key_pos.
@@ -46,7 +44,7 @@ module WLTools
   #
   # return {"one" => [["value11"], ["value12"]], "two" => [["value21"], ["value22"]]}
   #
-  # NB: un-nest the array in value if size is one after key extraction 
+  # NB: un-nest the array in value if size is one after key extraction
   #
   def self.merge_multivaluehash_grouped_by_field(ar_ar,key_pos)
     grouped = {}
@@ -61,6 +59,23 @@ module WLTools
     end
     grouped
   end
+
+  module SerializeObjState
+    # ===return
+    # a hash with variable name as key with their value as hash value
+    #
+    # ===option
+    # change the key_type for something else than "string" which is set by
+    # default to get symbol instead of string as key of the returned hash
+    #
+    def self.obj_to_hash (obj, key_type="string")
+      if key_type=="string"
+        Hash[obj.instance_variables.map {|var| [var[1..-1].to_s, obj.instance_variable_get(var)]}]
+      else
+        Hash[obj.instance_variables.map {|var| [var[1..-1].to_sym, obj.instance_variable_get(var)]}]
+      end
+    end
+  end  
 
   module Print_Tables
     

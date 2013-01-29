@@ -50,11 +50,11 @@ module WLBud
     # the list of declaration of relations to create as WLCollection object
     #
     def initialize (peername,filename,ip,port,make_binary_rules=false,options={})
-      raise WLBud::WLError, 'Program file has to be a string' unless filename.is_a?(String)
+      raise WLBud::WLError, 'Program file cannot be found' unless File.exist?(filename)
       #absolute path file to the program *.wl
       @programfile = filename
       @parser = WLBud::WebdamLogGrammarParser.new
-      @peername=peername
+      @peername=WLTools.sanitize!(peername)
       @peername.freeze
       @ip=ip
       @ip.freeze
@@ -67,13 +67,15 @@ module WLBud
       my_address = "#{ip}:#{port}"
       # List of the webdamlog relation inserted in that peer
       #
-      @wlcollections={} 
-      # List of known peers
-      #
+      @wlcollections={}       
       # Define here some std alias for local peer
       # * @peername
       # * 'localhost'
       # * 'me'
+      #
+      @localpeername = Set.new([@peername,'localhost','me'])
+      # List of known peers
+      #
       @wlpeers={}
       @wlpeers[@peername]=my_address
       @wlpeers['localhost']=my_address
@@ -240,21 +242,24 @@ module WLBud
         result = output.elements.first
         if add_to_program
           case result
-          when WLBud::WLPeerName then @wlpeers[result.name] = result.address
-          when WLBud::WLCollection then @wlcollections[result.name] = result
-          when WLBud::WLFact then @wlfacts << result
+          when WLBud::WLPeerName
+            @wlpeers[WLTools.sanitize!(result.name)] = WLTools.sanitize!(result.address)
+          when WLBud::WLCollection
+            @wlcollections[WLTools.sanitize!(result.atom_name)] = result
+          when WLBud::WLFact
+            @wlfacts << result
           when WLBud::WLRule
             if rewritten
-              if result.nonlocal?(@peername)
-                @delegations << result
+              if local?(result)
+                @rewrittenlocal << result                
               else
-                @rewrittenlocal << result
+                @delegations << result
               end
             else
-              if result.nonlocal?(@peername)
-                @nonlocalrules << result                
-              else
+              if local?(result)
                 @localrules << result
+              else
+                @nonlocalrules << result
               end
             end          
           end
@@ -287,7 +292,7 @@ module WLBud
 
       # Scan atoms and divide body in local and non-local
       rule.body.each { |atom|
-        if atom.local?(@peername) and !to_delegate
+        if !to_delegate and local?(atom)
           localstack << atom
         else
           to_delegate=true
@@ -298,7 +303,8 @@ module WLBud
       ERROR in rewrite : You are trying to rewrite a local rule. There may be an error in your rule filter
         MSG
         #The destination peer is the peer of the first nonlocal atom.
-        destination_peer = nonlocalstack.first.rpeer.text_value
+        destination_peer = nonlocalstack.first.peername
+        raise WLErrorProgram, "following peer is unknown it should have declared: #{destination_peer}" if @wlpeers[destination_peer].nil?
         addr_destination_peer = @wlpeers[destination_peer]
       
         # RULE REWRITING If local atoms are present at the beginning of the non
@@ -361,13 +367,13 @@ module WLBud
           raise WLErrorTyping,
             "wlrule should be of type WLBud::WLRule, not #{wlrule.class}"
         end
-        unless (head_atom_peer_name = wlrule.head.rpeer.text_value)
+        unless (head_atom_peername = wlrule.head.peername)
           raise WLErrorGrammarParsing,
             "In this rule: #{wlrule.show}\n Problem: the name of the peer in the relation in the head cannot be extracted. Relation in the head #{wlrule.head.text_value}"
         end
-        if @wlpeers[head_atom_peer_name].nil?
+        if @wlpeers[head_atom_peername].nil?
           raise WLErrorPeerId,
-            "This peer name: #{head_atom_peer_name} cannot be found in the list of known peer: #{@wlpeers.inspect}"
+            "This peer name: #{head_atom_peername} cannot be found in the list of known peer: #{@wlpeers.inspect}"
         end
         str_res=''
         str_self_join=''
@@ -375,12 +381,12 @@ module WLBud
 
         #Generate rule head
         #Send fact buffer if non-local head
-        unless wlrule.head.local?(@peername)
+        unless local?(wlrule.head)
           str_res << "sbuffer <= "
         else if is_tmp?(wlrule.head)
-            str_res << "temp :#{wlrule.head.name} <= "
+            str_res << "temp :#{wlrule.head.relname} <= "
           else
-            str_res << "#{wlrule.head.name} <= "
+            str_res << "#{wlrule.head.relname} <= "
           end
         end
 
@@ -408,7 +414,7 @@ module WLBud
           str_res << "];"
         else
           if body.length==1
-            str_res << body.first.name
+            str_res << body.first.relname
           else
             #Generate rule collection names using pairs and combos keywords.
             #          if @make_binary_rules
@@ -517,6 +523,48 @@ module WLBud
         return flush
       end
 
+      # return true if the given wlword is local
+      #
+      # according to the type of wlword which should be a wlvocabulary object or
+      # a string of the peername, it test if the given argument is local ie.
+      # match one of the alias name specifed in @localpeername
+      #
+      # Note that a rule is local if the body is local whatever the state of the
+      # head
+      #
+      def local? (wlword)        
+        if wlword.is_a? WLBud::WLCollection
+          if @localpeername.include?(wlword.peername)
+            return true
+          else 
+            return false
+          end
+        elsif wlword.is_a? WLBud::WLAtom
+          if @localpeername.include?(wlword.peername)
+            return true
+          else
+            return false
+          end
+        elsif wlword.is_a? WLBud::WLRule
+          wlword.body.each { |atom|
+            unless local?(atom.peername)
+              return false
+            end
+          }
+          return true
+        elsif wlword.is_a? String
+          WLTools.sanitize! wlword
+          if @localpeername.include?(wlword)
+            true
+          else
+            false
+          end
+        else
+          raise WLErrorProgram,
+            "Try to determine if #{wlword} is local but it has wrong type #{wlword.class}"
+        end
+      end
+
       private
 
       # Define the format of the name of the variable for the name of the
@@ -539,12 +587,12 @@ module WLBud
         str << '['
         # add location of the peer which should receive the fact and relation and
         # the relation in which the fact should be added on the remote peer.
-        unless wlrule.head.local?(@peername)
-          destination = "#{@wlpeers[wlrule.head.rpeer.text_value]}"
+        unless local?(wlrule.head)
+          destination = "#{@wlpeers[wlrule.head.peername]}"
           #add location specifier
           raise WLErrorPeerId, "impossible to define the peer that should receive a message" if destination.nil? or destination.empty?
           str << "\"#{destination}\", "
-          relation = "#{wlrule.head.name}"
+          relation = "#{wlrule.head.relname}"
           raise WLErrorProgram, "impossible to define the relation that should receive a message" if destination.nil? or destination.empty?
           str << "\"#{relation}\", "
           str << "["
@@ -566,7 +614,7 @@ module WLBud
         end
         str.slice!(-2..-1)
         str << ']'
-        unless wlrule.head.local?(@peername)
+        unless local?(wlrule.head)
           str << "]"
         end
         return str
@@ -690,7 +738,7 @@ module WLBud
       #    end
 
       def make_pairs (wlrule)
-        str = "(#{wlrule.body.first.name} * #{wlrule.body.last.rrelation.text_value}).pairs(" ;
+        str = "(#{wlrule.body.first.relname} * #{wlrule.body.last.rrelation.text_value}).pairs(" ;
         pairs=false
         wlrule.dic_wlvar.each { |key,value| next unless value.length > 1
           rel_first , attr_first =value.first.split('.')
@@ -718,10 +766,10 @@ module WLBud
           wlrule = input
           wlrule.body.each_with_index {|atom,n|
             #Creates temp collections when self-joins are present
-            if !rels.include?(atom.name) then rels << atom.name
+            if !rels.include?(atom.relname) then rels << atom.relname
             else #we have a self join situation. Create a temporary relation and rename the relation
-              atom.name(generate_intermediary_relation_name)
-              tmp_r = "temp :#{atom.name} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
+              atom.relname(generate_intermediary_relation_name)
+              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
               tmp_rels << tmp_r
               wlrule.has_self_join=true
             end
@@ -730,10 +778,10 @@ module WLBud
           body = input
           body.each_with_index {|atom,n|
             #Creates temp collections when selfjoins are present
-            if !rels.include?(atom.name) then rels << atom.name
+            if !rels.include?(atom.relname) then rels << atom.relname
             else #we have a self join situation. Create a temporary relation and rename the relation
-              atom.name(generate_intermediary_relation_name)
-              tmp_r = "temp :#{atom.name} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
+              atom.relname(generate_intermediary_relation_name)
+              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
               tmp_rels << tmp_r
             end
           }
@@ -745,7 +793,7 @@ module WLBud
       # relation so return true.
       def is_tmp? (result)
         if result.is_a?(WLBud::WLAtom)
-          if result.name=~/temp_/ or result.name=~/tmp_/ then return true else return false end
+          if result.relname=~/temp_/ or result.relname=~/tmp_/ then return true else return false end
         else
           raise WLErrorGrammarParsing, "is_tmp? is called on non-WLAtom object, of class #{result.class}"
         end
@@ -769,8 +817,8 @@ module WLBud
         raise WLError, "The dictionary should have been created before calling this method" unless wlrule.dic_made
         str = '('; if_str = '' ;
         wlrule.body.each do |atom|
-          unless atom==wlrule.body.last then str <<  "#{atom.name} * "
-          else str << "#{atom.name}" end
+          unless atom==wlrule.body.last then str <<  "#{atom.relname} * "
+          else str << "#{atom.relname}" end
         end
         str << ').combos('
         combos=false
@@ -808,7 +856,7 @@ module WLBud
       # Get the the name specified for the column of the relation in given atom as
       # it is declared in the collection
       def get_column_name_of_relation (atom, column_number)
-        ~      @wlcollections["#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"].fields.fetch(column_number)
+        @wlcollections["#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"].fields.fetch(column_number)
       end
 
       # Add quotes around s if it is a string

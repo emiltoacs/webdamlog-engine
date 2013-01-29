@@ -35,7 +35,7 @@ if  ARGV.include?("ordered")
   require "tc_bud_collection.rb"
   require "tc_bud_delete_fact.rb"
   require "tc_meta_test.rb"
-  require "tc_wl_wlbud_tools.rb"
+  require "tc_tools.rb"
   require "tc_wl_wlbud_misc.rb"
   require "tc_wl_wlbud_parse_program.rb"
   require "tc_wl_program_treetop.rb"
@@ -47,6 +47,6 @@ if  ARGV.include?("ordered")
   require "tc_wl_wlbud_delegation_2_complex.rb"
   require "tc_wlbud_async_update.rb"
 else
-  files.each { |file| require file }  
+  files.each { |file| require file }
 end
 
