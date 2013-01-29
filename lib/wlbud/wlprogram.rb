@@ -13,12 +13,12 @@
 
 module WLBud
  
-  # :title: WLProgram WLProgram is a class that parses and interprets
-  # WebdamLog files (.wl). Parsing is done using the Treetop module (and
-  # wlgrammar.treetop file). Interpretation is done using the three following
-  # methods. They all generate an [name,proc] array used by the WLBud
-  # initializer to create an instance method that would be understood as a
-  # Bloom collectionment by Bloom engine:
+  # :title: WLProgram WLProgram is a class that parses and interprets WebdamLog
+  # files (.wl). Parsing is done using the Treetop module (and wlgrammar.treetop
+  # file). Interpretation is done using the three following methods. They all
+  # generate an [name,proc] array used by the WLBud initializer to create an
+  # instance method that would be understood as a Bloom collection by Bloom
+  # engine:
   # * <tt>--generate_schema</tt> Generates relations names.
   # * <tt>--generate_bootstrap</tt> Generates extensional facts.
   # * <tt>--translate_rules</tt> Generates webdamlog rules. #A printing function
@@ -85,6 +85,10 @@ module WLBud
       # Array:(WLBud:WLFact)
       #
       @wlfacts=[]
+      # The original rules before the rewritting used for evaluation. It gives
+      # the original semantic of the program.
+      #
+      @original_rules=[]
       # The local rules straightforward to convert into bud (simple syntax
       # translation)
       # === data struct

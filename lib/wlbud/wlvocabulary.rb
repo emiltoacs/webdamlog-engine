@@ -215,7 +215,7 @@ module WLBud
       puts "--------------------------------------------------------"
     end
     #return an array of strings containing each element of the Fact.
-    def contents
+    def content
       if @contents.nil?
         array=[]
         self.fields.text_value.split(',').each {|s| array << s}
