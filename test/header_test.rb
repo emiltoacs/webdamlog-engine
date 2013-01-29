@@ -44,8 +44,8 @@ module MixinTcWlTest
   #
   # self reference MixinTcWlTest and klass is the module which include this one.
   #
-  # Allow to use the verbose options when running tests
-  # Allow to use the $BUD_DEBUG options when running tests
+  # + verbose allow to use the $test_verbose options when running tests
+  # + BUD_DEBUG allow to use the $BUD_DEBUG options when running tests
   #
   def self.included othermod
     if ARGV.include?("verbose")

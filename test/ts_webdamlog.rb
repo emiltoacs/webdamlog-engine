@@ -31,10 +31,6 @@ files = Dir.entries(File.dirname(__FILE__)).select do |file|
   file =~ /tc_.*\.rb$/
 end
 
-# I prefer to specify my own order instead of the default alphabetical order.
-#
-# The problem is to think to add the new test files in the list when created.
-#
 if  ARGV.include?("ordered")
   require "tc_bud_collection.rb"
   require "tc_bud_delete_fact.rb"

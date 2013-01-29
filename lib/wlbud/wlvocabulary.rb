@@ -94,7 +94,7 @@ module WLBud
           if ato.is_a? WLBud::WLAtom
             array << ato
           else
-            raise WLErrorGrammarParsing, "errror while parsing body atoms of #{self.show}"
+            raise WLErrorGrammarParsing, "errror while parsing body atoms of #{self.show} it seems that #{ato} is not recognized as an atom"
           end
         end
         @body = array
@@ -277,6 +277,8 @@ module WLBud
     end
 
     # Return true if the relation is local.
+    #
+    # me is the
     #
     def local?(budinstance=nil)
       if budinstance.nil?
