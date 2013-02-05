@@ -13,7 +13,6 @@ $:.unshift File.dirname(__FILE__)
 require 'header_test'
 require 'generator'
 
-
 # Use to test if a wl_program object is transformed into the right bud program.
 #
 # Given a right wl_program objects it should generate the right bud collection.
@@ -205,7 +204,7 @@ EOF
     end
   end
   def test_relation_initialisation_with_fact
-    puts "START"
+    puts "START" if $test_verbose
     wl_peer = []
     assert_nothing_raised {wl_peer[0] = WlPeer0TestRelationInitialisationWithFact.new('p1', Hash[WLOPTIONS0.each_pair.to_a])}
     assert_nothing_raised {wl_peer[1] = WlPeer1TestRelationInitialisationWithFact.new('p2', Hash[WLOPTIONS1.each_pair.to_a])}
@@ -215,7 +214,11 @@ EOF
         if /^__bootstrap__/.match m
           assert_equal(wl_peer[0].class, wl_peer[0].method(m.to_sym).owner,
             "bootstrap is defined in class #{wl_peer[0].method(m.to_sym).owner} instead of #{wl_peer[0].class}")
-            #puts wl_peer[0].method(m.to_sym).to_ruby
+#          if RUBY_VERSION < "1.9"
+#            puts wl_peer[0].method(m.to_sym).to_ruby
+#          else
+#            puts wl_peer[0].method(m.to_sym).to_source
+#          end
         end
       end
     end

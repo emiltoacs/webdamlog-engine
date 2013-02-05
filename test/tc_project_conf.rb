@@ -14,7 +14,7 @@ require 'header_test'
 
 # Test file to check configuration of the project
 #
-class ProjectConf < Test::Unit::TestCase
+class TcProjectConf < Test::Unit::TestCase
   include MixinTcWlTest
 
   # Test constant and variable accessible inside WLBud
