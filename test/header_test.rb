@@ -16,8 +16,16 @@ require '../lib/wlbud'
 #stdlib
 require 'test/unit'
 #lib
-require 'ruby2ruby'
-require 'parse_tree_extensions'
+#if RUBY_VERSION < "1.9"
+#  require 'ruby2ruby'
+#  gem 'ParseTree'
+#  require 'parse_tree_extensions'
+#else
+#  gem 'ruby_parser'
+#  gem 'file-tail'
+#  gem 'sourcify'
+#  require 'sourcify'
+#end
 require 'pp'
 require 'yaml'
 #custom
@@ -93,7 +101,7 @@ module MixinTcWlTest
   # Creates a valide filename with the name of that class
   #
   def create_name
-    WLTools.friendly_filename("#{self.name}")
+    WLTools.friendly_filename("#{self.class.name}")
   end
 
   # Block until a message has been received on the inbound of the given wlpeer
