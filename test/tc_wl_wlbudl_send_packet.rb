@@ -85,7 +85,7 @@ EOF
     end
     
     wl_peer = []
-    (0..NUMBER_OF_TEST_PG-1).each do |i|
+    (0..1).each do |i|
       assert_nothing_raised do
         wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
       end
