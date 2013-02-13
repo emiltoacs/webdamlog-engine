@@ -54,7 +54,7 @@ module WLBud
       #absolute path file to the program *.wl
       @programfile = filename
       @parser = WLBud::WebdamLogGrammarParser.new
-      @peername=WLTools.sanitize!(peername)
+      @peername=WLTools.sanitize(peername)
       @peername.freeze
       @ip=ip
       @ip.freeze
