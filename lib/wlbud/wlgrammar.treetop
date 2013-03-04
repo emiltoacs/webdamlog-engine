@@ -37,7 +37,10 @@ module WLBud
 
       ### The generic filter for words ###
       rule word
-        [a-zA-Z0-9!?]+ ('_'* [a-zA-Z0-9!?]+)*
+        char_in_word+ ('_'* char_in_word+)*
+      end
+      rule char_in_word
+        [a-zA-Z0-9!?:]
       end
 
       ### Type of entry (peername, fact, collection or rul) ###
@@ -89,7 +92,7 @@ module WLBud
                 end
                 # remove the comma and return an array of atoms
                 def list_atoms
-                  super.elements.map { |comma_and_atom| comma_and_atom.other_atom }
+                  super.elements.map{ |comma_and_atom| comma_and_atom.other_atom }
                 end
              }
         end
@@ -117,31 +120,42 @@ module WLBud
         end
         #### fields ####
         rule fields
-           items* item / [ ]* <WLFields>
+           items / [ ]* <WLFields>
         end
         rule col_fields
           keys values / [ ]* <WLFields>
         end
         # value+ for key fields in relations
         rule keys
-          key+
+          ( key sep )+
         end
         #value* for non-key fields in relations
         rule values
-          value*
+          ( value sep )*
         end
         rule key
-          item '*' ',' / item '*'
+          item '*' sep ',' / item '*'
         end
         rule value
           item ',' / item
         end
+        rule items
+            first_item:item list_items:( sep ',' sep other_item:item )* {
+                def get_items
+                  [first_item] + list_items
+                end
+                # remove the comma and return an array of items
+                def list_items
+                  super.elements.map{ |comma_and_item| comma_and_item.other_item }
+                end
+             }
+        end
         rule item
           ( word / ('"' (word ' '*)* '"') / '_' ) <WLItem>
         end
-        rule items
-          item ','
-        end
+        #rule items
+        #  item ','
+        #end
             
       ### for rules ###
         #### atom in rules ####

@@ -49,7 +49,7 @@ module WLBud
     # === Return
     # the list of declaration of relations to create as WLCollection object
     #
-    def initialize (peername,filename,ip,port,make_binary_rules=false,options={})
+    def initialize (peername, filename, ip, port, make_binary_rules=false, options={})
       raise WLBud::WLError, 'Program file cannot be found' unless File.exist?(filename)
       #absolute path file to the program *.wl
       @programfile = filename
@@ -85,10 +85,11 @@ module WLBud
       # Array:(WLBud:WLFact)
       #
       @wlfacts=[]
-      # The original rules before the rewritting used for evaluation. It gives
+      # The original rules before the rewriting used for evaluation. It gives
       # the original semantic of the program.
       #
-      # Original rules are stored as key and rewrittings of these ones as value in an array
+      # Original rules are stored as key and rewriting of these ones as value in
+      # an array
       #
       @original_rules = Hash.new{ |h,k| h[k]=Set.new }
       # The local rules straightforward to convert into bud (simple syntax
@@ -156,7 +157,7 @@ module WLBud
       @options=options.clone
 
       # Parse lines to be read
-      parse_lines(IO.readlines(@programfile))
+      parse_lines(IO.readlines(@programfile), true)
       # process non-local rules
       @nonlocalrules.each do |rule|
         rewrite_non_local rule
@@ -203,8 +204,8 @@ module WLBud
       puts "#{str} :{\n#{string}}"
     end
     
-    # Line parsing function. Notice that ';' is a reserved keyword. look through
-    # each atom of the body for variables.
+    # Parse a program. Notice that ';' is a reserved keyword for end sentence. A
+    # sentence could define a peer, a collection, a fact or a rule.
     #
     # Thanks to this function everything until the parser meet a semi-colon will
     # be interpreted as if it was written on one line. This should allow to
@@ -214,13 +215,13 @@ module WLBud
     # * +lines+ is an array of string, each cell containing a line of the file.
     #   Usually lines is the result of IO.readlines.
     #
-    def parse_lines (lines)
+    def parse_lines (lines, add_to_program=false)
       current=""
       lines.each_index do |i|
         l=lines[i]
         current << l
         next unless l =~ /;/
-        parse(current,true,false,{:line_nb=>i+1})
+        parse(current, add_to_program, false, {:line_nb=>i+1})
         current = "" #reset current line after parsing
       end
     end
@@ -233,12 +234,12 @@ module WLBud
     # declared but I can also make my parser declare them automatically since
     # the type is not important.
     #
-    def parse (line,add_to_program=false,rewritten=false, options={})
+    def parse(line, add_to_program=false, rewritten=false, options={})
       raise WLErrorTyping, "I could only parse string not #{line.class}" unless line.is_a?(String)
       unless (output=@parser.parse(line))
         line_nb = options[:line_nb] ||= "unknown"
         raise WLErrorGrammarParsing, <<-MSG
-          "\r\nFailure reason: #{@parser.failure_reason}\r\n
+          "Failure reason: #{@parser.failure_reason}\r\n
             line in the file:#{line_nb}\r\n
             line in the rule #{@parser.failure_line}\r\n
             column:#{@parser.failure_column}\r\n
@@ -268,7 +269,7 @@ module WLBud
               else
                 @nonlocalrules << result
               end
-            end          
+            end
           end
         end
         return result
@@ -289,7 +290,7 @@ module WLBud
     # results of non-local rules rewritten
     #
     def rewrite_non_local(rule)
-      raise WLError, "\npeername is not defined yet." if @peername.nil?  
+      raise WLError, "local peername:#{@peername} is not defined yet while rewrite rule:#{rule}" if @peername.nil?
       intermediary_relation_declaration_for_local_peer = nil
       localstack=[]
       nonlocalstack=[]

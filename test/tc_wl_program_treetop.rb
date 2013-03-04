@@ -1,12 +1,12 @@
 # ####License####
 #  File name tc_wl_program_treetop.rb
 #  Copyright © by INRIA
-# 
+#
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
+#
 #   WebdamLog - Aug 15, 2012
-# 
+#
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
@@ -24,7 +24,7 @@ require 'generator'
 class TcWlProgramTreetop < Test::Unit::TestCase
   include MixinTcWlTest
 
-  #  test regex in ruby
+  # Test regex in ruby
   def test_010_regex_match
     assert_match(/[^\$][a-zA-Z0-9!?][a-zA-Z0-9!?_]*/, "this")
     assert_match(/[^\$][a-zA-Z0-9!?][a-zA-Z0-9!?_]*/, "this_is")
@@ -93,13 +93,8 @@ class TcWlProgramTreetop < Test::Unit::TestCase
     end
   end
 
-  def test_100_wlvocabulary
-    
-  end
-
-
   # This is just a test file, in regular use it is forbidden to declare
-  # intermediary relation 
+  # intermediary relation
   STR1 = <<EOF
 peer p1=localhost:11111;
 peer p2=localhost:11112;
@@ -147,9 +142,41 @@ EOF
       SyncEnumerator.new(program.wlfacts,1..4).each { |fact,num|
         assert_equal [num.to_s], fact.content
       }
-      #assert_equal 1, program.wl
+      # #assert_equal 1, program.wl
     ensure
       File.delete('test_program_1') if File.exists?('test_program_1')
     end
+  end # test_200_program_1
+end
+
+# Put here some sample test program that must be correct syntactically
+class TcParseProgram < Test::Unit::TestCase
+  include MixinTcWlTest
+
+  PROG = <<-EOF
+peer sigmod_peer = localhost:10000;
+collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
+fact contact@local(sigmod_peer, localhost:10000, false, none, none);
+end
+  EOF
+
+  # Use to check the bootstrap program launched by the wepic app
+  def test_sample_program
+    begin
+      File.open('test_program_2',"w"){ |file| file.write PROG}
+      program = nil
+      assert_nothing_raised do
+        program = WLBud::WLProgram.new(
+          'the_peername',
+          'test_program_2',
+          'localhost',
+          '11111',
+          {:debug => true} )
+      end
+      
+    ensure
+      File.delete('test_program_2') if File.exists?('test_program_2')
+    end
   end
+
 end

@@ -9,10 +9,13 @@
 # 
 #   Encoding - UTF-8
 # ####License####
-$:.unshift File.expand_path("../lib")
-# full path to specify that you want the current version in the project and not
-# the gem
-require '../lib/wlbud'
+# Prefer webdamlog from local source tree to any version in RubyGems
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+$:.unshift "."
+# full relative path to specify that you want the current version in the project
+# and not the gem
+require 'wlbud'
+
 #stdlib
 require 'test/unit'
 #lib

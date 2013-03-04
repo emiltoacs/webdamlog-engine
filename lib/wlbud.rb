@@ -196,7 +196,7 @@ module WLBud
       #### WLBud:Begin adding to Bud
       #
       #Loads .wl file containing the setup(facts and rules) for the Webdamlog instance.
-      @wl_program = WLBud::WLProgram.new(@peername,@filename,@ip,@options[:port],false,{:debug => @options[:debug]})      
+      @wl_program = WLBud::WLProgram.new(@peername, @filename, @ip, @options[:port], false, {:debug => @options[:debug]} )
       #      if @options[:debug]
       #        WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment debug_comment="Peer #{@peername} classify rules of input files")
       #        prefix="(#{self.class.name} : initialize) :\t"
