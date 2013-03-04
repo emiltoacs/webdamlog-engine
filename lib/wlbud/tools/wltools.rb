@@ -10,7 +10,11 @@ module WLTools
   # + Remove " or '
   #
   def self.sanitize(string)
-    return string.strip.downcase.delete('"').gsub(/\s+/, '_')
+    str = string.strip.downcase
+    ['"', "'", "."].each do |c|
+      str.delete!(c)
+    end
+    return str.gsub(/\s+/, '_')
   end
 
   # Sanitize the string ie.
@@ -22,9 +26,10 @@ module WLTools
   def self.sanitize!(string)
     string.strip!
     string.downcase!
-    string.delete!('"')
-    string.delete!("'")
-    string.gsub!(/\s+/, '_')    
+    ['"', "'", "."].each do |c|
+      string.delete!(c)
+    end
+    string.gsub!(/\s+/, '_')
     return string
   end
 
