@@ -44,7 +44,7 @@ module WLBud
     # e.g. 'a' and as value it's location in the following format :
     # 'relation_position.field_position' Remark: position always start from 0
     #
-    attr_reader:dic_wlconst
+    attr_reader :dic_wlconst
     
     # Creates a new WLRule and instantiate empty dictionaries for that rule.
     #
@@ -141,7 +141,7 @@ module WLBud
         end
         
         # TODO list all the useful relation, a relation is useless if it's arity
-        # is more than zero and none variable and constant inside aren't used in
+        # is more than zero and none variable and constant inside are used in
         # other relation of this rule insert here the function
         if self.dic_relation_name.has_key?(atom.relname)
           self.dic_relation_name[atom.relname] << n
