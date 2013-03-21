@@ -1,0 +1,380 @@
+#-*- mode: org -*-
+#+STARTUP: content
+#+STARTUP: indent
+
+* Some notes about bud when programming
+
+
+** Version of bud
+
+History:
++ 0.0.3 :: starter
++ 0.0.5
++ 0.0.7
++ [current] 0.9.1 :: working but annoying to rewrite rules in files
++ 0.9.5 :: to test
+
+
+** Launch Bud
+
+*** Bud builder option
+
++ dump_rewrite :: see the dependency graph.
++ dump_ast :: see the abstract syntax tree when bud parse bud language.
++ print_wiring :: print the wiring between relation ie. the dependencies
+                  between the relations accroding to the rules.
++ trace :: see the deduction
+  + tag :: along with trace to give human-readable name
++ quiet :: remove non-debug message from bud such as "Created
+           directory: #{dbm_dir}"
++ rtrace :: ??? (seems to be bugged)
++ metric :: At each tick it store the time spend during this tick from
+            the begining of internal_tick to the end along with
+            statistic such as standard deviation. I remark it add info
+            in field @metrics in bud. @metric is a tab with an entry for
+            each collection and for each collection it store: addr,
+            tabname, strat_num, rule_num
+
++ $BUD_DEBUG = true :: display bud internal debug message
+
+*** Bud running method
+
+Ref: https://github.com/bloom-lang/bud/blob/master/docs/ruby_hooks.md
+
+Method to run bud:
++ run_fg/run_bg :: followed by some sync_do or async_do
++ tick :: start tick one by one
+
+According to the doc of "sync_do" and watching at the method
+"schedule_and_wait": when using "tick" or "sync_do" the caller thread
+thread is blocked until the block has been finshed to be evaluated.
+
+When using "tick" the block contains a start_reactor and tick_internal.
+
+When using "sync_do" the block is given in argument and then followed by
+a tick to guarantee that data possibly inserted by user block really
+produce the wanted output.
+
+
+
+** Bud instance
+
+*** attribute
+
++ @tables :: hash of all the bud collections with
+  - key :: the name of the collection as a symbol
+  - value :: the reference to the object of type collection
+
+
+** Collection class and inheritance
+
+*** Declare new collection
+To know how Bud is declaring new collection take a look at the
+*state.rb* file in bud. There are the methods called to register
+collection type via the keywords (table, scratch, interface, ...) in bud
+DSL. A state block is usually used to embed bloom collection
+declarations but I prefer to use the methods in state.rb
+
+*** Collection
+
+**** Internal Hashes for collection
+
+Each collection has five Hash, here I give an exemple to display the
+content of Hashes of 'collection local_at_p1' for Bud instance
+'wl_peer_1'
+
++ pending :: pending holds tuples deferred til the next tick:
+     "#{wl_peer_1.local_at_p1.pending.inspect}"
++ storage :: storage holds the "normal"
+     tuples: "#{wl_peer_1.local_at_p1.storage.inspect}"
++ delta :: delta holds the delta for rhs's of rules during
+     semi-naive "#{wl_peer_1.local_at_p1.delta.inspect}"
++ new_delta :: new_delta will hold the lhs tuples currently being
+     produced during s-n "#{wl_peer_1.local_at_p1.new_delta.inspect}"
++ tick_delta :: tick_delta holds \Union(delta_i) for each delta_i
+     processed in fixpoint iteration i:
+     "#{wl_peer_1.local_at_p1.tick_delta.inspect}"
+
+All these hashes use as key: an array of the columns declared as key --
+and as value a ruby Struct with the whole tuple (key+value) with each
+element of the struct accessible by the value given as the name of the
+column.
+
+Exemple for a table declared with
+: table :tbl, [:k1] => [:v1, :v2]
+#+begin_src ruby
+  # [[["t1"], #<struct  k1="t1", v1=1, v2=2>],
+  #   [["t2"], #<struct  k1="t2", v1=-1, v2=-2>],
+  #    [["t3"], #<struct  k1="t3", v1=-3, v2=-4>],
+  #     [["t4"], #<struct  k1="t4", v1=-5, v2=-6>]]
+#+end_src
+
+The easiest way to iterate on them is to use the method .pro (as
+projection).
+
+**** Operator
+
+***** bud style
+
++ <= :: instantaneous merge: tells Bud to consider a new set of tuple to
+        merge with the collection and propagate the changes accross the
+        nodes during tick.
+	: local_at_p1 <= [["1"], ["2"], ["3"], ["4"]]
+
+***** ruby style
+
++ << :: operator to add instantaneously one element and ignore duplicate
+        but raise an error if two different value for the same key(no
+        overwrite). This is a low-level operator that properly add the
+        tuple into the collection but it doesn't deal with cache
+        invalidation and wiring therefore the change made with this
+        operator won't be propagated at tick until another operator tell
+        this node to reevaluate for change.
+	#+begin_src ruby
+	# append the tuple to the collection childOf
+	prog.childOf << ["F","FF","MF"]
+	#+end_src
+
+**** Channel
+
+See the doc in the source of bud for details:
++ @storage and @delta keep incoming data
++ @pending keeps outgoing data(this collection is flushed at the end of
+  the tick so all the data produced are already gone. Therefore you
+  cannot inspect the content of pending after a tick).
+
+***** force write inc hannel <~
+
+Use <~ the superator that add in @pending collection that take an array
+of element to send. For exemple to send 1, [truc, bidule], {key => value}:
+: chan <~ [1, [truc, bidule], {key => value}]
+
+Remark contrary to << operator that take one element to add it takes a
+list of element to send. That is if you want to send only one array you
+should write
+: chan <~ [[truc,bidule]]
+
+**** Scratch
+
+According to the doc of "sync_do" inserting into a scratch with a
+deferred operator (especially <+ since <- is idiot) must be really
+inserting stuff for the next round.
+
+*** Join
+
+Self-join are very limited: only one and no-way to rename the two
+collection so ambiguous reference to attributes.
+
+Triple self-join are definitively not supported:
++ see TestIssue220 TripleJoin in tc_joins.rb
+
+
+*** Puts content for display
+**** Legacy from bud
++ Collection#pretty_print_instance_variables
+**** Method added
+***** In bud
+see wlextendsbud.rb
+***** In wl
+see WLTools.rb
+
+
+** Initialize bud server for each bud instance launched
+
+Bud is using the reactor design pattern via the gem EventMachine.
+
+In bub.rb the method start:
++ start :: a new reactor
++ schedule_and_wait :: plan a new bud server to launch and tick: this
+  means the reactor will launch a new event-driven thread by executing
+  the code in the block.
+  + do_start_server :: EventMachine::open_datagram_socket is the classic
+       way to start an UDP event-driven thread. The callback methods are
+       implemented in BudServer class in serevr.rb.
+       + ref :: http://eventmachine.rubyforge.org/EventMachine.html#open_datagram_socket-class_method
+		+ receive_data :: will be called when a datagram packet is received on the socket
+  + tick-internal :: can do one initial tick to setup the peer.
+
+
+** Bud reflexion
+
+The attribute [[*attribute][@tables]] is a list of all the collection defined in this
+bud instance.
+
+*** List of table that Bud keep for its reflexion
+
++ table :t_rules, [:bud_obj, :rule_id] =>
+  [:lhs, :op, :src, :orig_src, :nm_funcs_called]
++ table :t_depends, [:bud_obj, :rule_id, :lhs, :op, :body] => [:nm]
++ table :t_provides, [:interface] => [:input]
++ table :t_underspecified, t_provides.schema
++ table :t_stratum, [:predicate] => [:stratum]
++ table :t_cycle, [:predicate, :via, :neg, :temporal]
++ seems deprecated :: table :t_table_info, [:tab_name, :tab_type]
++ seems deprecated :: table :t_table_schema, [:tab_name, :col_name, :ord, :loc]
+
+All this tables have been declared in builtin state method of Bud.
+
+
+** Callback methods
+
+Ref:https://github.com/bloom-lang/bud/blob/master/docs/ruby_hooks.md
+The Bud module provides a Ruby method called register_callback. Given
+the name of a Bud collection, this method arranges for the given block
+of Ruby code to be invoked at the end of any timestep in which any
+tuples have been inserted into the specified collection.
+
+
+** Rebl
+
+The interactive shell to execute bud
+
+*** rmrules
+
+Notes there exist this method that looks perferct for us. However it is
+a cheating rmrules according to the webdamlog semantic. That is fact
+derived previously thanks to this rule continue to hold.
+
+
+
+** Bud tools
+
+*** Budplot
+
+Used to check the interdependencies between the modules and interface in
+bud.
+
+*** BudVis
+
+Generate a graph with the dependance between the collection accroding to
+the rules with the flow of facts.
+
+Diff file betweeen git original and locally mmodified to accept budvis
+generation
+#+begin_src
+include CartWorkloads
+
+   def test_replicated_destructive_cart
+-    trc = false
+-    cli = CCli.new(:tag => "DESclient", :trace => trc)
++    trc = true
++    cli = CCli.new(:port => 53521, :tag => "DESclient", :trace => trc)
+     cli.run_bg
+     prog = DCR.new(:port => 53525, :tag => "DESmaster", :trace => trc, :dump_rewrite => true)
+     rep = DCR.new(:port => 53526, :tag => "DESbackup", :trace => trc)
+#+end_src
+
+
+* Notes about webdamlog
+
+** Overwrite bud with webdamlog
+
+*** tick_internal
+
+rewrote with lots of addition
+
+*** builtin_state
+
+super + addition
+
+
+** WLBud
+
+*** Instanciation
+
+**** Subclass it
+
+To instanciate multiple WL peers create different subclass of WLBud::WL
+#+begin_src ruby
+class Peer1 < WLBud::WL
+end
+peer1 = Peer1.new('peername', 'progfilename', {:ip=>'localhost', :port=>'12345'})
+#+end_src
+then you can run your peer with one of the Bud running command
+1. peer1.tick
+2. peer1.run_fg
+3. peer1.run_bg
+
+If you instanciate directly WLBud::WL all the peers will share all the
+class method and variable ie. the bootstrap method.
+
+Take care that if you reuse the "Peer1.new" to instanciate another
+variable peer2, they will share the methods and especially the __BLOOM__
+methods.
+
+**** WL options
+
+Just as in bud, there is an optional hash parameter function that allow
+to set some flag to change the WLBud peer behavior.
+
+The list of these flags *options[:flag=>value]*
++ debug :: print lots of debug message.
++ dir_rule :: specify a subdirecotry name in which this instance will
+              write its files containing the rewritting of rules.
++ mesure :: put this flag to generate a report with measurement of
+            internal tick steps.
+
+** Program
+
+Syntax:
++ an instruction in webdamlog must be finished by a semi-colon ";" and
+  can be written in mulitple lines. (due to parse_lines in wl_program.rb)
+
+*** Declaration
+
+It is required to declare:
+1. all the local collection
+2. all the collection use in the head of rules (even the non-local ones
+  that must not be declared persitent even if they are in the remote
+  peer)
+
+It is not needed to declare:
+1. the non-local relation occuring only in the body of rules. Because
+  they will never be evaluated by Bud they will always be used during
+  the rewriting step.
+
+**** TODO improve program parser
+
++ It is not needed to give the type of non-local relation
+
++ Check that intensional relation are use in the head of one rule at
+  least and not defined as a list of facts(otherwise they will be used
+  at the first tick and then the relation will be empty for ever)
+
+** Communication
+
++ sbuffer :: collect the facts to send
+
++ struct of one packet on channel ::
+: [peername, srctimestamp, Struct <[facts], [rules], [declarations]>]
+
+** Log of benchmark
+
++ array ::
+	0. Bud :: receive via UDP and set up all its objects
+	1. WL :: parse input to insert properly facts and rules
+	2. WL+Bud :: update cache collection (that part is a mixin since Bud is doing that for facts only and I take care of rules)
+	3. Bud :: fixpoint (shown in the experimetns that it is the longest part)
+	4. WL :: prepare output
+	5. Bud :: log + write on channel and send updates for next tick
+	6. total time for the six previous steps
+
+** Unit Test
+
+You can put the flag :wl_test to true in wlbud options to get an easy
+access to internal data of WLpeer.
+
++ WLBud::WL.test_received_on_chan :: an array with all the packets received
+     during the last timestep.
+
+
+* Other Remark
+
++ implementation :: http://www.ccs.neu.edu/home/ramsdell/tools/datalog/datalog.html
+
+
+
+
+
+
+

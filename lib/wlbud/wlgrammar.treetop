@@ -40,7 +40,7 @@ module WLBud
         char_in_word+ ('_'* char_in_word+)*
       end
       rule char_in_word
-        [a-zA-Z0-9!?:/]
+        [a-zA-Z0-9!?:]
       end
 
       ### Type of entry (peername, fact, collection or rul) ###

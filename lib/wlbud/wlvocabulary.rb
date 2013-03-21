@@ -70,7 +70,7 @@ module WLBud
     
     public
             
-    # #prints to the screen information about the rule
+    # prints to the screen information about the rule
     def show
       puts "Class name : #{self.class}"
       puts "Head : #{show_head}" 
@@ -114,7 +114,7 @@ module WLBud
     # populate the four dictionaries
     def make_dictionaries ()
       self.body.each_with_index do |atom,n|
-        # field variable goes to wlvar and constant to const dictionary
+        # field variable goes to dic_wlvar and constant to dic_wlconst
         atom.fields.each_with_index do |f,i|
           str = "#{n}.#{i}"
           # if the rule is not a temporary variable
@@ -123,20 +123,23 @@ module WLBud
           #          else
           #            str = "#{atom.name}.pos#{i}"
           #          end
-          unless f.=~ /'^$*'/.nil?
-            if self.dic_wlvar.has_key?(f)
-              self.dic_wlvar[f] << str
+          if f.variable? #f.=~ /'^$*'/.nil?
+            var = f.text_value
+            if self.dic_wlvar.has_key?(var)
+              self.dic_wlvar[var] << str
             else
-              self.dic_wlvar[f]=[str]
+              self.dic_wlvar[var]=[str]
             end
           else
-            if self.dic_wlconst.has_key?(f)
-              self.dic_wlconst[f] << str
+            const = f.text_value
+            if self.dic_wlconst.has_key?(const)
+              self.dic_wlconst[const] << str
             else
-              self.dic_wlconst[f]=[str]
+              self.dic_wlconst[const]=[str]
             end
           end
         end
+        
         # TODO list all the useful relation, a relation is useless if it's arity
         # is more than zero and none variable and constant inside aren't used in
         # other relation of this rule insert here the function
@@ -288,7 +291,7 @@ module WLBud
       return @fields
     end
     
-    # #This method gives the name of the relation.
+    # This method gives the name of the relation.
     def relname
       self.relation_name.text_value
     end
@@ -365,6 +368,8 @@ module WLBud
   class WLRelation < WLVocabulary
   end
 
+  # This is the text part of fields in relation, it could be a constant or a
+  # variable
   module WLRToken
     # By default WLRtoken is not a variable unless it is override by WLVar
     def variable?
@@ -498,14 +503,14 @@ module WLBud
       end
       return @variables
     end
-    # this methods hands in all fields (in text value)
+    # this methods hands in all fields as WLRToken
     def fields
       if @fields.nil?
         f = []
         # self.rtokens.elements.each {|t| f <<
         # t.elements.first.text_value.split(',').first}# unless
         # t.text_value.include?(',')} f << self.rtoken.text_value
-        get_rtokens.each { |t| f << t.text_value unless t.variable? }
+        get_rtokens.each { |t| f << t }
         @fields=f
       end
       return @fields
