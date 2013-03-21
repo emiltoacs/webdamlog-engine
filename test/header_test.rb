@@ -34,15 +34,15 @@ require 'yaml'
 #custom
 require 'wlbud/wlextendsbud'
 
-begin
-  require 'debugger'
-rescue LoadError => e
-  begin
-    require 'ruby-debug'
-  rescue LoadError => e
-    puts "debugger disabled"
-  end
-end
+#begin
+#  require 'debugger'
+#rescue LoadError => e
+#  begin
+#    require 'ruby-debug'
+#  rescue LoadError => e
+#    puts "debugger disabled"
+#  end
+#end
 
 # Mixin with some code common to most of my tc_wl_* tests
 #

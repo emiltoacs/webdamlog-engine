@@ -628,8 +628,8 @@ module WLBud
       # Does not require to load anything since it is suppose to be loaded in
       # the good environment
       # str = "require '#{__FILE__}'\n"
-      str = "\tclass #{self.class}\n"
-      str << "\t\tbloom :#{sym_name} do\n"
+      str = "class #{self.class}\n"
+      str << "\tbloom :#{sym_name} do\n"
       str << "\t\t#{rule}\n"
       str << "\tend\n"
       str << "end"

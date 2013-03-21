@@ -591,10 +591,10 @@ In the string: #{line}
       # {descendant_at_emilien <= child_at_emilien {|atom0| *[atom0[0],
       # atom0[2]]*}
       def def_projection(wlrule)
-        str = ''
-        str << '['
-        # add location of the peer which should receive the fact and relation and
-        # the relation in which the fact should be added on the remote peer.
+        str = '['
+
+        # add the remote peer and relation name which should receive the fact.
+        # conform to facts to be sent via sbuffer
         unless local?(wlrule.head)
           destination = "#{@wlpeers[wlrule.head.peername]}"
           #add location specifier
@@ -605,26 +605,32 @@ In the string: #{line}
           str << "\"#{relation}\", "
           str << "["
         end
+        
         # add the list of variable and constant that should be projected
-        wlrule.head.fields.each_with_index do |f,i|
+        fields = wlrule.head.fields
+        fields.each_with_index do |f,i|
           # treat as a constant or a variable
-          unless f.include?('$')  #for constant
-            str << "#{quotes(f)}, "
-          else
-            unless wlrule.dic_wlvar.include?(f)
-              raise( WLErrorGrammarParsing,
-                "\nIn rule "+wlrule.text_value+" #{f} is present in the head but not in the body. This is not WebdamLog syntax." )
-            else
-              relation , attribute = wlrule.dic_wlvar.fetch(f).first.split('.')
+          #unless f.include?('$')  #for constant
+          if f.variable?
+            var = f.text_value
+            if wlrule.dic_wlvar.has_key?(var)
+              relation , attribute = wlrule.dic_wlvar.fetch(var).first.split('.')
               str << "#{WLBud::WLProgram.get_bud_var_by_pos(relation)}[#{attribute}], "
-            end
+            else
+              raise( WLErrorGrammarParsing,
+                "In rule "+wlrule.text_value+" #{f} is present in the head but not in the body. This is not WebdamLog syntax." )
+            end            
+          else
+            str << "#{quotes(f)}, "
           end
         end
-        str.slice!(-2..-1)
-        str << ']'
+        str.slice!(-2..-1) unless fields.empty?
+
         unless local?(wlrule.head)
           str << "]"
         end
+
+        str << ']'
         return str
       end
     

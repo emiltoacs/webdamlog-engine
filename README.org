@@ -1,0 +1,6 @@
+* Webdamlog engine
+
+Implementation of an engine for webdamlog evaluation. Webdamlog is
+distributed datalog language.
+
+
