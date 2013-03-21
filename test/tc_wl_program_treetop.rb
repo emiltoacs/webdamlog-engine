@@ -173,10 +173,40 @@ end
           '11111',
           {:debug => true} )
       end
-      
     ensure
       File.delete('test_program_2') if File.exists?('test_program_2')
     end
   end
+end
 
+
+class TcWLVocabulary < Test::Unit::TestCase
+  include MixinTcWlTest
+
+  PROG = <<-EOF
+peer sigmod_peer = localhost:10000;
+collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
+rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);
+end
+  EOF
+
+  def test_vocabulary
+    File.open('test_program_2',"w"){ |file| file.write PROG}
+    program = nil
+    assert_nothing_raised do
+      program = WLBud::WLProgram.new(
+        'the_peername',
+        'test_program_2',
+        'localhost',
+        '11111',
+        {:debug => true} )
+    end
+    program.original_rules.each_key do |r|      
+      assert 4, r.head.rfields.variables.length
+      assert 1, r.head.rfields.fields
+    end
+  ensure
+    File.delete('test_program_2') if File.exists?('test_program_2')
+  end
+  
 end

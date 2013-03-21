@@ -26,7 +26,7 @@ module WLBud
       end
 
       ### Comment ###
-            rule comment
+      rule comment
         '#' .* <WLComment>
       end
 
@@ -40,7 +40,7 @@ module WLBud
         char_in_word+ ('_'* char_in_word+)*
       end
       rule char_in_word
-        [a-zA-Z0-9!?:]
+        [a-zA-Z0-9!?:/]
       end
 
       ### Type of entry (peername, fact, collection or rul) ###
@@ -85,7 +85,7 @@ module WLBud
           'rule ' sep atom sep ':-' sep atoms <WLRule>
         end
         
-        rule atoms            
+        rule atoms         
             first_atom:atom list_atoms:( sep ',' sep other_atom:atom )* {
                 def get_atoms
                   [first_atom] + list_atoms
@@ -151,7 +151,7 @@ module WLBud
              }
         end
         rule item
-          ( word / ('"' (word ' '*)* '"') / '_' ) <WLItem>
+          ( word / ('"' (word / ' ')* '"') / '_' ) <WLItem>
         end
         #rule items
         #  item ','
@@ -160,7 +160,7 @@ module WLBud
       ### for rules ###
         #### atom in rules ####
         rule atom
-          rrelation '@' rpeer '(' rfields ')' <WLAtom>
+          rrelation '@' rpeer sep '(' sep rfields sep ')' <WLAtom>
         end
           ###### relation name in atom #####
           rule rrelation
@@ -180,17 +180,18 @@ module WLBud
           end
           ###### attributes name in atom #####
           rule rfields
-            rtokens rtoken <WLRfields>
+            first_rtoken:rtoken list_rtokens:( sep ',' sep other_rtoken:rtoken )* <WLRfields>
           end
             ####### attributes name in atom ######
-            rule rtokens
-              (rtoken ',')*
-            end
+            #rule rtokens
+            # (rtoken ',')*
+            #end
             rule rtoken
-              (variable / item)
+              (variable / item) <WLRToken>
             end
             rule variable
-              '$' [a-zA-Z0-9] <WLVar>
+              '$' char_in_word+ <WLVar>
             end
-   end
-end
+
+   end # grammar WebdamLogGrammar
+end # module WLBud

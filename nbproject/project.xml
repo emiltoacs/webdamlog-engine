@@ -5,12 +5,12 @@
         <data xmlns="http://www.netbeans.org/ns/ruby-project/1">
             <name>webdamlog-engine</name>
             <source-roots>
-                <root id="src.dir" name="Bin Files"/>
-                <root id="lib.dir" name="Source Files"/>
+                <root id="src.bin.dir"/>
+                <root id="src.lib.dir"/>
             </source-roots>
             <test-roots>
-                <root id="test.spec.dir" name="RSpec"/>
-                <root id="test.src.dir"/>
+                <root id="test.spec.dir"/>
+                <root id="test.test.dir"/>
             </test-roots>
         </data>
     </configuration>

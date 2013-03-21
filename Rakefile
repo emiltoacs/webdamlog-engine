@@ -31,20 +31,20 @@ require "./lib/wlbud/version"
 spec = Gem::Specification.new do |s|
   s.name        = "wlbud"
   s.version     = WLBud::VERSION
-  s.extra_rdoc_files = ['README', 'LICENSE']
+  s.extra_rdoc_files = ['README.org', 'LICENSE']
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Émilien Antoine", "Jules Testard"]
   s.email       = []
   s.homepage    = ""
   s.summary     = %q{TODO: Write a gem summary}
   s.description = %q{TODO: Write a gem description}
-  s.required_ruby_version = '>= 1.8.7'
+  s.required_ruby_version = '>= 1.9.3'
   s.rubyforge_project = "none"
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
-#  s.default_executable = 'rebl'
+#  s.default_executable = ''
   s.require_paths = ["lib"]
   s.bindir = "bin"
 
@@ -58,7 +58,7 @@ Rake::PackageTask.new(spec) do |p|
 end
 
 Rake::RDocTask.new do |rdoc|
-  files =['README', 'LICENSE', 'lib/**/*.rb']
+  files =['README.org', 'LICENSE', 'lib/**/*.rb']
   rdoc.rdoc_files.add(files)
   rdoc.main = "README" # page to start on
   rdoc.title = "WLBud Docs"
