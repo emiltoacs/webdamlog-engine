@@ -28,7 +28,7 @@ module WLBud
   #
   class WLProgram    
     attr_reader :wlcollections, :peername, :wlpeers, :wlfacts
-    attr_accessor :localrules, :nonlocalrules, :delegations, :rewrittenlocal    
+    attr_accessor :localrules, :nonlocalrules, :delegations, :rewrittenlocal, :original_rules
     
     # The initializer for the WLBud program takes in a filename corresponding to
     # a WebdamLog file (.wl) and parses each line in the file either as a
@@ -73,12 +73,12 @@ module WLBud
       # * 'localhost'
       # * 'me'
       #
-      @localpeername = Set.new([@peername,'localhost','me'])
+      @localpeername = Set.new([@peername,'local','me'])
       # List of known peers
       #
       @wlpeers={}
       @wlpeers[@peername]=my_address
-      @wlpeers['localhost']=my_address
+      @wlpeers['local']=my_address
       @wlpeers['me']=my_address
       # List of bootstrap facts ie. the facts given in the program file
       # === data struct
@@ -239,11 +239,11 @@ module WLBud
       unless (output=@parser.parse(line))
         line_nb = options[:line_nb] ||= "unknown"
         raise WLErrorGrammarParsing, <<-MSG
-          "Failure reason: #{@parser.failure_reason}\r\n
-            line in the file:#{line_nb}\r\n
-            line in the rule #{@parser.failure_line}\r\n
-            column:#{@parser.failure_column}\r\n
-            In the string: #{line}"
+Failure reason: #{@parser.failure_reason}
+line in the file:#{line_nb}
+line in the rule #{@parser.failure_line}
+column:#{@parser.failure_column}
+In the string: #{line}
         MSG
       else
         result = output.elements.first

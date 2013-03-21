@@ -1,9 +1,9 @@
 module WLBud
 
-  #The WLVocabulary classes are instantiated using the Treetop parsing
-  #gem and all inherit the Treetop::Runtime::SyntaxNode class.
-  #When a .wl file is parsed, a tree of nodes is created, with each 
-  #node (not only the leaves) are assigned a proper subclass of WLVocabulary.
+  # The WLVocabulary classes are instantiated using the Treetop parsing gem and
+  # all inherit the Treetop::Runtime::SyntaxNode class. When a .wl file is
+  # parsed, a tree of nodes is created, with each node (not only the leaves) are
+  # assigned a proper subclass of WLVocabulary.
   #
   class WLVocabulary < Treetop::Runtime::SyntaxNode
     
@@ -18,7 +18,7 @@ module WLBud
     #    end
   end
   
-  #The WLrule class is used to store the content of parsed WLRules.
+  # #The WLrule class is used to store the content of parsed WLRules.
   class WLRule < WLVocabulary
     @@index=0
     attr_accessor :has_self_join
@@ -33,18 +33,16 @@ module WLBud
     # atom position to string name of the relation
     #
     attr_reader :dic_invert_relation_name
-    # The wlvar dictionary is a hash that contains the position of the
-    # variables of each atom of the body. It takes as key the field value of the
-    # variable, e.g. '$x' and as value it's location in the following format :
-    # 'relation_position.field_position'
-    # Remark: position always start from 0
+    # The wlvar dictionary is a hash that contains the position of the variables
+    # of each atom of the body. It takes as key the field value of the variable,
+    # e.g. '$x' and as value it's location in the following format :
+    # 'relation_position.field_position' Remark: position always start from 0
     #
     attr_reader :dic_wlvar
     # The var dictionary is a hash that contains the name of the constants of
     # each atom of the body. It takes as key the field value of the constant,
     # e.g. 'a' and as value it's location in the following format :
-    # 'relation_position.field_position'
-    # Remark: position always start from 0
+    # 'relation_position.field_position' Remark: position always start from 0
     #
     attr_reader:dic_wlconst
     
@@ -60,8 +58,7 @@ module WLBud
       @dic_made=false
       # TODO add self-join detection and think of the structure to use to create
       # the symbolic predicates of linkage during joins instead of named
-      # perspective. See function make_combos in wlprogram
-      # @has_self_join=false
+      # perspective. See function make_combos in wlprogram @has_self_join=false
       @index=@@index+=1
       @body=nil      
       @dic_relation_name={}
@@ -73,7 +70,7 @@ module WLBud
     
     public
             
-    #prints to the screen information about the rule
+    # #prints to the screen information about the rule
     def show
       puts "Class name : #{self.class}"
       puts "Head : #{show_head}" 
@@ -81,12 +78,12 @@ module WLBud
       puts "--------------------------------------------------------"
     end
      
-    #return the head atom of the rule
+    # return the head atom of the rule
     def head
       self.atom
     end
 
-    #return the body atoms of the rule in an array
+    # return the body atoms of the rule in an array
     def body
       if @body.nil?
         array=[];
@@ -102,24 +99,7 @@ module WLBud
       return @body
     end
 
-    # REMOVE
-    #return true if head is local, false otherwise.
-#    def head_local?
-#      return self.head.local?
-#    end
-
-    # REMOVE
-    #Checks if a rule is a delegation
-#    def nonlocal?(peername)
-#      self.body.each { |atom|
-#        unless atom.local?(peername)
-#          return true
-#        end
-#      }
-#      return false
-#    end
-
-    #returns all atoms of the rule in an array (head + body).
+    # returns all atoms of the rule in an array (head + body).
     def atoms
       [self.head,self.body].flatten
     end
@@ -130,8 +110,8 @@ module WLBud
     # joins. As value it's location in the following format :
     # 'relation_pos.field_pos'
     #
-    # Detect variable by checking field names starting with a '$' sign
-    # This populate the four dictionaries
+    # Detect variable by checking field names starting with a '$' sign This
+    # populate the four dictionaries
     def make_dictionaries ()
       self.body.each_with_index do |atom,n|
         # field variable goes to wlvar and constant to const dictionary
@@ -197,7 +177,7 @@ module WLBud
     end
   end
   
-  #The WLrule class is used to store the content of parsed WL facts.
+  # #The WLrule class is used to store the content of parsed WL facts.
   class WLFact < WLVocabulary
     public
     
@@ -205,7 +185,7 @@ module WLBud
       @contents=nil
       super(a1,a2,a3)
     end
-    #prints to the screen information about the extensional fact.
+    # #prints to the screen information about the extensional fact.
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
@@ -214,7 +194,7 @@ module WLBud
       puts "Data content : #{self.fields.text_value}"
       puts "--------------------------------------------------------"
     end
-    #return an array of strings containing each element of the Fact.
+    # #return an array of strings containing each element of the Fact.
     def content
       if @contents.nil?
         array=[]
@@ -223,7 +203,7 @@ module WLBud
       end
       return @contents
     end
-    #returns the name of the relation of the fact.
+    # #returns the name of the relation of the fact.
     def relname
       return "#{self.relation_name.text_value}_at_#{self.peer_name.text_value}"
     end
@@ -245,7 +225,7 @@ module WLBud
     end
 
     public
-    #prints to the screen information about the extensional fact.
+    # #prints to the screen information about the extensional fact.
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
@@ -255,7 +235,7 @@ module WLBud
       puts "--------------------------------------------------------"
     end
     
-    #This method generates the schema corresponding to this 'collection'
+    # #This method generates the schema corresponding to this 'collection'
     def schema
       if @schema.nil?
         keys = [];
@@ -282,13 +262,13 @@ module WLBud
     #
     # me is the
     #
-#    def local?(budinstance=nil)
-#      if budinstance.nil?
-#        self.peer.eql?('me')
-#      else
-#        self.peer.eql?('me') or self.peer.eql?(budinstance.peername)
-#      end
-#    end
+    #    def local?(budinstance=nil)
+    #      if budinstance.nil?
+    #        self.peer.eql?('me')
+    #      else
+    #        self.peer.eql?('me') or self.peer.eql?(budinstance.peername)
+    #      end
+    #    end
 
     # Return the name of the peer
     #
@@ -308,13 +288,13 @@ module WLBud
       return @fields
     end
     
-    #This method gives the name of the relation.
+    # #This method gives the name of the relation.
     def relname
       self.relation_name.text_value
     end
 
     # Return the name of this atom in the format "relation_at_peer"
-    # 
+    #
     # Create a string for the name of the relation that fits bud restriction
     #
     # It substitute @ by '_at_'
@@ -355,7 +335,8 @@ module WLBud
   
   class WLIntensional < WLRelType
     def initialize (a1,a2,a3=nil)
-      # a3 default value is nil since WLIntensional rule is terminal node the elements methods is not available
+      # a3 default value is nil since WLIntensional rule is terminal node the
+      # elements methods is not available
       super(a1,a2,a3)
       @type = :Intensional
       @persistent=false
@@ -370,11 +351,6 @@ module WLBud
     end
     
     def persistent?
-      #      p "self here: #{self.text_value}"
-      #      p "self from #{self.input} interval #{self.interval}"
-      #      puts self.parent
-      #      p "self here: #{self.inspect}"
-      #      p "per elem : #{persistent.elements}"
       if @persistent.nil?
         @persistent = (not persistent.elements.nil?)
       else
@@ -382,20 +358,38 @@ module WLBud
       end
     end
   end
-
-  module WLItem
-  end
   
   class WLFields < WLVocabulary
   end
   
   class WLRelation < WLVocabulary
   end
-  
+
+  module WLRToken
+    # By default WLRtoken is not a variable unless it is override by WLVar
+    def variable?
+      if self.kind_of?(WLVar)
+        true
+      else
+        false
+      end
+    end
+  end
+
+  module WLItem
+    def variable?
+      false
+    end
+  end
+
   class WLVar < WLVocabulary
+    # variable? is override here against previous mixins of modules
+    def variable?
+      true
+    end
   end
   
-  #WebdamLog Atom, element of a WLrule.
+  # WebdamLog Atom, element of a WLrule.
   class WLAtom < WLVocabulary
     def initialize (a1,a2,a3)
       @name_choice=false
@@ -403,11 +397,11 @@ module WLBud
       super(a1,a2,a3)
     end
     public
-    #return true if the atom is local, false otherwise
+    # #return true if the atom is local, false otherwise
     #
-#    def local?(peername)
-#      self.rpeer.text_value.eql?('me') or self.rpeer.text_value.eql?(peername)
-#    end
+    #    def local?(peername)
+    #      self.rpeer.text_value.eql?('me') or self.rpeer.text_value.eql?(peername)
+    #    end
 
     # Return peer name
     #
@@ -415,15 +409,15 @@ module WLBud
       return self.rpeer.text_value
     end
 
-    #return the variables included in the atom in an array format.
-    #e.g. : [relation_var,peer_var,[field_var1,field_var2,...]]
+    # return the variables included in the atom in an array format e.g. :
+    # [relation_var,peer_var,[field_var1,field_var2,...]]
     #
     def variables
       if @variables.nil?
         vars = []
         relation=self.rrelation.text_value
         peer=self.rpeer.text_value
-        #Check if relation and/or peer are variables.
+        # Check if relation and/or peer are variables.
         if relation.include?('$') then vars << relation else vars << nil end
         if peer.include?('$') then vars << peer else vars << nil end
         vars << self.rfields.variables
@@ -432,15 +426,16 @@ module WLBud
       return @variables
     end
     
-    #returns the fields of the atom (variables and constants) in an array format
+    # returns the fields of the atom (variables and constants) in an array
+    # format
     #
     def fields
       self.rfields.fields
     end
     
-    # This method gives the name of the relation. It may also change the name
-    # of the relation on this rule only, in order to implement renaming
-    # strategies for self joins.
+    # This method gives the name of the relation. It may also change the name of
+    # the relation on this rule only, in order to implement renaming strategies
+    # for self joins.
     def relname(newname=nil)
       if !@name_choice then @name = "#{self.rrelation.text_value}_at_#{self.rpeer.text_value}" end
       unless newname.nil?
@@ -466,36 +461,51 @@ module WLBud
       end
       str << fields.inspect << "\n"
     end
-  end
-  
+  end  
 
   class WLPeer < WLVocabulary
-  end
+  end  
   
-  
-  #The Rfields class corresponds to nodes contains the fields of atoms in rules.
+  # The Rfields class corresponds contains the fields of atoms in rules.
   class WLRfields < WLVocabulary
     def initialize(a1,a2,a3)
       @fields=nil
       @variables=nil
       super(a1,a2,a3)
     end
-    #this methods gives only variable fields (in text value)
+
+    # remove the comma and return an array of items if defined here, it seems
+    # that list_rtokens doesn't override the list_rtokens defined by treetop
+    # while parsing
+    #
+    # def list_rtokens
+    #  super.elements.map{ |comma_and_item| comma_and_item.other_rtoken}
+    # end the list of rtokens in an array
+    def get_rtokens
+      [first_rtoken] + list_rtokens.elements.map{ |comma_and_item| comma_and_item.other_rtoken }
+    end
+
+    # this methods gives only variable fields (in text value)
     def variables
       if @variables.nil?
         f = []
-        self.rtokens.elements.each {|t| f << t.elements.first.text_value.split(',').first unless !t.text_value.include?('$')}
-        f << self.rtoken.text_value unless !self.rtoken.text_value.include?('$')
+        # self.rtokens.elements.each {|t| f <<
+        # t.elements.first.text_value.split(',').first unless
+        # !t.text_value.include?('$')} f << self.rtoken.text_value unless
+        # !self.rtoken.text_value.include?('$')
+        get_rtokens.each { |t| f << t.text_value if t.variable? }
         @variables=f
       end
       return @variables
     end
-    #this methods hands in all fields (in text value)
+    # this methods hands in all fields (in text value)
     def fields
       if @fields.nil?
         f = []
-        self.rtokens.elements.each {|t| f << t.elements.first.text_value.split(',').first}# unless t.text_value.include?(',')}
-        f << self.rtoken.text_value
+        # self.rtokens.elements.each {|t| f <<
+        # t.elements.first.text_value.split(',').first}# unless
+        # t.text_value.include?(',')} f << self.rtoken.text_value
+        get_rtokens.each { |t| f << t.text_value unless t.variable? }
         @fields=f
       end
       return @fields
