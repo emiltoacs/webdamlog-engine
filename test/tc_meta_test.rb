@@ -11,7 +11,7 @@
 # ####License####
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
-require 'generator'
+require 'rexml/syncenumerator'
 
 class TestMeta < Test::Unit::TestCase
 
@@ -60,8 +60,8 @@ EOF
     lines = myfile.readlines
     assert(str.lines.count!=0, "an empty string is not a valide program")
     assert_equal lines.size, str.lines.count
-    SyncEnumerator.new(lines,str).each { |l,s|
-      assert_equal s, l
+    REXML::SyncEnumerator.new(lines,str.lines.to_a).each { |l,s|
+      assert_equal l, s
     }
   end
 end

@@ -148,11 +148,7 @@ module WLBud
         else
           self.dic_relation_name[atom.relname]=[n]
         end
-        if self.dic_invert_relation_name.has_key?(n)
-          self.dic_invert_relation_name[n] << atom.relname
-        else
-          self.dic_invert_relation_name[n]=[atom.relname]
-        end
+        self.dic_invert_relation_name[n] = atom.relname
       end
       @dic_made = true
     end
@@ -180,7 +176,7 @@ module WLBud
     end
   end
   
-  # #The WLrule class is used to store the content of parsed WL facts.
+  # The WLrule class is used to store the content of parsed WL facts.
   class WLFact < WLVocabulary
     public
     
@@ -466,10 +462,10 @@ module WLBud
       end
       str << fields.inspect << "\n"
     end
-  end  
+  end
 
   class WLPeer < WLVocabulary
-  end  
+  end
   
   # The Rfields class corresponds contains the fields of atoms in rules.
   class WLRfields < WLVocabulary

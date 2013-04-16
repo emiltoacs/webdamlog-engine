@@ -94,7 +94,7 @@ EOF
           end
           assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_real should have been created")
           assert(p.tables.has_key?("join_at_p0".to_sym), "join should have been created")
-          assert [["3"], ["4"]], p.join_at_p0.to_a.sort
+          assert_equal [["3"], ["4"]], p.join_at_p0.to_a.sort
         end
       end
     ensure

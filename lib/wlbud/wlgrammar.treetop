@@ -191,6 +191,8 @@ module WLBud
             end
             rule variable
               '$' char_in_word+ <WLVar>
+              /
+              '_' <WLVar>
             end
 
    end # grammar WebdamLogGrammar
