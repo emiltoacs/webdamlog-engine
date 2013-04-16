@@ -109,9 +109,9 @@ module WLBud
       #debug message
       options[:debug] ||= false
       #additional module with bud block to import
-      options[:modulename] ||= nil       
+      options[:modulename] ||= nil
       WLTools::Debug_messages.h1 "Peer #{@peername} start of initialization" if options[:debug]
-      @filename = pgfilename      
+      @filename = pgfilename
       # This flag is set to true when the wl_program is made via the
       # make_program method. It is used to consider the delegation spawned by
       # the program evaluation.

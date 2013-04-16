@@ -130,8 +130,8 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     assert_equal 1, wl_peer[0].relation_to_declare.length
     assert_equal 1, wl_peer[0].relation_to_declare.values.first.length
     p wl_peer[0].relation_to_declare if $test_verbose
-    new_declaration = wl_peer[0].relation_to_declare.values.first.to_s
-    /(deleg.*)\(/ =~ new_declaration
+    new_declaration = wl_peer[0].relation_to_declare.values.first
+    /(deleg.*)\(/ =~ new_declaration.to_s
     new_rel = Regexp.last_match(1).gsub('@', '_at_')
     assert_kind_of Bud::BudScratch, wl_peer[0].tables[new_rel.to_sym], "check the type of the newly created relation Table or Scratch"
     assert_equal 1, wl_peer[0].test_send_on_chan.length, "should send 1 packet"
@@ -155,7 +155,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     assert_equal 1, wl_peer[1].test_received_on_chan.length, "peer 1 is suppose to receive exaclty one packet"
     packet = wl_peer[1].test_received_on_chan.first
     assert_equal 1, packet.declarations.length, "only one new relation"
-    assert_match new_declaration, packet.declarations.first, "new relation received is suppose to be #{new_rel}"
+    assert_match new_declaration, packet.declarations, "new declaration received is suppose to be #{new_declaration}"
 
     assert_equal old_nb_rel_peer2 + 1, nb_rel_peer2, "one new relation should have been created"
     assert wl_peer[1].tables.keys.include?(new_rel.to_sym), "don't find the new relation #{new_rel}"

@@ -166,7 +166,7 @@ module WLBud
 
     
     public
-    # REMOVE 
+    # REMOVE
     #    def add_peer(peername,ip,port)
     #      @peername=peername
     #      address = "#{ip}:#{port}"
@@ -634,16 +634,16 @@ In the string: #{line}
         return str
       end
     
-=begin    
+=begin
     # Generates a string corresponding to the appropriate delegation.
-    # Ensure that the delegation string is created according to the specifications.    # 
+    # Ensure that the delegation string is created according to the specifications.    #
     #
-    def generate_delegation(delegation) 
+    def generate_delegation(delegation)
       ######## MANAGE DELEGATIONS ########
       # Pushes each atom of the body of the rule (left to right) into a stack until it finds a non local one.
-      # Take all the previous atoms and puts them into a temporary variable. 
+      # Take all the previous atoms and puts them into a temporary variable.
       # From : out@j($x,$y,$z):-f@j(alice,$x), f@e(alice,$y), f@a(alice,$z)
-      # Get to : 
+      # Get to :
       # collection tmp_from_j@e($x)
       # rule tmp_from_j@e($x):-f@j(alice,$x)
       #
@@ -657,8 +657,8 @@ In the string: #{line}
         end
       }
       # RULE REWRITING
-      # create a relation for this declaration that is persistent and that has 
-      # an arity corresponding to the number of unique variables present in the stack.      
+      # create a relation for this declaration that is persistent and that has
+      # an arity corresponding to the number of unique variables present in the stack.
       stack.each { |atom|
         atom.variables.flatten.each {|var|
           unless var.nil? or local_vars.include?(var)
@@ -673,12 +673,12 @@ In the string: #{line}
       rule = "rule #{collection}:-#{body};"
       declaration="collection #{collection};"
       puts "Delegation WL:{\n#{rule}\n#{collection}\n}"
-      
+
       # RULE TRANSLATION
       bud_rule_str=translate_rule_str(add_rule(rule,true)) # Creates a string corresponding to the bud equivalent rule
       # add_collection(declaration)
       collection_meta=""
-      
+
       # RULE SENDING
       facts="{['#{collection_name}']=>[#{collection_name} {|s| s}]}"
       destination_delegation="[]"
@@ -734,7 +734,8 @@ In the string: #{line}
     
     
       # Update nonlocal updates the head_nonlocal. Has to be called each time
-      # program collection changes (new rules or new peers added to the program).
+      # program collection changes (new rules or new peers added to the
+      # program).
       #
       #    def update_body_local
       #      @localrules.each_with_index { |wlrule,n|
@@ -779,7 +780,7 @@ In the string: #{line}
         if input.is_a?(WLBud::WLRule)
           wlrule = input
           wlrule.body.each_with_index {|atom,n|
-            #Creates temp collections when self-joins are present
+            # #Creates temp collections when self-joins are present
             if !rels.include?(atom.relname) then rels << atom.relname
             else #we have a self join situation. Create a temporary relation and rename the relation
               atom.relname(generate_intermediary_relation_name)
@@ -791,7 +792,7 @@ In the string: #{line}
         else
           body = input
           body.each_with_index {|atom,n|
-            #Creates temp collections when selfjoins are present
+            # #Creates temp collections when selfjoins are present
             if !rels.include?(atom.relname) then rels << atom.relname
             else #we have a self join situation. Create a temporary relation and rename the relation
               atom.relname(generate_intermediary_relation_name)
@@ -816,59 +817,68 @@ In the string: #{line}
       # FIXME error in the head of the rules aren't detcted during parsing but
       # here it is too late.
       #
-      # Make joins when there is more than two atoms in the
-      # body. Need to call make_dic before calling this function. it return the
-      # beginning of the body of the bud rule containing the join of relations
-      # along with their join tuple criterion for example (rel1 *
-      # rel2).combos(rel1.1 => rel2.2) TODO move to wlvocabulary
+      # Make joins when there is more than two atoms in the body. Need to call
+      # make_dic before calling this function. it return the beginning of the
+      # body of the bud rule containing the join of relations along with their
+      # join tuple criterion for example (rel1 * rel2).combos(rel1.1 => rel2.2)
+      # TODO move to wlvocabulary
       #
-      # For a bud rule like the following it produce the part between stars marked
-      # with ** around
+      # For a bud rule like the following it produce the part between stars
+      # marked with ** around
       #
       # sibling <= *(childOf*childOf).pairs(:father => :father,:mother =>
       # :mother)* {|s1,s2| [s1[0],s2[0]] unless s1==s2}
       def make_combos (wlrule)
+
+        # list all the useful relation in combo
         raise WLError, "The dictionary should have been created before calling this method" unless wlrule.dic_made
         str = '('; if_str = '' ;
         wlrule.body.each do |atom|
-          unless atom==wlrule.body.last then str <<  "#{atom.relname} * "
-          else str << "#{atom.relname}" end
+          str <<  "#{atom.relname} * "
         end
+        str.slice!(-2..-1) unless wlrule.body.empty?
         str << ').combos('
+
+        # create join conditions
         combos=false
         wlrule.dic_wlvar.each do |key,value|
-          next unless value.length > 1 #skip anonymous variable (that is occurring only once in the body)
-          value.each do |v|
-            v1 = value.first
-            #join every first occurrence of a variable with its subsequent
-            rel_first , attr_first = v1.first.split('.')
-            unless v1.eql?(v)
-              rel_other , attr_other = v.first.split('.')
-              # If it is a self-join symbolic name should be used
-              rel_first_name = wlrule.dic_invert_relation_name[rel_first]
-              rel_other_name = wlrule.dic_invert_relation_name[rel_other]
-              unless rel_first_name.eql?(rel_other_name)
-                str << WLProgram.get_bud_var_by_pos(rel_first) << attr_first << ' => ' << WLProgram.get_bud_var_by_pos(rel_other) << attr_other << ',' ;
-                combos=true
-              else
-                #if_str << " && #{wlrule.dic_relation_name[rel_first]}.#{attr_first}==#{wlrule.dic_budvar[rel_other]}.#{attr_other}"
-                first_atom = wlrule.body[Integer(rel_first)]
-                other_atom = wlrule.body[Integer(rel_other)]
-                col_name_first = get_column_name_of_relation(first_atom, Integer(attr_first))
-                col_name_other = get_column_name_of_relation(other_atom, Integer(attr_other))
-                str << ":#{col_name_first}" << ' => ' << ":#{col_name_other}" << ',' ;
-                combos=true
-              end
+          next unless value.length > 1 # skip free variable (that is occurring only once in the body)
+          next if key == '_' # skip anonymous variable
+
+          v1 = value.first
+          rel_first , attr_first = v1.split('.')
+          # join every first occurrence of a variable with its subsequent
+          value[1..-1].each do |v|
+            rel_other , attr_other = v.split('.')
+            rel_first_name = wlrule.dic_invert_relation_name[Integer(rel_first)]
+            rel_other_name = wlrule.dic_invert_relation_name[Integer(rel_other)]
+            first_atom = wlrule.body[Integer(rel_first)]
+            other_atom = wlrule.body[Integer(rel_other)]
+            col_name_first = get_column_name_of_relation(first_atom, Integer(attr_first))
+            col_name_other = get_column_name_of_relation(other_atom, Integer(attr_other))
+            # If it is a self-join symbolic name should be used
+            if rel_first_name.eql?(rel_other_name)
+              # if_str << " && #{wlrule.dic_relation_name[rel_first]}.#{attr_first}==#{wlrule.dic_budvar[rel_other]}.#{attr_other}"
+              str << ":#{col_name_first}" << ' => ' << ":#{col_name_other}"
+              combos=true
+            else
+              # str << WLProgram.get_bud_var_by_pos(rel_first) << attr_first <<
+              # ' => ' << WLProgram.get_bud_var_by_pos(rel_other) << attr_other
+              # << ',' ;
+              str << rel_first_name << '.' << col_name_first << ' => ' << rel_other_name << '.' << col_name_other
+              combos=true
             end
+            str << ','
           end
         end
         str.slice!(-1) if combos
         str << ')'
+        
         return str, if_str
       end
 
-      # Get the the name specified for the column of the relation in given atom as
-      # it is declared in the collection
+      # Get the the name specified for the column of the relation in given atom
+      # as it is declared in the collection
       def get_column_name_of_relation (atom, column_number)
         @wlcollections["#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"].fields.fetch(column_number)
       end
@@ -893,8 +903,7 @@ In the string: #{line}
     
       # Generates a temporary name that is guaranteed to be unique. This one is
       # based in the fact that peername are unique and always have one uniq
-      # program
-      # TODO: add more stuff in the name to guarantee uniqueness
+      # program TODO: add more stuff in the name to guarantee uniqueness
       #
       def generate_intermediary_relation_name()
         return "deleg_#{@next+=1}_from_#{@peername}"

@@ -93,7 +93,7 @@ EOF
     
     # p "===all wl_peer tick 1 in reverse order==="
     wl_peer.reverse_each do |p|
-      p.tick      
+      p.tick
     end
     
     # p "check content of p0 the peer which send"

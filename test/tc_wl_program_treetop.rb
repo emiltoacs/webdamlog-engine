@@ -11,8 +11,9 @@
 # ####License####
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
-require 'generator'
-  
+require 'rexml/syncenumerator'
+
+
 # Test the treetop parser implementation in WLProgram and WLVocabulary objects
 # instantiation.
 #
@@ -139,15 +140,17 @@ EOF
       assert program.wlcollections["relintermed_2_at_p1"].persistent?
       assert_equal 4, program.wlfacts.length
       program.wlfacts.each { |fact| assert_equal "local_at_p1",fact.relname }
-      SyncEnumerator.new(program.wlfacts,1..4).each { |fact,num|
-        assert_equal [num.to_s], fact.content
+      program.wlfacts.each_with_index { |fact,num|
+        assert_equal [(num+1).to_s], fact.content
       }
-      # #assert_equal 1, program.wl
+      # assert_equal 1, program.wl
     ensure
       File.delete('test_program_1') if File.exists?('test_program_1')
     end
   end # test_200_program_1
 end
+
+
 
 # Put here some sample test program that must be correct syntactically
 class TcParseProgram < Test::Unit::TestCase
@@ -180,6 +183,7 @@ end
 end
 
 
+
 class TcWLVocabulary < Test::Unit::TestCase
   include MixinTcWlTest
 
@@ -202,8 +206,8 @@ end
         {:debug => true} )
     end
     program.original_rules.each_key do |r|      
-      assert 4, r.head.rfields.variables.length
-      assert 1, r.head.rfields.fields
+      assert_equal 4, r.head.rfields.variables.length
+      assert_equal 5, r.head.rfields.fields.length
     end
   ensure
     File.delete('test_program_2') if File.exists?('test_program_2')
