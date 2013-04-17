@@ -1,3 +1,5 @@
 /lib/wlrule_to_bud/
 /nbproject/
 /nbproject/**
+/bin/DBM*
+/bin/*rewritten.txt
