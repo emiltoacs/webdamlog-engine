@@ -18,7 +18,7 @@ module WLBud
     #    end
   end
   
-  # #The WLrule class is used to store the content of parsed WLRules.
+  # The WLrule class is used to store the content of parsed WLRules
   class WLRule < WLVocabulary
     @@index=0
     attr_accessor :has_self_join
@@ -184,7 +184,7 @@ module WLBud
       @contents=nil
       super(a1,a2,a3)
     end
-    # #prints to the screen information about the extensional fact.
+    # prints to the screen information about the extensional fact.
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
@@ -193,7 +193,7 @@ module WLBud
       puts "Data content : #{self.fields.text_value}"
       puts "--------------------------------------------------------"
     end
-    # #return an array of strings containing each element of the Fact.
+    # return an array of strings containing each element of the Fact.
     def content
       if @contents.nil?
         array=[]
@@ -202,7 +202,7 @@ module WLBud
       end
       return @contents
     end
-    # #returns the name of the relation of the fact.
+    # returns the name of the relation of the fact.
     def relname
       return "#{self.relation_name.text_value}_at_#{self.peer_name.text_value}"
     end
@@ -224,7 +224,7 @@ module WLBud
     end
 
     public
-    # #prints to the screen information about the extensional fact.
+    # prints to the screen information about the extensional fact.
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
@@ -234,7 +234,7 @@ module WLBud
       puts "--------------------------------------------------------"
     end
     
-    # #This method generates the schema corresponding to this 'collection'
+    # This method generates the schema corresponding to this 'collection'
     def schema
       if @schema.nil?
         keys = [];
@@ -256,18 +256,6 @@ module WLBud
     def persistent?
       return rel_type.persistent?
     end
-
-    # Return true if the relation is local.
-    #
-    # me is the
-    #
-    #    def local?(budinstance=nil)
-    #      if budinstance.nil?
-    #        self.peer.eql?('me')
-    #      else
-    #        self.peer.eql?('me') or self.peer.eql?(budinstance.peername)
-    #      end
-    #    end
 
     # Return the name of the peer
     #
@@ -367,7 +355,7 @@ module WLBud
   # This is the text part of fields in relation, it could be a constant or a
   # variable
   module WLRToken
-    # By default WLRtoken is not a variable unless it is override by WLVar
+    # By default WLRtoken is not a variable unless this method is override by WLVar
     def variable?
       if self.kind_of?(WLVar)
         true
@@ -390,7 +378,7 @@ module WLBud
     end
   end
   
-  # WebdamLog Atom, element of a WLrule.
+  # WebdamLog Atom, element of a WLrule: rrelation@rpeer(rfields)
   class WLAtom < WLVocabulary
     def initialize (a1,a2,a3)
       @name_choice=false

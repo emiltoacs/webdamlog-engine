@@ -19,7 +19,7 @@ require 'header_test'
 # Given a webdamlog program in a text file, it should generate the right
 # wl_program object.
 #
-# This test can be followed by tc_wl_wlbud_parse_program id succeed
+# This test can be followed by tc_wl_wlbud_parse_program if succeed
 #
 class TcWlProgramTreetop < Test::Unit::TestCase
   include MixinTcWlTest
@@ -182,7 +182,7 @@ end
 end
 
 
-
+# Test variables in rules
 class TcWLVocabulary < Test::Unit::TestCase
   include MixinTcWlTest
 
@@ -211,5 +211,7 @@ end
   ensure
     File.delete('test_program_2') if File.exists?('test_program_2')
   end
+
+  
   
 end

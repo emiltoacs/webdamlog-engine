@@ -12,42 +12,42 @@ https://github.com/ooyala/scope
 * Bug
 
 ** Channel stop receiving
-Testing multiple wlbud instance fails because it makes communication via
-channel broke. Message are not received at the right time or not at all.
+   Testing multiple wlbud instance fails because it makes communication via
+   channel broke. Message are not received at the right time or not at all.
 #+begin_src ruby
-(init stuff)...
-wl_peer.reverse_each do |p|
-	p.tick
-end
-... (some tests)
+   (init stuff)...
+   wl_peer.reverse_each do |p|
+   p.tick
+   end
+   ... (some tests)
 #+end_src
-in this case it may happen that the thread that run the test take the
-priority on the thread launched for the tick by the event machine.
+   in this case it may happen that the thread that run the test take the
+   priority on the thread launched for the tick by the event machine.
 
-Solution is to slow down a bit your test thread *sleep(0.4)*
+   Solution is to slow down a bit your test thread *sleep(0.4)*
 
-Seen in =tc_wl_wlbudl_send_packet=
+   Seen in =tc_wl_wlbudl_send_packet=
 
 #+begin_src ruby
-  while wl_peer[1].inbound.empty?
-    sleep 0.2
-    cpt += 1
-    if cpt>7
-      assert(false, "it seems that peer1 is not receiving the message from peer 0")
-    end
-  end
+   while wl_peer[1].inbound.empty?
+   sleep 0.2
+   cpt += 1
+   if cpt>7
+   assert(false, "it seems that peer1 is not receiving the message from peer 0")
+   end
+   end
 #+end_src
 
 
 ** Netbeans freeze
-Netbeans freeze because of a bg in ruby plugins
-auto-completion mechanism.
-: pkill -KILL -f netbeans
+   Netbeans freeze because of a bg in ruby plugins
+   auto-completion mechanism.
+   : pkill -KILL -f netbeans
 
 ** Ruby event machine mess-up
-Eventmachine is going messy because of some non-regular stop, It
-generates some error about unregistered callback in bud.
-: pkill -KILL -f ruby
+   Eventmachine is going messy because of some non-regular stop, It
+   generates some error about unregistered callback in bud.
+   : pkill -KILL -f ruby
 
 
 * Update from bud 0.9.1 to 0.9.5

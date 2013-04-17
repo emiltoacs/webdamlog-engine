@@ -19,11 +19,12 @@ History:
 
 *** Bud builder option
 
-+ dump_rewrite :: see the dependency graph.
++ dump_rewrite :: if true, dump results of internal rewriting of Bloom
+                  code to a file
 + dump_ast :: see the abstract syntax tree when bud parse bud language.
 + print_wiring :: print the wiring between relation ie. the dependencies
-                  between the relations accroding to the rules.
-+ trace :: see the deduction
+                  between the relations according to the rules in stdout.
++ trace :: see the deduction for budvis
   + tag :: along with trace to give human-readable name
 + quiet :: remove non-debug message from bud such as "Created
            directory: #{dbm_dir}"
