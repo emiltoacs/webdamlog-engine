@@ -11,7 +11,6 @@
 # ####License####
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
-require 'rexml/syncenumerator'
 
 # Use to test if a wl_program object is transformed into the right bud program.
 #
