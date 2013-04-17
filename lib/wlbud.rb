@@ -25,7 +25,7 @@ module WLBud
   #controle bud gem version
   require "#{PATH_LIB}/version"
   require 'rubygems'
-  gem 'bud', "= #{WLBud::BUD_GEM_VERSION}"
+  gem 'bud', ">= #{WLBud::BUD_GEM_VERSION}"
   require 'bud'
   require 'polyglot'
   require 'treetop'

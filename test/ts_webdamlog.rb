@@ -26,7 +26,6 @@ if  ARGV.include?("verbose")
   $test_verbose = true
 end
 
-
 files = Dir.entries(File.dirname(__FILE__)).select do |file|
   file =~ /tc_.*\.rb$/
 end
