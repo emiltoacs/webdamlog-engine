@@ -118,8 +118,6 @@ module WLBud
       if debug
         puts "inspect packet received"
         puts packet.inspect
-        puts "inspect packet received"
-        puts y packet
       end
       return WLPacketData.new(packet[0], packet[1], packet[2])
     end

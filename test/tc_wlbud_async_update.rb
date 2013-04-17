@@ -63,7 +63,7 @@ EOF
                   "declarations"=>["collection ext persistent new_rel@p0(attr1*);"]
                 }]]
           end
-          assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_real should have been created")
+          assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_rel should have been created")
           assert_equal [["1"], ["2"], ["3"], ["4"]], p.new_rel_at_p0.to_a.sort
         end
       end

@@ -30,6 +30,7 @@ module WLBud
   require 'polyglot'
   require 'treetop'
   require 'yaml'
+  require 'prettyprint'
   # stdlib
   require 'set'
   require 'benchmark'
@@ -666,7 +667,7 @@ module WLBud
     #
     # @param [WLCollection] wlcollection that should be declared in bud
     # @param colltype must be a sub class of Bud::Collection. It is use to force the declaration of the given type of Bud Collection for this WLCollection. Use it in test only as the method is supposed to parse correctly the WLCollection
-    # @param args optional args if colltype is a channel then args could be "loopbabk"
+    # @param args optional args if colltype is a channel then args could be "loopback"
     #
     # TODO refine the declaration according to type
     #
