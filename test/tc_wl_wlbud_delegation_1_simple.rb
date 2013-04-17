@@ -149,7 +149,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
       end
     end
     wl_peer[1].tick
-    q1.pop    
+    q1.pop
     nb_rel_peer2 = wl_peer[1].tables.length
     nb_rule_peer2 = wl_peer[1].tables[:t_rules].length
     assert_equal 1, wl_peer[1].test_received_on_chan.length, "peer 1 is suppose to receive exaclty one packet"

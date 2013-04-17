@@ -12,10 +12,10 @@
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
 
-# This file is the test suite file used to lauch all the test defined for this
+# This file is the test suite file used to launch all the test defined for this
 # project. It has a very simple goal: load all files in this directory with a
-# name starting with the prefix tc_ therefore the test files should be named
-# with this prefix.
+# name starting with the prefix tc_ therefore the test files should be named with
+# this prefix.
 
 # This flag $quick-mode could be use to skip the most expensive time test file
 if  ARGV.include?("quick")
@@ -31,7 +31,7 @@ files = Dir.entries(File.dirname(__FILE__)).select do |file|
   file =~ /tc_.*\.rb$/
 end
 
-if  ARGV.include?("ordered")
+if ARGV.include?("ordered")
   require "tc_bud_collection.rb"
   require "tc_bud_delete_fact.rb"
   require "tc_meta_test.rb"

@@ -1,4 +1,4 @@
 /lib/wlrule_to_bud/
 /lib/wlbud/storage/twk/
 /lib/wlbud/storage/
-/nbproject/
+/nbproject/**/*
