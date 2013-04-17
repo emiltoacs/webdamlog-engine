@@ -11,7 +11,6 @@
 # ####License####
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
-require 'rexml/syncenumerator'
 
 
 # Test the treetop parser implementation in WLProgram and WLVocabulary objects
