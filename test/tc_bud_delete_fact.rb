@@ -56,7 +56,7 @@ class TcBudDeleteFact < Test::Unit::TestCase
     assert_equal [["E","F"],["E","M"],["e","F"],["e","M"]], prog.descendant.to_a.sort
 
     # This append new fact to the collection childOf
-    prog.childOf <= [["F","FF","MF"], ["M","FM","MM"]]
+    prog.childOf <+ [["F","FF","MF"], ["M","FM","MM"]]
     prog.tick
     assert_equal [["E", "F"],["E", "FF"],["E", "FM"],["E", "M"],["E", "MF"],["E", "MM"],["F", "FF"],
       ["F", "MF"],["M", "FM"],["M", "MM"],["e", "F"],["e", "FF"],["e", "FM"],["e", "M"],["e", "MF"],["e", "MM"]],
@@ -100,7 +100,7 @@ class TcBudDeleteFact < Test::Unit::TestCase
     assert_equal [["E", "e"], ["e", "E"]], prog.sibling.to_a.sort
 
     # This append new fact to the collection childOf
-    prog.childOf <= [["E2", "F", "M"], ["e2", "F", "M"]]
+    prog.childOf <+ [["E2", "F", "M"], ["e2", "F", "M"]]
     prog.tick
     assert_equal 4, prog.childOf.to_a.length
     assert_equal [["E", "F", "M"], ["E2", "F", "M"], ["e", "F", "M"], ["e2", "F", "M"]], prog.childOf.to_a.sort

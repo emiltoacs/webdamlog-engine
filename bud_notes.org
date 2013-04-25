@@ -22,9 +22,11 @@ History:
 + dump_rewrite :: if true, dump results of internal rewriting of Bloom
                   code to a file
 + dump_ast :: see the abstract syntax tree when bud parse bud language.
-+ print_wiring :: print the wiring between relation ie. the dependencies
-                  between the relations according to the rules in stdout.
-+ trace :: see the deduction for budvis
++ print_wiring :: print in stdout the wiring between relation ie. the
+                  dependencies between the relations according to the
+                  rules.
++ trace :: generate the deduction for budvis ie. the facts generated at
+           each turn from each facts and rules.
   + tag :: along with trace to give human-readable name
 + quiet :: remove non-debug message from bud such as "Created
            directory: #{dbm_dir}"
@@ -203,16 +205,15 @@ The attribute [[*attribute][@tables]] is a list of all the collection defined in
 bud instance.
 
 *** List of table that Bud keep for its reflexion
-
-+ table :t_rules, [:bud_obj, :rule_id] =>
-  [:lhs, :op, :src, :orig_src, :nm_funcs_called]
-+ table :t_depends, [:bud_obj, :rule_id, :lhs, :op, :body] => [:nm]
+<
++ table :t_rules, [:bud_obj, :rule_id] => [:lhs, :op, :src, :orig_src, :nm_funcs_called]
++ table :t_depends, [:bud_obj, :rule_id, :lhs, :op, :body] => [:nm, :in_body]
 + table :t_provides, [:interface] => [:input]
 + table :t_underspecified, t_provides.schema
 + table :t_stratum, [:predicate] => [:stratum]
 + table :t_cycle, [:predicate, :via, :neg, :temporal]
-+ seems deprecated :: table :t_table_info, [:tab_name, :tab_type]
-+ seems deprecated :: table :t_table_schema, [:tab_name, :col_name, :ord, :loc]
++ table :t_table_info, [:tab_name, :tab_type] (seems to be viz specific)
++ table :t_table_schema, [:tab_name, :col_name, :ord, :loc]
 
 All this tables have been declared in builtin state method of Bud.
 
@@ -266,13 +267,35 @@ include CartWorkloads
 #+end_src
 
 
+** Bud external library
+
+*** msgpack MessagePack
+
+http://msgpack.org/
+
+A simple de/serializer for nested structure ; MessagePack is an
+efficient binary serialization format. It lets you exchange data among
+multiple languages like JSON but it's faster and smaller.
+
+#+begin_src ruby
+  require 'msgpack'
+
+  src = ["Hello", "World", 1, 2, 3]
+  binary = MessagePack.pack(src)
+
+  dst = MessagePack.unpack(binary)
+  p dst  #=> ["Hello", "World", 1, 2, 3]
+#+end_src
+
+http://wiki.msgpack.org/display/MSGPACK/QuickStart+for+Ruby
+
 * Notes about webdamlog
 
 ** Overwrite bud with webdamlog
 
 *** tick_internal
 
-rewrote with lots of addition
+rewrote with lots of addition and externalize rewrite strata
 
 *** builtin_state
 

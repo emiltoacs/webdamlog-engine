@@ -8,7 +8,6 @@ see for exemple gem:
 https://github.com/ooyala/scope
 
 
-
 * Bug
 
 ** Channel stop receiving
@@ -50,9 +49,30 @@ https://github.com/ooyala/scope
    : pkill -KILL -f ruby
 
 
-* Update from bud 0.9.1 to 0.9.5
+* Updates
 
-** BudCollection.pro method changed
+** Paperclip
+
+##################################################
+#  NOTE FOR UPGRADING FROM PRE-3.0 VERSION       #
+##################################################
+
+Paperclip 3.0 introduces a non-backward compatible change in your attachment
+path. This will help to prevent attachment name clashes when you have
+multiple attachments with the same name. If you didn't alter your
+attachment's path and are using Paperclip's default, you'll have to add
+`:path` and `:url` to your `has_attached_file` definition. For example:
+
+    has_attached_file :avatar,
+      :path => ":rails_root/public/system/:attachment/:id/:style/:filename",
+      :url => "/system/:attachment/:id/:style/:filename"
+
+Successfully installed paperclip-3.4.1
+
+
+** Update from bud 0.9.1 to 0.9.5
+
+*** BudCollection.pro method changed
 
 To iterate on tuples in the buffers of the collections, this method pro
 can be used with a block but the interpretation of the block has now
@@ -98,7 +118,7 @@ def pro(the_name=tabname, the_schema=schema, &blk)
 #+end_src
 
 
-** Channel changed
+*** Channel changed
 
 + bug :: WLBud.aggregate_facts
 + svn version :: 3486
