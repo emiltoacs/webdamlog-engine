@@ -9,13 +9,11 @@ rescue LoadError
 end
 
 
-
 STR1 = <<EOF
 peer p1=localhost:11110;
 collection ext persistent local1@p1(atom1*);
 collection ext persistent local2@p1(atom1*);
 collection ext persistent local3@p1(atom1*);
-collection ext persistent local4@p1(atom1*);
 collection int join1@p1(atom1*);
 collection int join2@p1(atom1*);
 fact local1@p1(11);
@@ -38,7 +36,6 @@ fact local4@p1(43);
 fact local4@p1(44);
 rule join1@p1($x):- local1@p1($x),local2@p1($x);
 rule join1@p1($x):- local3@p1($x);
-rule join2@p1($x):- join1@p1($x), local4@p1($x);
 end
 EOF
 
@@ -61,8 +58,16 @@ end
 @prog.sync_do do
   @prog.chan << ["localhost:12340",
     ["p0", "0",
+      {"rules"=>["rule join2@p1($x):- join1@p1($x), local4@p1($x);"],
+        "facts"=>{"local4_at_p1"=>[["21"]]},
+        "declarations"=>["collection ext persistent local4@p1(atom1*);"]
+      }]]
+end
+@prog.sync_do do
+  @prog.chan << ["localhost:12340",
+    ["p0", "0",
       {"rules"=>[],
-        "facts"=>{"local4_at_p1"=>[["21"], ["22"]]},
+        "facts"=>{"local4_at_p1"=>[["22"],]},
         "declarations"=>[]
       }]]
 end

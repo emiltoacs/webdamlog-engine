@@ -36,9 +36,11 @@ require 'wlbud/wlextendsbud'
 
 #begin
 #  require 'debugger'
+#  puts 'debugger loaded'
 #rescue LoadError => e
 #  begin
 #    require 'ruby-debug'
+#    puts 'ruby-debug loaded'
 #  rescue LoadError => e
 #    puts "debugger disabled"
 #  end

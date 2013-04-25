@@ -90,18 +90,18 @@ class TcBudCollection < Test::Unit::TestCase
     assert_equal( [['t1', 1, 2],['t2', -1, -2]], pg.tbl.to_a.sort)
     assert_equal( [['t1', 1, 2],['t2', -1, -2]], pg.tbl.delta.values.to_a.sort)
     assert_equal( [], pg.tbl.storage.values.to_a.sort)
-    pg.tbl <= [['t3',-3, -4]]
+    # pg.tbl <= [['t3',-3, -4]] # this now longer work on purpose since bud 0.9.7
     pg.tbl <+ [['t4',-5, -6]]
     pg.tick
     assert_equal( [], pg.scrtch.to_a.sort)
-    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t3',-3, -4],['t4',-5, -6]], pg.tbl.delta.values.to_a.sort )
+    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t4',-5, -6]], pg.tbl.delta.values.to_a.sort )
     assert_equal( [], pg.tbl.storage.values.to_a.sort)
-    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t3',-3, -4],['t4',-5, -6]], pg.tbl.to_a.sort )
-    pg.scrtch <= [['s3',-3, -4]]
+    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t4',-5, -6]], pg.tbl.to_a.sort )
+    # pg.scrtch <= [['s3',-3, -4]] # this now longer work on purpose since bud 0.9.7
     pg.scrtch <+ [['s4',-5, -6]]
     pg.tick
-    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t3',-3, -4],['t4',-5, -6]], pg.tbl.to_a.sort )
-    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t3',-3, -4],['t4',-5, -6]], pg.tbl.delta.values.to_a.sort )
+    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t4',-5, -6]], pg.tbl.to_a.sort )
+    assert_equal( [['t1', 1, 2],['t2', -1, -2],['t4',-5, -6]], pg.tbl.delta.values.to_a.sort )
     assert_equal( [['s4', -5, -6]], pg.scrtch.to_a.sort )
     assert_equal( [['s4', -5, -6]], pg.scrtch.delta.values.to_a.sort )
     assert_equal( [], pg.scrtch.storage.values.to_a.sort)
@@ -147,13 +147,13 @@ class TcBudCollection < Test::Unit::TestCase
     assert_equal( [], program.scrtch.to_a.sort)
     assert_equal( [['a', 'b', 1, 2],['z', 'y', 9, 8]], program.tbl.to_a.sort)
     assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch2.to_a.sort)
-    assert_equal( [['a', 'b'],['a', 'c']], program.scrtch3.to_a.sort)
+    assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch3.to_a.sort)
 
     program.tick
     assert_equal( [], program.scrtch.to_a.sort)
     assert_equal( [['a', 'b', 1, 2],['z', 'y', 9, 8]], program.tbl.to_a.sort)
-    assert_equal( [], program.scrtch2.to_a.sort)
-    assert_equal( [['a', 'b'],['a', 'c']], program.scrtch3.to_a.sort)
+    assert_equal( [['a', 'b'],['z', 'y']], program.scrtch2.to_a.sort)
+    assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch3.to_a.sort)
 
     program.tick
     program.tick
@@ -161,8 +161,8 @@ class TcBudCollection < Test::Unit::TestCase
     program.tick
     assert_equal( [], program.scrtch.to_a.sort)
     assert_equal( [['a', 'b', 1, 2],['z', 'y', 9, 8]], program.tbl.to_a.sort)
-    assert_equal( [], program.scrtch2.to_a.sort)
-    assert_equal( [['a', 'b'],['a', 'c']], program.scrtch3.to_a.sort)
+    assert_equal( [['a', 'b'],['z', 'y']], program.scrtch2.to_a.sort)
+    assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch3.to_a.sort)
   end
 end
 
