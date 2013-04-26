@@ -108,6 +108,7 @@ module WLBud
       raise WLError, "you must give or provide read and write access to a file for reading rules to provide to bud, but it seems impossible with: #{@rule_dir}" unless File.writable?(@rule_dir)
       # #debug message
       options[:debug] ||= false
+      $BUD_DEBUG ||= options[:bud_debug]
       # #additional module with bud block to import
       options[:modulename] ||= nil
       WLTools::Debug_messages.h1 "Peer #{@peername} start of initialization" if options[:debug]
@@ -280,7 +281,6 @@ module WLBud
       if @options[:debug]
         puts "==================================================================\n"
         puts "\t\t\tOutput for internal tick turn #{budtime}\n"
-        puts "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n"
       end
       if @options[:mesure]
         timetick = {}
@@ -347,7 +347,7 @@ module WLBud
           packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?          
           insert_updates(packet_value.facts) unless packet_value.facts.nil?
         end
-        # #if @collection_added then call_state_methods ;
+        # if @collection_added then call_state_methods ;
         # @collection_added=false end # useless could be removed
         if @need_rewrite_strata
           rewrite_strata
@@ -565,6 +565,8 @@ module WLBud
       # scratch
       self.t_rules.storage.clear
       self.t_depends.storage.clear
+      self.t_table_info.send :init_buffers
+      self.t_table_schema.send :init_buffers
       # Need to manually erase strata
       self.t_stratum.storage.clear
       self.t_stratum.delta.clear
@@ -581,20 +583,6 @@ module WLBud
         @merge_targets = @num_strata.times.map{Set.new}
       end
     end
-    
-    # #Assumes that the program runs in the background. Waits until #there is
-    # something in the chan to evaluate again. Facts are properly #received in
-    # their appropriate relation.
-    #
-    #    def run_loop
-    #      count = 1
-    #      while count < 100
-    #        while count > budtime
-    #        end
-    #        count = budtime + 1
-    #      end
-    #      print "Peer is killed."
-    #    end
     
     # #Simple successor function useful for WLprogram.
     #
