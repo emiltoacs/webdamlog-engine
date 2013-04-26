@@ -42,7 +42,7 @@ EOF
 File.open("test_pg","w"){ |file| file.write STR1 }
 @prog = WLBud::WL.new('p1', "test_pg",
   :ip=>"localhost",:port=>"13245",
-  :debug=>true,:debug2 =>true,
+  :debug=>true,:debug2 =>true, :bud_debug => true,
   :dump_rewrite=>true,:dump_ast=>false,:print_wiring=>true,
   :tag => "test_pg", :trace => true,
   :metrics => true, :mesure => false)
