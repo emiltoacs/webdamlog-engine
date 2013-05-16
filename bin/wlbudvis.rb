@@ -49,7 +49,7 @@ tabinf = meta[:tabinf].find_all do |k|
   !(k[1] == "Bud::BudChannel" and k[0] =~ /_snd\z/)
 end
 
-vh = VizHelper.new(tabinf, meta[:cycle], meta[:depends], meta[:rules], BUD_DBM_DIR, meta[:provides])
+vh = VizHelper.new(tabinf, meta[:cycle], meta[:depends], meta[:rules], BUD_DBM_DIR, meta[:provides], meta[:depends_time])
 data.each do |d|
   vh.full_info << d
 end
