@@ -1,6 +1,7 @@
---protected 
+--protected
 --private
 -- title "webdamlog"
-trunk/src/fr/inria/webdam/webdamlog/wlbud/*.rb
-trunk/src/fr/inria/webdam/webdamlog/wlbud/**/*.rb -
-README
+lib/*.rb
+lib/**/*.rb -
+README.org
+LICENSE

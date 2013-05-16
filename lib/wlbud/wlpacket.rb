@@ -73,7 +73,7 @@ module WLBud
   # communication channel used in WLPacket
   class WLPacketData
 
-    # Should follow the given structure {name of relation => [[tuple], [tuple], [tuple]]}
+    # Should follow the given structure !{name of relation => [[tuple], [tuple], [tuple]]}
     #TODO add flag for add or remove
     attr_accessor :facts
     

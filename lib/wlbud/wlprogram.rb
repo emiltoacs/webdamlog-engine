@@ -588,7 +588,7 @@ In the string: #{line}
       # For a bud rule like the following it produce the part between stars
       # marked with ** around
       #
-      # {descendant_at_emilien <= child_at_emilien {|atom0| *[atom0[0],
+      # !{descendant_at_emilien <= child_at_emilien {|atom0| *[atom0[0],
       # atom0[2]]*}
       def def_projection(wlrule)
         str = '['
