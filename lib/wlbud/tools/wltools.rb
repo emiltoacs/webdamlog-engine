@@ -57,7 +57,7 @@ module WLTools
   # a = [["one", "value11"], ["one", "value12"], ["two", "value21"], ["two",
   # "value22"]]
   #
-  # return {"one" => [["value11"], ["value12"]], "two" => [["value21"], ["value22"]]}
+  # return !{"one" => [["value11"], ["value12"]], "two" => [["value21"], ["value22"]]}
   #
   # NB: un-nest the array in value if size is one after key extraction
   #

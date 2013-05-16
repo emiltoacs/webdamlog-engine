@@ -205,9 +205,9 @@ The attribute [[*attribute][@tables]] is a list of all the collection defined in
 bud instance.
 
 *** List of table that Bud keep for its reflexion
-<
+
 + table :t_rules, [:bud_obj, :rule_id] => [:lhs, :op, :src, :orig_src, :nm_funcs_called]
-+ table :t_depends, [:bud_obj, :rule_id, :lhs, :op, :body] => [:nm, :in_body]
++ table :t_depends, [:bud_obj, :rule_id, :lhs, :op, :body] => [:nm, :in_body] :: head is a relation name that depends on lhs relation name according to rule identified by rule_id
 + table :t_provides, [:interface] => [:input]
 + table :t_underspecified, t_provides.schema
 + table :t_stratum, [:predicate] => [:stratum]
