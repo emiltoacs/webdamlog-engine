@@ -772,7 +772,7 @@ module WLBud
         WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment comment="Peer #{@peername} make program parse input file from WLGrammar to wlvocabulary internal representation")
         WLTools::Debug_messages.h3 "make_program start generate_schema"
       end
-      @wl_program.wlcollections.each_value {|s| schema_init(s)}
+      @wl_program.wlcollections.each_value {|s| add_collection(s)}
       if @options[:debug]
         WLTools::Debug_messages.h3 "make_program start generate_facts"
       end
@@ -833,6 +833,8 @@ module WLBud
     # Insert or delete facts in collections according to messages received from
     # channel
     #
+    # Collections are suppose to support <+ operator
+    #
     # TODO customize according to the type of relation in which facts are
     # inserted
     #
@@ -840,11 +842,11 @@ module WLBud
       # TODO test if the name is a relation name and transform otherwise: ie.
       # change @ into _at_
       facts.each_pair do |k,v|
-        raise WLErrorProgram, "relation name #{k.to_s} is not conforme to bud collection name restriction check if the @ if present you should change for _at_" if k.to_s.include?'@'
-        #        p "try to eval #{k.to_s} <= #{v.inspect} at peer #{self.peername}"
-        #        pp "tables in peer #{self.peername} are"
-        #        tables.each { |t| pp "#{t}" }
-        eval("#{k.to_s} <= #{v.inspect}")
+        raise WLErrorProgram, <<-"EOS" if k.to_s.include?'@'
+          relation name #{k.to_s} is not conforme to bud collection name restriction check if the @ if present you should change for _at_
+          EOS
+        #eval("#{k.to_s} <= #{v.inspect}")
+        tables[k.to_sym] <= v.to_a
       end
     end
 
