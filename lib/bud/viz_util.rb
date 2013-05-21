@@ -1,6 +1,5 @@
 # Use to override some bud methods in viz_util.rb
 #
-
 # Add depends_time
 #
 class VizHelper
