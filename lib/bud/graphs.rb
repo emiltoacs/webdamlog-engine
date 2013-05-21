@@ -1,7 +1,7 @@
 # Use to override some bud methods in viz.rb
 #
 class GraphGen
-
+  
   # Override bud
   #
   # Add filter on rule by timesteps to display only active rules during this timestep

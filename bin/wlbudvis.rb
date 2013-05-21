@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-# This code is the same as the executable budvis but it include the bud methods
-# override in wlbud
+# This code is the same as the executable budvis but it executes the bud methods
+# override in wlbud to generate proper graph for dynamic rules adding.
 require 'rubygems'
 require 'dbm'
 require 'bud'
@@ -16,7 +16,7 @@ end
 
 include VizUtil
 
-# Add default file is the last DBM* directory created
+# Add default file is the last DBM* directory created if no argument is given
 unless ARGV[0]
   BUD_DBM_DIR = Dir.glob("DBM*").sort_by{|f| File.mtime(f)}.last
   puts "Default file choosen #{BUD_DBM_DIR}"

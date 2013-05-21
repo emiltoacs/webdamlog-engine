@@ -76,7 +76,7 @@ module WLBud
 
     # TODO: define the following attributes only if options[:wl_test]
 
-    # @return the content returned by read_packet_channel at the begining og the
+    # @return the content returned by read_packet_channel at the beginning of the
     # tick (an array of WLPacketData)
     attr_reader :test_received_on_chan
     attr_reader :test_send_on_chan, :wl_callback, :wl_callback_step
@@ -444,7 +444,7 @@ module WLBud
             t.flush_deltas
           end
         end
-        @viz.do_cards if @options[:trace]
+        @viz.do_cards(true) if @options[:trace]
 
 
         # part 3: transition
@@ -543,6 +543,12 @@ module WLBud
     #
     def builtin_state
       super
+
+      # Contains the times nodes informations
+      # TODO: facts should be the list of facts used to derive head: define field to use(some kind of id)
+      #
+      table :t_derivation, [:rule_id, :facts] => [:derivated]
+      @builtin_tables = @tables.clone if toplevel
       # Unique channel that serves for all messages. Each timestep exactly one
       # or zero packet is sent to each peer (see wlpacket).
       wlchannel :chan, [:@dst,:packet] => []
@@ -551,9 +557,6 @@ module WLBud
       # the destination where to send the facts in the same format as :@dst in
       # standard bud channel "ip:port"
       scratch :sbuffer, [:dst, :rel_name, :fact] => []
-      # #this is the buffer in which we receive all the facts sent to us
-      # #scratch :readChannel, [:result] #this is the buffer that stores in all
-      # the facts to be sent to each peer. #scratch :buffer, [:dst,:facts]
     end
 
     # WLBud:Begin alternative to Bud rewrite_strata rewrites the dependency

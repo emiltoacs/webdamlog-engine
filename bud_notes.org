@@ -293,14 +293,28 @@ http://wiki.msgpack.org/display/MSGPACK/QuickStart+for+Ruby
 
 ** Overwrite bud with webdamlog
 
-*** tick_internal
+*** wlbud.rb override some bud.rb methods
+**** tick_internal
 
 rewrote with lots of addition and externalize rewrite strata
 
-*** builtin_state
+**** builtin_state
 
 super + addition
 
+*** lib/bud directory overrride other bud methods
+
+budoverride.rb load all the files that in the same directory named as
+they are in bud ie. lib/bud/graphs.rb int the project override
+lib/bud/graphs.rb in the bud gems.
+
+
+** bin directory
+
+Use wlbudvis instead of the budvis executable from gems to generate
+webdamlog compliante trace graphs. You should run a wl instance with
+options :trace to true then you can execute wlbudvis on the directory
+created under bin usually called DBM_*
 
 ** WLBud
 
