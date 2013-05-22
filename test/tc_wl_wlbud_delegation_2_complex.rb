@@ -1,12 +1,12 @@
 # ####License####
 #  File name tc_wl_delegation_2_complex.rb
 #  Copyright © by INRIA
-# 
+#
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
+#
 #   WebdamLog - Aug 9, 2012
-# 
+#
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
@@ -94,8 +94,8 @@ EOF
     end
   end
 
-  # TODO intensional not supported in non-local check with join
-  # collection int join_delegated@p0(atom1*);
+  # TODO intensional not supported in non-local check with join collection int
+  # join_delegated@p0(atom1*);
   #
   def test_1
     
@@ -130,11 +130,11 @@ EOF
     assert_equal [["localhost:11111", 
         ["p0", "0",
           {"rules"=>
-              ["rule join_delegated@p0($x):-deleg_1_from_p0@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"],
+              ["rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"],
             "facts"=>
-              {"deleg_1_from_p0_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
+              {"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
             "declarations"=>
-              ["collection inter persistent deleg_1_from_p0@p1(deleg_1_from_p0_x_0*);"]
+              ["collection inter persistent deleg_from_p0_1_1@p1(deleg_from_p0_1_1_x_0*);"]
           }]]],
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
       "p0 must have sent a packet with new rule declaration and facts"
@@ -147,10 +147,13 @@ EOF
     assert_equal 3, packet.data.length, "data in packet value must have three entries"    
     assert_equal 1, packet.data.facts.length, "should receive new insertions for one relations only"
     assert_equal ["localhost:11111",
-      ["p0", "0",
-        {"declarations"=>["collection inter persistent deleg_1_from_p0@p1(deleg_1_from_p0_x_0*);"],
-          "facts"=>{"#{new_rel_at_p1}"=>[["1"], ["2"], ["3"], ["4"]]},
-          "rules"=>["rule join_delegated@p0($x):-deleg_1_from_p0@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"]}]],
+      ["p0",
+        "0",
+        {"facts"=>{"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
+          "rules"=>
+            ["rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"],
+          "declarations"=>
+            ["collection inter persistent deleg_from_p0_1_1@p1(deleg_from_p0_1_1_x_0*);"]}]],
       packet.serialize_for_channel
 
     p "===all wl_peer tick 2===" if $test_verbose
@@ -162,7 +165,7 @@ EOF
     wl_peer[0].tick
     assert_equal [["localhost:11111",
         ["p0", "1", {"rules"=>[],
-            "facts"=>{"deleg_1_from_p0_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
+            "facts"=>{"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
             "declarations"=>[]}]]],
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
       "p0 should have sent again the list of facts but not the declaratiosn or rules"
@@ -172,14 +175,13 @@ EOF
     p "data at p1" if $test_verbose
     wl_peer[1].tick
     assert_equal [["localhost:11112",
-        ["p1", "1",
-          {"declarations"=>
-              ["collection inter persistent deleg_1_from_p1@p2(deleg_1_from_p1_x_0*);"],
-            "facts"=>
-              {"deleg_1_from_p1_at_p2"=>[["2"], ["3"], ["4"]]},
+        ["p1",
+          "1",
+          {"facts"=>{"deleg_from_p1_1_1_at_p2"=>[["2"], ["3"], ["4"]]},
             "rules"=>
-              ["rule join_delegated@p0($x):-deleg_1_from_p1@p2($x),delegated@p2($x),delegated@p3($x);"]
-          }]]],
+              ["rule join_delegated@p0($x):-deleg_from_p1_1_1@p2($x),delegated@p2($x),delegated@p3($x);"],
+            "declarations"=>
+              ["collection inter persistent deleg_from_p1_1_1@p2(deleg_from_p1_1_1_x_0*);"]}]]],
       wl_peer[1].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
       "p1 should have sent the list of facts, the new rule and the new declaration"
 
@@ -190,11 +192,11 @@ EOF
     assert_equal [["localhost:11113",
         ["p2",
           "1",
-          {"rules"=>
-              ["rule join_delegated@p0($x):-deleg_1_from_p2@p3($x),delegated@p3($x);"],
-            "facts"=>{"deleg_1_from_p2_at_p3"=>[["3"], ["4"]]},
+          {"facts"=>{"deleg_from_p2_1_1_at_p3"=>[["3"], ["4"]]},
+            "rules"=>
+              ["rule join_delegated@p0($x):-deleg_from_p2_1_1@p3($x),delegated@p3($x);"],
             "declarations"=>
-              ["collection inter persistent deleg_1_from_p2@p3(deleg_1_from_p2_x_0*);"]}]]],
+              ["collection inter persistent deleg_from_p2_1_1@p3(deleg_from_p2_1_1_x_0*);"]}]]],
       wl_peer[2].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
       "p2 should have sent the list of facts, the new rule and the new declaration"
 

@@ -5,22 +5,15 @@ module WLBud
   # parsed, a tree of nodes is created, with each node (not only the leaves) are
   # assigned a proper subclass of WLVocabulary.
   #
-  class WLVocabulary < Treetop::Runtime::SyntaxNode
-    
+  class WLVocabulary < Treetop::Runtime::SyntaxNode    
     public     
     def to_s
       self.text_value
     end
-    protected
-    #    #The firstchild class
-    #    def firstchild
-    #      self.elements.first
-    #    end
   end
   
   # The WLrule class is used to store the content of parsed WLRules
   class WLRule < WLVocabulary
-    @@index=0
     attr_accessor :has_self_join
     attr_reader :index, :dic_made
     # The budvar dictionary is a hash defines variables included in the
@@ -55,16 +48,16 @@ module WLBud
     # * elements
     #
     def initialize (a1,a2,a3)
-      @dic_made=false
+      @dic_made = false
       # TODO add self-join detection and think of the structure to use to create
       # the symbolic predicates of linkage during joins instead of named
       # perspective. See function make_combos in wlprogram @has_self_join=false
-      @index=@@index+=1
-      @body=nil      
-      @dic_relation_name={}
-      @dic_invert_relation_name={}
-      @dic_wlvar={}
-      @dic_wlconst={}
+      @rule_id = nil
+      @body = nil
+      @dic_relation_name = {}
+      @dic_invert_relation_name = {}
+      @dic_wlvar = {}
+      @dic_wlconst = {}
       super(a1,a2,a3)
     end
     
@@ -151,6 +144,23 @@ module WLBud
         self.dic_invert_relation_name[n] = atom.relname
       end
       @dic_made = true
+    end
+
+    # Set a unique id for this rule for the peer which has parsed this rule
+    #
+    def rule_id= int
+      @rule_id = int
+      #@rule_id.freeze
+    end
+
+    def rule_id
+      if @rule_id.nil?
+        raise WLError, <<-"EOS"
+this rule has been parsed but no valid id has been assigned for unknown reasons
+        EOS
+      else
+        return @rule_id
+      end
     end
 
     private
@@ -355,7 +365,8 @@ module WLBud
   # This is the text part of fields in relation, it could be a constant or a
   # variable
   module WLRToken
-    # By default WLRtoken is not a variable unless this method is override by WLVar
+    # By default WLRtoken is not a variable unless this method is override by
+    # WLVar
     def variable?
       if self.kind_of?(WLVar)
         true

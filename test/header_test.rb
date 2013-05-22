@@ -113,7 +113,7 @@ module MixinTcWlTest
     end
   end
 
-  # Creates a valide filename with the name of that class
+  # Creates a valid filename with the name of that class
   #
   def create_name
     WLTools.friendly_filename("#{self.class.name}")

@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.description = %q{Write a gem description}
   s.required_ruby_version = '>= 1.9.3'
   s.rubyforge_project = "none"
+  s.has_rdoc = 'yard'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec}/*`.split("\n")
