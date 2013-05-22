@@ -193,7 +193,7 @@ module WLBud
       puts "Data content : #{self.fields.text_value}"
       puts "--------------------------------------------------------"
     end
-    # return an array of strings containing each element of the Fact.
+    # return an array of strings containing each attribute value of the fact.
     def content
       if @contents.nil?
         array=[]

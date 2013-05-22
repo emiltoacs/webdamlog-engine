@@ -76,8 +76,8 @@ module WLBud
 
     # TODO: define the following attributes only if options[:wl_test]
 
-    # @return the content returned by read_packet_channel at the beginning of the
-    # tick (an array of WLPacketData)
+    # @return the content returned by read_packet_channel at the beginning of
+    # the tick (an array of WLPacketData)
     attr_reader :test_received_on_chan
     attr_reader :test_send_on_chan, :wl_callback, :wl_callback_step
 
@@ -348,11 +348,11 @@ module WLBud
           end
           # Declare all the new relations and insert the rules
           packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
-          packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?          
-          insert_updates(packet_value.facts) unless packet_value.facts.nil?
+          packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?
+          add_facts(packet_value.facts) unless packet_value.facts.nil?
         end
-        # if @collection_added then call_state_methods ;
-        # @collection_added=false end # useless could be removed
+        # if @collection_added then call_state_methods ; @collection_added=false
+        # end # useless could be removed
         if @need_rewrite_strata
           rewrite_strata
           @done_wiring=false
@@ -402,19 +402,18 @@ module WLBud
           end
         end
         
-        # ### WLBud:Begin adding to Bud        
+        # ### WLBud:Begin adding to Bud
         @need_rewrite_strata=false
         #
         # #part 2: logic
-        #        
+        #
         if @options[:mesure]
           end_time = Time.now
           timetick[@budtime] << end_time - inter_time
           inter_time = end_time
         end
-        # removed receive_inbound since it has been done earlier
-        # ### WLBud:End adding to Bud
-        # compute fixpoint for each stratum in order
+        # removed receive_inbound since it has been done earlier ### WLBud:End
+        # adding to Bud compute fixpoint for each stratum in order
         @stratified_rules.each_with_index do |rules,stratum|
           fixpoint = false
           first_iter = true
@@ -462,10 +461,11 @@ module WLBud
           # #logtab = @viz.class.send(:logtab) #dbm = logtab.class.send(:dbm)
           logtab = @viz.instance_eval{ @logtab }
           dbm = logtab.instance_eval{ @dbm }
-          # #dbm.each{ |o| puts "#{o.class} : #{o}" }
-          #logtab.each_storage{ |s| puts s }
+          # #dbm.each{ |o| puts "#{o.class} : #{o}" } #logtab.each_storage{ |s|
+          # puts s }
           logtab.to_a.sort_by{ |t| [t[0],t[1]] }.each{|s| puts s}
-          #logtab.to_a.sort{ |t1,t2| [t1[0],t1[1]] <=> [t2[0],t2[1]] }.each{|s| puts s} # same result as above
+          # #logtab.to_a.sort{ |t1,t2| [t1[0],t1[1]] <=> [t2[0],t2[1]]
+          # }.each{|s| puts s} # same result as above
           puts "----end of viz logtab-----"
         end
         # There is the moment in the tick where I should fill the channel with
@@ -544,8 +544,8 @@ module WLBud
     def builtin_state
       super
 
-      # Contains the times nodes informations
-      # TODO: facts should be the list of facts used to derive head: define field to use(some kind of id)
+      # Contains the times nodes informations TODO: facts should be the list of
+      # facts used to derive head: define field to use(some kind of id)
       #
       table :t_derivation, [:rule_id, :facts] => [:derivated]
       @builtin_tables = @tables.clone if toplevel
@@ -572,9 +572,8 @@ module WLBud
       # scratch
       self.t_rules.storage.clear
       self.t_depends.storage.clear
-      # self.t_table_info.send :init_buffers
-      # self.t_table_schema.send :init_buffers
-      # Need to manually erase strata
+      # self.t_table_info.send :init_buffers self.t_table_schema.send
+      # :init_buffers Need to manually erase strata
       self.t_stratum.storage.clear
       self.t_stratum.delta.clear
       # WLBud:End the rest is the legacy bud code
@@ -703,16 +702,27 @@ module WLBud
       end
     end
     
-    # Adds dynamically a WLFact
+    # Adds dynamically facts
     #
-    def add_fact (fact_str)
-      fact = @wl_program.parse(fact_str,true)
-      raise WLError, "\nfact is not considered as a fact construct, but is of class #{fact.class}" unless fact.is_a?(WLBud::WLFact)
-      # TODO pass fact in the format of hash as in packet
-      
-      insert_updates(facts)
-      # REMOVE #fields="" #fact.contents.each {|f| fields<<"#{self.quotes(f)},"}
-      # #fields.slice!(-1) eval ("self.#{fact.name}<=[[#{fields}]]")
+    def add_facts(wlpg_fact)
+      if WLPacketData.valid_fact_struct wlpg_fact
+        facts = insert_updates(wlpg_fact)
+      else
+        if wlpg_fact.is_a? WLBud::WLFact
+          fact = {wlpg_fact.relname.to_sym => wlpg_fact.content}
+          facts = add_facts fact
+        elsif wlpg_fact.is_a? String
+          fact = @wl_program.parse(wlpg_fact, true)
+          if fact.is_a? WLBud::WLFact
+            facts = add_facts fact
+          else
+            raise WLError, "fact string is not considered as a fact construct, but is #{fact.class} : #{fact}"
+          end
+        else
+          raise WLError, "fact is not considered as a fact construct, but is of class #{wlpg_fact.class}"
+        end
+      end
+      return facts
     end
     
     # It will dynamically add a collection to the program
@@ -833,7 +843,7 @@ module WLBud
     # Insert or delete facts in collections according to messages received from
     # channel
     #
-    # Collections are suppose to support <+ operator
+    # Collections in which to add facts are suppose to support <+ operator
     #
     # TODO customize according to the type of relation in which facts are
     # inserted
@@ -845,245 +855,246 @@ module WLBud
         raise WLErrorProgram, <<-"EOS" if k.to_s.include?'@'
           relation name #{k.to_s} is not conforme to bud collection name restriction check if the @ if present you should change for _at_
           EOS
-        #eval("#{k.to_s} <= #{v.inspect}")
-        tables[k.to_sym] <= v.to_a
+          # TODO check declaration and arity with wlcollections in program or
+          # tables[k.to_sym]
+          tables[k.to_sym] <= v.to_a
+        end
       end
-    end
 
-    # Read incoming packets on the channels and format them into an array of
-    # WLPacketData
-    #
-    # @return [Array] array of WLPacketData
-    #
-    def read_packet_channel
-      return chan.read(@options[:debug])
-    end
+      # Read incoming packets on the channels and format them into an array of
+      # WLPacketData
+      #
+      # @return [Array] array of WLPacketData
+      #
+      def read_packet_channel
+        return chan.read(@options[:debug])
+      end
 
-    # This method aggregates all the fact, rules and declarations of each peer
-    # in a single packet for this peer. This method allow to be sure that facts
-    # and rules deduce at the same timestep will be received in the remote peer
-    # at the same timestep.
-    #
-    # TODO: optimization this fact aggregation is a useless overhead that can be
-    # avoid if I create as many sbuffer collection as non-local relation in head
-    # of rules.
-    #
-    def write_packet_on_channel
-      packets_to_send = []
-      facts_to_send = aggregate_facts(sbuffer)
-      peer_to_contact = Set.new(facts_to_send.keys)
-      peer_to_contact.merge(@rules_to_delegate.keys)
-      if @options[:wl_test]
-        @wl_callback.each_value do |callback|
-          if callback[0] == :callback_step_write_on_chan
-            block = callback[1]
-            unless block.respond_to?(:call)
-              raise WLErrorCallback,
-                "Trying to call a callback method that is not responding to call #{block}"
+      # This method aggregates all the fact, rules and declarations of each peer
+      # in a single packet for this peer. This method allow to be sure that
+      # facts and rules deduce at the same timestep will be received in the
+      # remote peer at the same timestep.
+      #
+      # TODO: optimization this fact aggregation is a useless overhead that can
+      # be avoid if I create as many sbuffer collection as non-local relation in
+      # head of rules.
+      #
+      def write_packet_on_channel
+        packets_to_send = []
+        facts_to_send = aggregate_facts(sbuffer)
+        peer_to_contact = Set.new(facts_to_send.keys)
+        peer_to_contact.merge(@rules_to_delegate.keys)
+        if @options[:wl_test]
+          @wl_callback.each_value do |callback|
+            if callback[0] == :callback_step_write_on_chan
+              block = callback[1]
+              unless block.respond_to?(:call)
+                raise WLErrorCallback,
+                  "Trying to call a callback method that is not responding to call #{block}"
+              end
+              block.call(self, facts_to_send, peer_to_contact)
             end
-            block.call(self, facts_to_send, peer_to_contact)
           end
         end
-      end
-      peer_to_contact.each do |dest|
-        packet = WLPacket.new(dest, @peername, @budtime)
-        packet.data.facts = facts_to_send[dest]
-        packet.data.rules = @rules_to_delegate[dest]
-        packet.data.declarations = @relation_to_declare[dest]
-        packets_to_send << packet.serialize_for_channel
-      end
-      if @options[:wl_test]
-        @test_send_on_chan = Marshal.load(Marshal.dump(packets_to_send))
-        @wl_callback.each_value do |callback|
-          if callback[0] == :callback_step_write_on_chan_2
-            block = callback[1]
-            raise WLErrorCallback, "Trying to call a callback method that is not responding to call #{block}" unless block.respond_to?(:call)
-            block.call(self, packets_to_send)
+        peer_to_contact.each do |dest|
+          packet = WLPacket.new(dest, @peername, @budtime)
+          packet.data.facts = facts_to_send[dest]
+          packet.data.rules = @rules_to_delegate[dest]
+          packet.data.declarations = @relation_to_declare[dest]
+          packets_to_send << packet.serialize_for_channel
+        end
+        if @options[:wl_test]
+          @test_send_on_chan = Marshal.load(Marshal.dump(packets_to_send))
+          @wl_callback.each_value do |callback|
+            if callback[0] == :callback_step_write_on_chan_2
+              block = callback[1]
+              raise WLErrorCallback, "Trying to call a callback method that is not responding to call #{block}" unless block.respond_to?(:call)
+              block.call(self, packets_to_send)
+            end
           end
         end
-      end
-      packets_to_send.each do |packet|
-        chan <~ [packet]
-      end
-      if @options[:debug]
-        puts "BEGIN display what I wrote in chan to be send"
-        # #puts chan.pending.inspect
-        puts "number of facts: #{chan.pending.size}, sample of ten first keys #{chan.pending.keys[1..10].inspect}"
-        puts "chan in yaml"
-        # #y chan.pending
-        puts "END"
-      end
-    end
-
-    # Register a callback triggered during the tick at the moment specified by
-    # *step*, it will execute &blk
-    #
-    # Note that option :wl_test must be set for the wlbud instance otherwise
-    # callback are ignored. This callback are used for test and must not be used
-    # for production.
-    #
-    # * :callback_step_received_on_chan called in the tick just after inbound
-    #   has been flushed into chan
-    # * :callback_step_write_on_chan, :callback_step_write_on_chan_2 two
-    #   callback called just after writing on channel
-    # * :callback_step_end_tick is called at the end of the tick with self as
-    #   argument
-    #
-    # === return
-    # the callback id useful to unregister the callback later
-    #
-    def register_wl_callback(step, &blk)
-      unless @wl_callback_step.include? step
-        raise WLBud::WLErrorCallback, "no such callback step #{step}"
-      end
-      if @wl_callback.has_key? @wl_callback_id
-        raise WLBud::WLErrorCallback, "callback duplicate key"
-      end
-      @wl_callback[@wl_callback_id] = [step, blk]
-      cb_id = @wl_callback_id
-      @wl_callback_id += 1
-      return cb_id
-    end
-
-    # Unregister the callback by id given during registration
-    #
-    def unregister_wl_callback(cb_id)
-      raise WLBud::WLErrorCallback, "missing callback: #{cb_id.inspect}" unless @wl_callback.has_key? cb_id
-      @wl_callback.delete(cb_id)
-    end
-
-    # Create if needed the directory for the rules
-    #
-    # === return the name of dir created
-    #
-    def create_rule_dir(rule_dir)
-      rule_dir ||= "wlrule_#{@peername}_#{Time.now}"
-      # #rule file to pass to bud parser in the wlrule directory
-      base_dir = WL::get_path_to_rule_dir
-      unless (File::directory?(base_dir))
-        Dir.mkdir(base_dir)
-      end
-      rule_dir = File.join(base_dir,WLTools.friendly_filename(rule_dir))
-      unless (File::directory?(rule_dir))
-        Dir.mkdir(rule_dir)
-      end
-      return rule_dir
-    end
-
-    # Clear the content of the rule dir for this peer
-    #
-    def clear_rule_dir
-      unless @rule_dir.nil?
-        Dir.foreach(@rule_dir) do |filename|
-          file_to_delete = File.join(@rule_dir, filename)
-          File.delete(file_to_delete) if File.file?(file_to_delete)
+        packets_to_send.each do |packet|
+          chan <~ [packet]
         end
-        Dir.rmdir(@rule_dir)
-        return true
-      else
-        # silent quit
-        return false
+        if @options[:debug]
+          puts "BEGIN display what I wrote in chan to be send"
+          # #puts chan.pending.inspect
+          puts "number of facts: #{chan.pending.size}, sample of ten first keys #{chan.pending.keys[1..10].inspect}"
+          puts "chan in yaml"
+          # #y chan.pending
+          puts "END"
+        end
+      end
+
+      # Register a callback triggered during the tick at the moment specified by
+      # *step*, it will execute &blk
+      #
+      # Note that option :wl_test must be set for the wlbud instance otherwise
+      # callback are ignored. This callback are used for test and must not be
+      # used for production.
+      #
+      # * :callback_step_received_on_chan called in the tick just after inbound
+      #   has been flushed into chan
+      # * :callback_step_write_on_chan, :callback_step_write_on_chan_2 two
+      #   callback called just after writing on channel
+      # * :callback_step_end_tick is called at the end of the tick with self as
+      #   argument
+      #
+      # === return
+      # the callback id useful to unregister the callback later
+      #
+      def register_wl_callback(step, &blk)
+        unless @wl_callback_step.include? step
+          raise WLBud::WLErrorCallback, "no such callback step #{step}"
+        end
+        if @wl_callback.has_key? @wl_callback_id
+          raise WLBud::WLErrorCallback, "callback duplicate key"
+        end
+        @wl_callback[@wl_callback_id] = [step, blk]
+        cb_id = @wl_callback_id
+        @wl_callback_id += 1
+        return cb_id
+      end
+
+      # Unregister the callback by id given during registration
+      #
+      def unregister_wl_callback(cb_id)
+        raise WLBud::WLErrorCallback, "missing callback: #{cb_id.inspect}" unless @wl_callback.has_key? cb_id
+        @wl_callback.delete(cb_id)
+      end
+
+      # Create if needed the directory for the rules
+      #
+      # === return the name of dir created
+      #
+      def create_rule_dir(rule_dir)
+        rule_dir ||= "wlrule_#{@peername}_#{Time.now}"
+        # #rule file to pass to bud parser in the wlrule directory
+        base_dir = WL::get_path_to_rule_dir
+        unless (File::directory?(base_dir))
+          Dir.mkdir(base_dir)
+        end
+        rule_dir = File.join(base_dir,WLTools.friendly_filename(rule_dir))
+        unless (File::directory?(rule_dir))
+          Dir.mkdir(rule_dir)
+        end
+        return rule_dir
+      end
+
+      # Clear the content of the rule dir for this peer
+      #
+      def clear_rule_dir
+        unless @rule_dir.nil?
+          Dir.foreach(@rule_dir) do |filename|
+            file_to_delete = File.join(@rule_dir, filename)
+            File.delete(file_to_delete) if File.file?(file_to_delete)
+          end
+          Dir.rmdir(@rule_dir)
+          return true
+        else
+          # silent quit
+          return false
+        end
+      end
+
+      def self.get_path_to_rule_dir
+        base_dir = File.expand_path(File.dirname(__FILE__))
+        return File.join(base_dir, RULE_DIR_NAME)
       end
     end
 
-    def self.get_path_to_rule_dir
-      base_dir = File.expand_path(File.dirname(__FILE__))
-      return File.join(base_dir, RULE_DIR_NAME)
+    # Build a packet to write on the channel with all the standard meta-data. It
+    #   is recommended to use this method to generate packet of standard format.
+    #
+    # ==== Attributes
+    #
+    # * +dest+ - IP of the peer on which to send the data
+    # * +facts+ - list of facts order by relations
+    # * +delegations+ - rules to delegate
+    # * +declarations+ - new relations to declare (must correspond to one of the
+    #   relations used in the delegations of this package).
+    #
+    # ==== Examples
+    #
+    #    none
+    #
+    def packet_builder(dest,facts,delegations,declarations)
+      Packet.new(dest, @peername, @budtime, nil)
     end
-  end
 
-  # Build a packet to write on the channel with all the standard meta-data. It
-  #   is recommended to use this method to generate packet of standard format.
-  #
-  # ==== Attributes
-  #
-  # * +dest+ - IP of the peer on which to send the data
-  # * +facts+ - list of facts order by relations
-  # * +delegations+ - rules to delegate
-  # * +declarations+ - new relations to declare (must correspond to one of the
-  #   relations used in the delegations of this package).
-  #
-  # ==== Examples
-  #
-  #    none
-  #
-  def packet_builder(dest,facts,delegations,declarations)
-    Packet.new(dest, @peername, @budtime, nil)
-  end
-
-  # This method group facts by relations and by peers.
-  #
-  # ==== return a hash
-  #
-  # * +key+ destination
-  # * +value+ hash of relation with their facts
-  def aggregate_facts(fact_buffer)
-    sto = fact_buffer.pro{ |t| t.to_a }
-    facts_by_peer = WLTools::merge_multivaluehash_grouped_by_field(sto,0)
-    facts_by_peer_and_relations = {}
-    facts_by_peer.each_pair do |k, v|
-      facts_by_peer_and_relations[k] = WLTools::merge_multivaluehash_grouped_by_field(v,0)
+    # This method group facts by relations and by peers.
+    #
+    # ==== return a hash
+    #
+    # * +key+ destination
+    # * +value+ hash of relation with their facts
+    def aggregate_facts(fact_buffer)
+      sto = fact_buffer.pro{ |t| t.to_a }
+      facts_by_peer = WLTools::merge_multivaluehash_grouped_by_field(sto,0)
+      facts_by_peer_and_relations = {}
+      facts_by_peer.each_pair do |k, v|
+        facts_by_peer_and_relations[k] = WLTools::merge_multivaluehash_grouped_by_field(v,0)
+      end
+      #          if @options[:debug]
+      #            puts "BEGIN display aggregate facts format"
+      #            puts "facts_by_peer_and_relations with inspect"
+      #            puts facts_by_peer_and_relations.inspect
+      #            # puts "facts_by_peer_and_relations in yaml"
+      #            # y facts_by_peer_and_relations
+      #            puts "END"
+      #          end
+      return facts_by_peer_and_relations
     end
-    #          if @options[:debug]
-    #            puts "BEGIN display aggregate facts format"
-    #            puts "facts_by_peer_and_relations with inspect"
-    #            puts facts_by_peer_and_relations.inspect
-    #            # puts "facts_by_peer_and_relations in yaml"
-    #            # y facts_by_peer_and_relations
-    #            puts "END"
-    #          end
-    return facts_by_peer_and_relations
-  end
 
-  def pretty_string(print_table)
-    s1 = print_table[0].to_s + "\t"
-    s2 = print_table[1].inspect + "\t"
-    s3 = print_table[2].to_s
-    return s1 + s2 + s3
-  end
+    def pretty_string(print_table)
+      s1 = print_table[0].to_s + "\t"
+      s2 = print_table[1].inspect + "\t"
+      s3 = print_table[2].to_s
+      return s1 + s2 + s3
+    end
   
-  # #This method formats a fact table to be #processed by WebdamExchange manager
-  # module.
-  #
-  def fact_we_output(print_table)
-    s1 = print_table[0].to_s
-    s2 = print_table[1].inspect
-    s3 = print_table[2].to_s
-    s1.strip!;s2.strip!;s3.strip!
-    return "[fact]:" + s1 + ":"+ s2 + ":" + s3
-  end
-  #     Oldies
-  #
-  # Takes in an array of rule tuples and adds them to the current WLBud
-  # instance. The first element of the tuple is the rule name, and the second
-  # element is the rule content.
-  #
-  #    def rule_init (rule)
-  #      create_method(rule.first,rule.last) unless rule.nil?
-  #    end
-  # Create for this bud engine a new method representing a rule to add with a
-  # name which should be a Symbol and proc should be a Proc.
-  #
-  # Basically it check the type of both argument and create a call to the
-  # private define_method
-  #    def create_method(name, proc)
-  #      raise WLErrorGrammarParsing unless name.is_a?(Symbol)
-  #      raise WLErrorGrammarParsing unless proc.is_a?(Proc)
-  #      # Call the Module#define_method that create an instance method with name
-  #      # and proc as block this is equivalent to the following call:
-  #      # self.define_method(name, proc)
-  #      self.class.send(:define_method, name, proc)
-  #    end
+    # #This method formats a fact table to be #processed by WebdamExchange
+    # manager module.
+    #
+    def fact_we_output(print_table)
+      s1 = print_table[0].to_s
+      s2 = print_table[1].inspect
+      s3 = print_table[2].to_s
+      s1.strip!;s2.strip!;s3.strip!
+      return "[fact]:" + s1 + ":"+ s2 + ":" + s3
+    end
+    #     Oldies
+    #
+    # Takes in an array of rule tuples and adds them to the current WLBud
+    # instance. The first element of the tuple is the rule name, and the second
+    # element is the rule content.
+    #
+    #    def rule_init (rule)
+    #      create_method(rule.first,rule.last) unless rule.nil?
+    #    end
+    # Create for this bud engine a new method representing a rule to add with a
+    # name which should be a Symbol and proc should be a Proc.
+    #
+    # Basically it check the type of both argument and create a call to the
+    # private define_method
+    #    def create_method(name, proc)
+    #      raise WLErrorGrammarParsing unless name.is_a?(Symbol)
+    #      raise WLErrorGrammarParsing unless proc.is_a?(Proc)
+    #      # Call the Module#define_method that create an instance method with name
+    #      # and proc as block this is equivalent to the following call:
+    #      # self.define_method(name, proc)
+    #      self.class.send(:define_method, name, proc)
+    #    end
 
-end
-
-module Bud
-  def self.done_rewrite= (d)
-    @done_rewrite = d
   end
 
-  def self.done_rewrite
-    @done_rewrite
+  module Bud
+    def self.done_rewrite= (d)
+      @done_rewrite = d
+    end
+
+    def self.done_rewrite
+      @done_rewrite
+    end
   end
-end
 

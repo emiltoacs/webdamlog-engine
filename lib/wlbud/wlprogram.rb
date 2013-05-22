@@ -67,7 +67,7 @@ module WLBud
       my_address = "#{ip}:#{port}"
       # List of the webdamlog relation inserted in that peer
       #
-      @wlcollections={}       
+      @wlcollections={}
       # Define here some std alias for local peer
       # * @peername
       # * 'localhost'
@@ -541,16 +541,10 @@ In the string: #{line}
       # head
       #
       def local? (wlword)        
-        if wlword.is_a? WLBud::WLCollection
+        if wlword.is_a? WLBud::WLCollection or wlword.is_a? WLBud::WLAtom
           if @localpeername.include?(wlword.peername)
             return true
           else 
-            return false
-          end
-        elsif wlword.is_a? WLBud::WLAtom
-          if @localpeername.include?(wlword.peername)
-            return true
-          else
             return false
           end
         elsif wlword.is_a? WLBud::WLRule
