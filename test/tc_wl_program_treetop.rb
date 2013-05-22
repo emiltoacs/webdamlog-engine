@@ -204,14 +204,26 @@ end
         '11111',
         {:debug => true} )
     end
-    program.original_rules.each_key do |r|      
-      assert_equal 4, r.head.rfields.variables.length
-      assert_equal 5, r.head.rfields.fields.length
-    end
+    assert_equal 2, program.rule_mapping.size
+
+    delegation = "rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);"
+
+    keys = program.rule_mapping.keys
+    assert_equal 1, keys[0]
+    assert_equal delegation, keys[1]
+
+    values = program.rule_mapping.values
+    assert_equal 2, values[0].size
+    assert_kind_of(WLBud::WLRule, values[0].first)
+    assert_equal delegation, values[0][1]
+
+    assert_equal 1, values[1].size
+    assert_kind_of String, values[1].first
+    assert_equal delegation, values[1].first
+
+    assert_equal 4, program.rule_mapping[1].first.head.rfields.variables.length
+    assert_equal 5, program.rule_mapping[1].first.head.rfields.fields.length
   ensure
     File.delete('test_program_2') if File.exists?('test_program_2')
   end
-
-  
-  
 end

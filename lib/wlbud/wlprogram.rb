@@ -28,7 +28,7 @@ module WLBud
   #
   class WLProgram    
     attr_reader :wlcollections, :peername, :wlpeers, :wlfacts
-    attr_accessor :localrules, :nonlocalrules, :delegations, :rewrittenlocal, :original_rules
+    attr_accessor :localrules, :nonlocalrules, :delegations, :rewrittenlocal, :rule_mapping
     
     # The initializer for the WLBud program takes in a filename corresponding to
     # a WebdamLog file (.wl) and parses each line in the file either as a
@@ -62,7 +62,7 @@ module WLBud
       @port.freeze
       # A counter for this program to name rule with a uniq ID
       #
-      @next=0
+      @next=1
       @make_binary_rules=make_binary_rules #Use binary rule format (use Bloom pairs keyword instead of combos).
       my_address = "#{ip}:#{port}"
       # List of the webdamlog relation inserted in that peer
@@ -91,7 +91,7 @@ module WLBud
       # Original rules are stored as key and rewriting of these ones as value in
       # an array
       #
-      @original_rules = Hash.new{ |h,k| h[k]=Set.new }
+      @rule_mapping = Hash.new{ |h,k| h[k]=Array.new }
       # The local rules straightforward to convert into bud (simple syntax
       # translation)
       # === data struct
@@ -247,6 +247,8 @@ In the string: #{line}
         MSG
       else
         result = output.elements.first
+        result.rule_id = rule_id_generator if result.is_a? WLBud::WLRule
+
         if add_to_program
           case result
           when WLBud::WLPeerName
@@ -263,7 +265,7 @@ In the string: #{line}
                 @delegations << result
               end
             else
-              @original_rules[result] << []
+              @rule_mapping[result.rule_id] << result
               if local?(result)
                 @localrules << result
               else
@@ -289,8 +291,8 @@ In the string: #{line}
     # declaration that should be created into bud to store intermediary local
     # results of non-local rules rewritten
     #
-    def rewrite_non_local(rule)
-      raise WLError, "local peername:#{@peername} is not defined yet while rewrite rule:#{rule}" if @peername.nil?
+    def rewrite_non_local(wlrule)
+      raise WLError, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       intermediary_relation_declaration_for_local_peer = nil
       localstack=[]
       nonlocalstack=[]
@@ -299,7 +301,7 @@ In the string: #{line}
       to_delegate=false
 
       # Scan atoms and divide body in local and non-local
-      rule.body.each { |atom|
+      wlrule.body.each { |atom|
         if !to_delegate and local?(atom)
           localstack << atom
         else
@@ -331,17 +333,17 @@ In the string: #{line}
               localbody << "#{atom},"
             end
             localbody.slice!(-1)
-            tmp_name=generate_intermediary_relation_name
-            relation_name="#{tmp_name}"
+            relation_name = generate_intermediary_relation_name(wlrule.rule_id)
             # build the list of attributes for relation declaration (dec_fields)
             # removing the '$' of variable and create attributes names
             dec_fields=''
             var_fields=''
-            local_vars.each_index do |index|
-              local_var=local_vars[index]
-              dec_fields << local_var.gsub( /(^\$)(.*)/ , tmp_name+"_\\2_"+index.to_s+"\*," )
+            local_vars.each_index do |i|
+              local_var=local_vars[i]
+              dec_fields << local_var.gsub( /(^\$)(.*)/ , relation_name+"_\\2_"+i.to_s+"\*," )
               var_fields << local_var << ","
             end ; dec_fields.slice!(-1);var_fields.slice!(-1);
+            
             intermediary_relation_atom_in_rule = "#{relation_name}@#{destination_peer}(#{var_fields})"
             intermediary_relation_declaration_for_remote_peer = "collection inter persistent #{relation_name}@#{destination_peer}(#{dec_fields});"
             intermediary_relation_declaration_for_local_peer = intermediary_relation_declaration_for_remote_peer.gsub("persistent ", "")
@@ -350,19 +352,23 @@ In the string: #{line}
             @new_local_declaration << parse(intermediary_relation_declaration_for_local_peer,true,true)
             @new_relations_to_declare_on_remote_peer[addr_destination_peer] << intermediary_relation_declaration_for_remote_peer
             #Add local rule to the set of rewritten local rules
-            @new_rewritten_local_rule_to_install << parse(local_rule_which_delegate_facts, true, true)
+            @new_rewritten_local_rule_to_install << ru = parse(local_rule_which_delegate_facts, true, true)
+            @rule_mapping[wlrule.rule_id] << ru.rule_id
+            @rule_mapping[ru.rule_id] << ru
             #Create the delegation rule string
             nonlocalbody="" ;
             nonlocalstack.each { |atom| nonlocalbody << "#{atom}," } ; nonlocalbody.slice!(-1)
-            delegation="rule #{rule.head}:-#{intermediary_relation_atom_in_rule},#{nonlocalbody};"
+            delegation="rule #{wlrule.head}:-#{intermediary_relation_atom_in_rule},#{nonlocalbody};"
           elsif localstack.empty? # else if the whole body is non-local, no rewriting are needed just delegate all the rule
-            delegation="#{rule};"
+            delegation="#{wlrule};"
           end
           @new_delegations_to_send[addr_destination_peer] << delegation
+          @rule_mapping[wlrule.rule_id] << delegation
+          @rule_mapping[delegation] << delegation
         elsif nonlocalstack.empty?
           raise WLErrorProgram, "\nLocal rule found in nonlocal rule table. There may have been an error in previous processing"
         else # the last case where only the head is non-local and the body is only local, we can install it as it is
-          @new_rewritten_local_rule_to_install << rule
+          @new_rewritten_local_rule_to_install << wlrule
         end
         return intermediary_relation_declaration_for_local_peer
       end
@@ -680,51 +686,51 @@ In the string: #{line}
       str = "{\n#{bud_rule_str}\n#{io}\n}"
       puts "Delegation Bud : #{str}"
       proc = eval("Proc.new#{str}")
-      name = "__bloom__#{@name}_rule#{wlrule.index}".to_sym
+      name = "__bloom__#{@name}_rule#{wlrule.rule_id}".to_sym
       @WLinstance.rule_init([name,proc])
     end
 =end
 
       # DEPRECATED
       #
-      def make_binary (wlrule)
-        # #r($a,$e,d):-r1($a,$b,coco),r2($b,$c,toto),r3($b,$c,titi)
-        # #tmp($a,$e,d,$b):-:-r1($a,$b,coco),r2($b,$c,toto)
-        # #r($a,$e,d):-tmp($a,$e,d,$b),r3($b,$c,titi)
-        #
-        # #create first temporary relation and transform the rule
-        # #make_dictionnaries(wlrule) unless wlrule.made_dictionnaries
-        rewritten_rules=[];head_str='';body_str=''
-        wlbody = wlrule.body
-        prev_atom_var=wlbody.first.variables[2]
-        join = wlbody.first.text_value
-        wlbody.each_with_index {|atom,i|
-          unless i==0 #do not do anything with the first atom
-
-            # head rewriting
-            if wlbody.last.eql?(atom)
-              head_str<<wlrule.head.text_value
-            else
-              head_str<<"#{generate_intermediary_relation_name}@me("
-              var_in_hd=[]
-              atom.variables[2].each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
-              prev_atom_var.each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
-              prev_atom_var=var_in_hd
-              head_str.slice!(-1)
-              head_str << ')'
-            end
-
-            # body rewriting
-            body_str << "#{join},#{atom.text_value}"
-            rewritten_rules << "{#{head_str}:-#{body_str}};"
-            join=head_str
-            head_str=''
-            body_str=''
-          end
-        }
-        puts rewritten_rules.inspect
-        return rewritten_rules
-      end
+      #      def make_binary (wlrule)
+      #        # #r($a,$e,d):-r1($a,$b,coco),r2($b,$c,toto),r3($b,$c,titi)
+      #        # #tmp($a,$e,d,$b):-:-r1($a,$b,coco),r2($b,$c,toto)
+      #        # #r($a,$e,d):-tmp($a,$e,d,$b),r3($b,$c,titi)
+      #        #
+      #        # #create first temporary relation and transform the rule
+      #        # #make_dictionnaries(wlrule) unless wlrule.made_dictionnaries
+      #        rewritten_rules=[];head_str='';body_str=''
+      #        wlbody = wlrule.body
+      #        prev_atom_var=wlbody.first.variables[2]
+      #        join = wlbody.first.text_value
+      #        wlbody.each_with_index {|atom,i|
+      #          unless i==0 #do not do anything with the first atom
+      #
+      #            # head rewriting
+      #            if wlbody.last.eql?(atom)
+      #              head_str<<wlrule.head.text_value
+      #            else
+      #              head_str<<"#{generate_intermediary_relation_name}@me("
+      #              var_in_hd=[]
+      #              atom.variables[2].each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
+      #              prev_atom_var.each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
+      #              prev_atom_var=var_in_hd
+      #              head_str.slice!(-1)
+      #              head_str << ')'
+      #            end
+      #
+      #            # body rewriting
+      #            body_str << "#{join},#{atom.text_value}"
+      #            rewritten_rules << "{#{head_str}:-#{body_str}};"
+      #            join=head_str
+      #            head_str=''
+      #            body_str=''
+      #          end
+      #        }
+      #        puts rewritten_rules.inspect
+      #        return rewritten_rules
+      #      end
     
     
       # Update nonlocal updates the head_nonlocal. Has to be called each time
@@ -769,34 +775,34 @@ In the string: #{line}
       # === DEPRECATED ====
       # Renaming for self join must be rewrote from scratch
       #
-      def rename_atoms (input)
-        tmp_rels=[];rels=[]
-        if input.is_a?(WLBud::WLRule)
-          wlrule = input
-          wlrule.body.each_with_index {|atom,n|
-            # #Creates temp collections when self-joins are present
-            if !rels.include?(atom.relname) then rels << atom.relname
-            else #we have a self join situation. Create a temporary relation and rename the relation
-              atom.relname(generate_intermediary_relation_name)
-              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
-              tmp_rels << tmp_r
-              wlrule.has_self_join=true
-            end
-          }
-        else
-          body = input
-          body.each_with_index {|atom,n|
-            # #Creates temp collections when selfjoins are present
-            if !rels.include?(atom.relname) then rels << atom.relname
-            else #we have a self join situation. Create a temporary relation and rename the relation
-              atom.relname(generate_intermediary_relation_name)
-              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
-              tmp_rels << tmp_r
-            end
-          }
-        end
-        return tmp_rels
-      end
+      #      def rename_atoms (input)
+      #        tmp_rels=[];rels=[]
+      #        if input.is_a?(WLBud::WLRule)
+      #          wlrule = input
+      #          wlrule.body.each_with_index {|atom,n|
+      #            # #Creates temp collections when self-joins are present
+      #            if !rels.include?(atom.relname) then rels << atom.relname
+      #            else #we have a self join situation. Create a temporary relation and rename the relation
+      #              atom.relname(generate_intermediary_relation_name)
+      #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
+      #              tmp_rels << tmp_r
+      #              wlrule.has_self_join=true
+      #            end
+      #          }
+      #        else
+      #          body = input
+      #          body.each_with_index {|atom,n|
+      #            # #Creates temp collections when selfjoins are present
+      #            if !rels.include?(atom.relname) then rels << atom.relname
+      #            else #we have a self join situation. Create a temporary relation and rename the relation
+      #              atom.relname(generate_intermediary_relation_name)
+      #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
+      #              tmp_rels << tmp_r
+      #            end
+      #          }
+      #        end
+      #        return tmp_rels
+      #      end
 
       # If the name of the atom start with tmp_ or temp_ it is a temporary
       # relation so return true.
@@ -895,12 +901,23 @@ In the string: #{line}
         table.each_with_index {|a,i| if obj.eql?(a) then return i else next end}
       end
     
-      # Generates a temporary name that is guaranteed to be unique. This one is
-      # based in the fact that peername are unique and always have one uniq
-      # program TODO: add more stuff in the name to guarantee uniqueness
+      # Generate a new unique relation name for intermediary relation due to
+      # delegation rewritings.
       #
-      def generate_intermediary_relation_name()
-        return "deleg_#{@next+=1}_from_#{@peername}"
+      # @param [Fixnum] the rule id used in @rule_mapping usually given by
+      # WLRule.rule_id
+      #
+      def generate_intermediary_relation_name(orig_rule_id)
+        return "deleg_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
+      end
+
+      # Simple successor function useful to create id for rules in this WLprogram.
+      #
+      def rule_id_generator
+        while @rule_mapping.has_key? @next
+          @next+=1
+        end
+        return @next
       end
     end
   end
