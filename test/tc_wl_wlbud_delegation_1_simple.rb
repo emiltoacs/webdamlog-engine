@@ -21,7 +21,7 @@ class TcWlDelegation1Simple < Test::Unit::TestCase
   @@first_test=true
   NUMBER_OF_TEST_PG = 2
   TEST_FILENAME_VAR = "test_filename_"
-  CLASS_PEER_NAME = "Peer"
+  CLASS_PEER_NAME = "PeerDelegSimple"
   PREFIX_PORT_NUMBER = "1111"
 
   STR0 = <<EOF
@@ -76,7 +76,7 @@ EOF
   def test_1_simple_delegation
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|
-      wl_peer << eval("@@Peer#{i}.new(
+      wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(
 \'p#{i}\',
 STR#{i},
 @#{TEST_FILENAME_VAR}#{i}, 
