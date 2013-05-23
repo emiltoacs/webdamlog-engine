@@ -26,10 +26,10 @@ if  ARGV.include?("verbose")
   $test_verbose = true
 end
 
-# files = Dir.entries(File.dirname(__FILE__)).select do |file|
-#  file =~ /tc_.*\.rb$/
-# end
-files = Dir.chdir(File.dirname(__FILE__)) { Dir.glob('tc_*\.rb').sort }
+ files = Dir.entries(File.dirname(__FILE__)).select do |file|
+  file =~ /tc_.*\.rb$/
+ end
+#files = Dir.chdir(File.dirname(__FILE__)) { Dir.glob('tc_*\.rb').sort }
 
 if ARGV.include?("ordered")
   require "tc_bud_collection.rb"
@@ -51,11 +51,11 @@ if ARGV.include?("ordered")
 else
   # files.each { |file| puts "require \"#{file}\"" }
   #
-  # files.each { |file| require file }
+  files.each { |file| require file }
 
-  files.each do |file|
-    p file
-    require file
-  end
+#  files.each do |file|
+#    p file
+#    require file
+#  end
 end
 

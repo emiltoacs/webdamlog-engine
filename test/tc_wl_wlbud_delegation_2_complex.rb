@@ -18,7 +18,7 @@ class TcWlDelegation2Complex < Test::Unit::TestCase
   @@first_test=true
   NUMBER_OF_TEST_PG = 4
   TEST_FILENAME_VAR = "test_filename_"
-  CLASS_PEER_NAME = "Peer"
+  CLASS_PEER_NAME = "PeerDelegComplex"
   PREFIX_PORT_NUMBER = "1111"
 
   STR0 = <<EOF
@@ -97,12 +97,12 @@ EOF
   # TODO intensional not supported in non-local check with join collection int
   # join_delegated@p0(atom1*);
   #
-  def test_1
+  def test_1_complex_delegation
     
     p "===START of test_1===" if $test_verbose
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|
-      wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
+      wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
     end
     p "===all wl_peer tick 1 in reverse order===" if $test_verbose
     p " such that p0 is sending its message after everyone has been initialized" if $test_verbose    

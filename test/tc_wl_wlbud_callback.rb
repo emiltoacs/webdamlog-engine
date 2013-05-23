@@ -32,7 +32,7 @@ class TcWlCallback < Test::Unit::TestCase
     end
   end
 
-  class Peer1Local < WLBud::WL
+  class PeerCallback < WLBud::WL
     STR0 = <<EOF
 peer p0=localhost:11111;
 peer p1=localhost:11112;
@@ -55,7 +55,7 @@ EOF
   #
   def test_callback_invoke
     wl_peer_1 = nil
-    assert_nothing_raised {wl_peer_1 = Peer1Local.new('p0', Hash[WLOPTIONS1.each_pair.to_a])}
+    assert_nothing_raised {wl_peer_1 = PeerCallback.new('p0', Hash[WLOPTIONS1.each_pair.to_a])}
     get_public = {}
     get_private = []
     block = lambda do | wlbudinstance, *options |
