@@ -1,11 +1,11 @@
 #  File name tc_wl_wlbud_deletion.rb
 #  Copyright © by INRIA
-# 
+#
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
+#
 #   WebdamLog - Jan 20, 2013
-# 
+#
 #   Encoding - UTF-8
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
@@ -65,18 +65,24 @@ collection ext persistent useless@p1(atom1*);
 end
 EOF
     wl_peer = []
-    (0..NUMBER_OF_TEST_PG-1).each do |i|
+    (0..NUMBER_OF_TEST_PG-1).each do |i|      
       wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', str#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
     end
     # #TODO current finish the test to try the delta according to collection
     # type in bud: use WLBud::schema_init method to force the type of the
-    # collection to create
-    # ...
-    
+    # collection to create ...
+
+  ensure
+    unless wl_peer.nil? or wl_peer.empty?
+      wl_peer.each { |p|
+        p.clear_rule_dir
+        p.stop(true) if EventMachine::reactor_running?          
+      }
+    end
   end
 
   def test_delta_remote
-      str0 = <<EOF
+    str0 = <<EOF
 peer p0=localhost:11110;
 peer p1=localhost:11111;
 collection ext persistent local@p0(atom1*);
@@ -88,7 +94,7 @@ fact local@p0(4);
 rule join_ext@p0($x):- local@p0($x),delegated@p1($x);
 end
 EOF
-  str1 = <<EOF
+    str1 = <<EOF
 peer p0=localhost:11110;
 peer p1=localhost:11111;
 collection ext persistent delegated@p1(atom1*);
@@ -108,5 +114,11 @@ EOF
       p.tick
     end
     assert_equal [["0"], ["3"], ["4"], ["5"], ["6"]], wl_peer[1].delegated_at_p1.to_a.sort
-  end    
+    unless wl_peer.nil? or wl_peer.empty?
+      wl_peer.each { |p|
+        p.clear_rule_dir
+        p.stop(true) if EventMachine::reactor_running?
+      }
+    end
+  end
 end
