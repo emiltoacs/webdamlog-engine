@@ -97,6 +97,7 @@ EOF
     assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
   ensure
     if EventMachine::reactor_running?
+      wl_peer_1.clear_rule_dir
       wl_peer_1.stop(true) # here I also stop EM to be clean      
     end
   end
@@ -137,6 +138,7 @@ EOF
     assert_equal [["3"], ["4"], ["5"]], wl_peer_1.join_at_p1.to_a.sort
   ensure
     if EventMachine::reactor_running?
+      wl_peer_1.clear_rule_dir
       wl_peer_1.stop(true) # here I also stop EM to be clean
     end
   end
@@ -190,6 +192,7 @@ EOF
     assert_equal [["3"], ["4"]], wl_peer_1.join13_at_p1.to_a.sort
   ensure
     if EventMachine::reactor_running?
+      wl_peer_1.clear_rule_dir
       wl_peer_1.stop(true) # here I also stop EM to be clean
     end
   end
@@ -269,6 +272,7 @@ EOF
     
   ensure
     if EventMachine::reactor_running?
+      wl_peer_1.clear_rule_dir
       wl_peer_1.stop(true) # here I also stop EM to be clean
     end
   end

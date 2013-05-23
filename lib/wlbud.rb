@@ -961,7 +961,7 @@ module WLBud
       # === return the name of dir created
       #
       def create_rule_dir(rule_dir)
-        rule_dir ||= "wlrule_#{@peername}_#{Time.now}"
+        rule_dir ||= "wlrdir_#{@peername}_#{Time.now}_#{self.class}_#{@peername.object_id}"
         # rule file to pass to bud parser in the wlrule directory
         base_dir = WL::get_path_to_rule_dir
         unless (File::directory?(base_dir))
