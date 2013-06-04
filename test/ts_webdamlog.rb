@@ -38,6 +38,7 @@ if ARGV.include?("ordered")
   require "tc_project_conf.rb"
   require "tc_tools.rb"
   require "tc_wl_program_treetop.rb"
+  require "tc_wl_runner.rb"
   require "tc_wl_wlbud_async_update.rb"
   require "tc_wl_wlbud_callback.rb"
   require "tc_wl_wlbud_delegation_1_simple.rb"

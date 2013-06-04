@@ -248,10 +248,12 @@ bud.
 
 *** BudVis
 
+see [[*wlbudvis][wlbudvis]] to use it with webdamlog
+
 Generate a graph with the dependance between the collection accroding to
 the rules with the flow of facts.
 
-Diff file betweeen git original and locally mmodified to accept budvis
+Diff file betweeen git original and locally modified to accept budvis
 generation
 #+begin_src
 include CartWorkloads
@@ -311,10 +313,11 @@ lib/bud/graphs.rb in the bud gems.
 
 ** bin directory
 
+*** wlbudvis
 Use wlbudvis instead of the budvis executable from gems to generate
-webdamlog compliante trace graphs. You should run a wl instance with
-options :trace to true then you can execute wlbudvis on the directory
-created under bin usually called DBM_*
+webdamlog trace graphs. You should run a wl instance with options :trace
+to true then you can execute wlbudvis on the directory created under bin
+usually called DBM_*
 
 ** WLBud
 

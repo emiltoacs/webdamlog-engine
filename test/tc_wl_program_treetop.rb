@@ -147,6 +147,57 @@ EOF
       File.delete('test_program_1') if File.exists?('test_program_1')
     end
   end # test_200_program_1
+
+  # EOL comments with # or // or C-style comment on multiple lines /* ... */.
+  # C-style comment should start on a line without a previous  webdamlog command
+  # ie. no ';' could precede a '/*' on the same line
+  def test_comment    
+    prog = <<-EOF
+# comment should start with # // for end of line comment or /* */ for C-style comment
+peer sigmod_peer = localhost:10000;
+// some other comments here
+# comments again
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+peer p3=localhost:11113;
+peer p4=localhost:11114;
+/* some C-style comment
+on multiple lines
+...
+until here */
+collection extensional persistent local@p1(atom1*);
+collection ext local_2@p1(atom1*);
+collection int joindelegated@p1(atom1*);
+collection intermediary relintermed@p1(atom1*);
+collection inter per relintermed_2@p1(atom1*);
+fact local@p1(1);
+fact local@p1(2);
+fact local@p1(3);
+fact local@p1(4);
+rule joindelegated@p1($x):- local@p1($x),
+  delegated@p2($x),
+  delegated@p3($x), 
+  delegated@p4($x);
+end
+    EOF
+    begin
+      File.open('test_program_2',"w"){ |file| file.write prog}
+      program = nil
+      assert_nothing_raised do
+        program = WLBud::WLProgram.new(
+          'the_peername',
+          'test_program_2',
+          'localhost',
+          '11111',
+          {:debug => true} )
+      end
+      assert_equal 5, program.wlcollections.length
+      assert_equal 4, program.wlfacts.length
+      assert_equal 2, program.rule_mapping.size
+    ensure
+      File.delete('test_program_2') if File.exists?('test_program_2')
+    end
+  end # test_comment
 end
 
 
@@ -182,19 +233,20 @@ end
 end
 
 
-# Test variables in rules
+# Test variables in rules and rule rewriting in rule_mapping
+#
 class TcWLVocabulary < Test::Unit::TestCase
-  include MixinTcWlTest
-
-  PROG = <<-EOF
+  include MixinTcWlTest 
+  
+  def test_vocabulary
+    prog = <<-EOF
 peer sigmod_peer = localhost:10000;
 collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
 rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);
 end
-  EOF
-
-  def test_vocabulary
-    File.open('test_program_2',"w"){ |file| file.write PROG}
+    EOF
+  
+    File.open('test_program_2',"w"){ |file| file.write prog}
     program = nil
     assert_nothing_raised do
       program = WLBud::WLProgram.new(
