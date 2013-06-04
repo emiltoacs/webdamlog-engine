@@ -95,7 +95,7 @@ module WLBud
     #
     # ==== Options
     #
-    # * +:dir_rule+ the name of the directory in which the file with the rule
+    # * +:rule_dir+ the name of the directory in which the file with the rule
     #   will be stored.
     # * +:debug+ very verbose debug
     # * +:measure+ put this flag to generate a report with measurement of

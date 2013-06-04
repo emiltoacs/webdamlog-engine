@@ -20,20 +20,34 @@ module WLBud
       ### Root program ###
       #### Each line is either a comment or it describe either a peer a fact a collection or a rule
       rule root
-        comment
-        /
-        ( (fact / collection / rul / peer_dec) (' '/"\n")* ';' (' '/"\n")* )
+        sep instruction:(fact / collection / rul / peer_dec) sep ';' sep <WLVocabulary>
       end
 
-      ### Comment ###
-      rule comment
-        '#' .* <WLComment>
-      end
-
-      ### The generic white break line and white space killer
+      ### Optional separator
       rule sep
-        (' '/"\n")*
+        msep?
       end
+      ### Mandatory separator
+      rule msep
+        (white / comment)+
+      end      
+        rule white
+          [ \t\n\r]+
+        end
+        ### Comment ###
+        rule comment
+          comment_to_eol <WLComment>
+          /
+          comment_c_style <WLComment>
+        end
+        rule comment_to_eol
+          '//' (!"\n" .)+
+          /
+          '#' (!"\n" .)+
+        end
+        rule comment_c_style
+            '/*' (!'*/' . )* '*/'
+        end
 
       ### The generic filter for words ###
       rule word

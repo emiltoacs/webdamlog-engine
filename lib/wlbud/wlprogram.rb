@@ -21,8 +21,9 @@ module WLBud
   # engine:
   # * <tt>--generate_schema</tt> Generates relations names.
   # * <tt>--generate_bootstrap</tt> Generates extensional facts.
-  # * <tt>--translate_rules</tt> Generates webdamlog rules. #A printing function
-  #   (showing information to the screen) is also avaible :
+  # * <tt>--translate_rules</tt> Generates webdamlog rules.
+  #
+  # A printing function (showing information to the screen) is also avaible :
   # * <tt>--print_content</tt> print all rules, facts and relations to the
   #   screen.
   #
@@ -221,6 +222,7 @@ module WLBud
         l=lines[i]
         current << l
         next unless l =~ /;/
+        current << "\n"
         parse(current, add_to_program, false, {:line_nb=>i+1})
         current = "" #reset current line after parsing
       end
@@ -246,7 +248,8 @@ column:#{@parser.failure_column}
 In the string: #{line}
         MSG
       else
-        result = output.elements.first
+        #result = output.elements.first
+        result = output.get_inst
         result.rule_id = rule_id_generator if result.is_a? WLBud::WLRule
 
         if add_to_program

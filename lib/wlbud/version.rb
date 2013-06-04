@@ -5,5 +5,6 @@
 #
 module WLBud
   VERSION = "0.0.1"
+  RUBY_VERSION = "1.9.3"
   BUD_GEM_VERSION = '0.9.5'
 end

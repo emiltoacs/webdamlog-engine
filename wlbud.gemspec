@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.homepage    = "http://webdam.inria.fr/"
   s.summary     = %q{Write a gem summary}
   s.description = %q{Write a gem description}
-  s.required_ruby_version = '>= 1.9.3'
+  s.required_ruby_version = ">= #{WLBud::RUBY_VERSION}"
   s.rubyforge_project = "none"
   s.has_rdoc = 'yard'
 

@@ -5,10 +5,17 @@ module WLBud
   # parsed, a tree of nodes is created, with each node (not only the leaves) are
   # assigned a proper subclass of WLVocabulary.
   #
-  class WLVocabulary < Treetop::Runtime::SyntaxNode    
-    public     
+  class WLVocabulary < Treetop::Runtime::SyntaxNode
+    public
     def to_s
       self.text_value
+    end
+    def get_inst
+      return instruction
+    end
+    # only node including {WLBud::WLComment} in their ancestry are comments
+    def comment?
+      false
     end
   end
   
@@ -521,10 +528,14 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
   
-  class WLComment < WLVocabulary
+  module WLComment
     def show
       puts "--------------------------------------------------------"
-      puts 'I am a comment :) .'
+      puts "comment: #{text_value}"
+    end
+
+    def comment?
+      true
     end
   end
 end
