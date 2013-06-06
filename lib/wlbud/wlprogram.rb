@@ -167,12 +167,13 @@ module WLBud
 
     
     public
-    # REMOVE
-    #    def add_peer(peername,ip,port)
-    #      @peername=peername
-    #      address = "#{ip}:#{port}"
-    #      @wlpeers[@peername]=address
-    #    end
+    
+    def add_peer(peername,ip,port)
+      # TODO add filter to sanitize IP and port
+      @peername=peername
+      address = "#{ip}:#{port}"
+      @wlpeers[@peername]=address
+    end
 
     # The print_content method prints the content of the relations
     # declarations, extensional facts and rules of the program to the screen.
@@ -188,7 +189,7 @@ module WLBud
     end
     
     # Returns true if no rules are loaded for evaluation.
-    def rules_empty? ; return @localrules.empty?; end
+    def rules_empty? ; return @rule_mapping.empty?; end
 
     # Returns true if no facts are loaded for evaluation.
     def facts_empty? ; return @wlfacts.empty?; end
@@ -574,6 +575,14 @@ In the string: #{line}
           raise WLErrorProgram,
             "Try to determine if #{wlword} is local but it has wrong type #{wlword.class}"
         end
+      end
+
+      # return true if wlcollection is sound compared to current program already
+      # running otherwise return false with error message
+      def valid_collection? wlcollection
+        return false, "" unless wlcollection.is_a? WLBud::WLCollection
+        return false, "peername #{wlcollection.peername} should have been declared before" unless @wlpeers[wlcollection.peername]
+        return true, "collection valid"
       end
 
       private

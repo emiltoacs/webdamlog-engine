@@ -125,17 +125,22 @@ module WLBud
         return WLPacketData.new(packet[0], packet[1], packet[2])
       end
 
-      
-      def valid_fact_struct hash
+      # Valid fact structure is Hash with relation name as key and array of
+      # tuple as value.
+      def valid_hash_of_facts hash
         if hash.is_a? Hash
-          return true if hash.empty?
-          hash.each_value { |v|
-            return false unless v.is_a? Array
+          return true, "valid empty hash" if hash.empty?
+          hash.each_pair { |k,v|
+            return false, "keys in the hash should be String" unless k.is_a? String
+            return false, "values in the hash should be Array" unless v.is_a? Array
           }
-        end
-        return true
+          return true, "valid hash of facts to insert"
+        else
+          return false, "try to test a hash of fact that is not a hash"
+        end        
       end
-    end
+      
+    end # end self
 
     def serialize_for_channel
       return [@peer_name.to_s,@srcTimeStamp.to_s,get_data]
