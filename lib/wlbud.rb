@@ -326,7 +326,7 @@ module WLBud
           inter_time = end_time
         end
         if @options[:wl_test]
-          # callback insertion of callback_step_received_on_chan MArshalling is
+          # callback insertion of callback_step_received_on_chan Marshalling is
           # used to deep duplicate the object
           @test_received_on_chan = Marshal.load(Marshal.dump(read_packet_channel))
           @wl_callback.each_value do |callback|
@@ -351,14 +351,17 @@ module WLBud
           packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?
           add_facts(packet_value.facts) unless packet_value.facts.nil?
         end
-        # if @collection_added then call_state_methods ; @collection_added=false
-        # end # useless could be removed
+        
         if @need_rewrite_strata
           rewrite_strata
           @done_wiring=false
           puts "do_wiring at tick #{budtime}" if @options[:debug]
           do_wiring
           @viz = VizOnline.new(self) if @options[:trace]
+          @need_rewrite_strata=false
+        elsif @collection_added # only if collections have been added and do_wiring has not been called because no new rules appeared
+          update_app_tables
+          @collection_added = false
         end
         if @options[:mesure]
           end_time = Time.now
@@ -402,8 +405,7 @@ module WLBud
           end
         end
         
-        # ### WLBud:Begin adding to Bud
-        @need_rewrite_strata=false
+        # ### WLBud:Begin adding to Bud        
         #
         # #part 2: logic
         #
@@ -590,6 +592,26 @@ module WLBud
       end
     end
 
+    # WLBud:Begin alternative to Bud this is the preamble to do_wiring which
+    # prepare active tables in the application to be used in fixpoint
+    def update_app_tables
+      # Prepare list of tables that will be actively used at run time. First,
+      # all the user-defined tables and lattices.  We start @app_tables off as a
+      # set, then convert to an array later.
+      @app_tables = (@tables.keys - @builtin_tables.keys).map {|t| @tables[t]}.to_set
+      @app_tables.merge(@lattices.values)
+
+      # Check scan and merge_targets to see if any builtin_tables need to be
+      # added as well.
+      @scanners.each do |scs|
+        @app_tables.merge(scs.values.map {|s| s.collection})
+      end
+      @merge_targets.each do |mts| #mts == merge_targets at stratum
+        @app_tables.merge(mts)
+      end
+      @app_tables = @app_tables.to_a
+    end
+
     # This method will translate one wlrule in parameter into Bud rule format
     # and make bud evaluate it as method of its class. It return the name of the
     # block created that is the name of the rule in bud.
@@ -731,16 +753,16 @@ module WLBud
     #
     def add_collection(wlpg_relation)
       if wlpg_relation.is_a?(WLBud::WLCollection)
-        collection=wlpg_relation
+        collection = wlpg_relation
       else
         collection = @wl_program.parse(wlpg_relation, true)
       end
       raise WLErrorProgram, "parse relation and get #{collection.class}" unless collection.is_a?(WLBud::WLCollection)
-      valid, msg = @wl_program.valid_collection? wlpg_relation
+      valid, msg = @wl_program.valid_collection? collection
       raise WLErrorProgram, msg unless valid
-      puts "Adding a collection #{wlpg_relation}" if @options[:debug]
+      puts "Adding a collection: \n #{collection.show}" if @options[:debug]
       self.schema_init(collection)
-      @collection_added=true
+      @collection_added = true
     end
 
     # Takes in a string representing a WLRule, parses it and adds it directly
@@ -879,7 +901,7 @@ module WLBud
             end
           end
         end
-      end
+      end # end facts.each_pair
       return valid, err
     end # end insert_updates
 

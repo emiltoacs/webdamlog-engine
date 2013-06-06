@@ -135,13 +135,18 @@ EOF
       ]
     ]
     wl_peer_1.tick
-    # p "inserting into from chan into scratch is useless"
+    
     assert_kind_of Bud::BudScratch, wl_peer_1.newscratchrel_at_p1
-    assert_equal 0, wl_peer_1.newscratchrel_at_p1.length
-    assert_equal [], wl_peer_1.newscratchrel_at_p1.to_a.sort
+    assert_equal 2, wl_peer_1.newscratchrel_at_p1.length
+    assert_equal [["2"],["3"]], wl_peer_1.newscratchrel_at_p1.to_a.sort, "insert in chan via chan is now ok"
 
+    assert_equal 5, wl_peer_1.join_at_p1.length
+    assert_equal [["2"], ["3"], ["4"], ["5"], ["6"]], wl_peer_1.join_at_p1.to_a.sort
+
+    wl_peer_1.tick
     assert_equal 4, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"], ["5"], ["6"]], wl_peer_1.join_at_p1.to_a.sort
+    
   ensure
     if EventMachine::reactor_running?
       wl_peer_1.clear_rule_dir

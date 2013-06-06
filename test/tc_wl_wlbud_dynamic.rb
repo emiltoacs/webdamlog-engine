@@ -37,12 +37,14 @@ end
     ObjectSpace.garbage_collect
   end
 
+  class KlassAddFacts < WLBud::WL; end;
+
   # Test add_facts in {WLBud::WL}
   def test_add_facts
     begin
-      wl_obj = nil
+      wl_obj = nil      
       assert_nothing_raised do
-        wl_obj = WLBud::WL.new(@username, @pg_file, {:port => @port})
+        wl_obj = KlassAddFacts.new(@username, @pg_file, {:port => @port})
       end
       wl_obj.run_bg
       assert_not_nil wl_obj.tables[:local_at_test_create_user]
