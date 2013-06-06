@@ -33,5 +33,9 @@ module WLBud
   #Error thrown when a callback method failed at invocation
   class WLErrorCallback < WLError
   end
+
+  # Thrown by the wrapper WLRunner
+  class WLErrorRunner < WLError
+  end
   
 end

@@ -291,6 +291,14 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
       return @fields
     end
+
+    # Number of fields for this relation
+    def arity
+      if @arity.nil?
+        @arity = self.col_fields.keys.elements.size + self.col_fields.values.elements.size
+      end
+      return @arity
+    end
     
     # This method gives the name of the relation.
     def relname

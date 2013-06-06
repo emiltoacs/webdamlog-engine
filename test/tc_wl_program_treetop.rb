@@ -30,17 +30,19 @@ class TcWlProgramTreetop < Test::Unit::TestCase
     assert_match(/[^\$][a-zA-Z0-9!?][a-zA-Z0-9!?_]*/, "this_is")
   end
 
-  # Test creation of empty WLProgram
-  def test_020_string_1
+  # Test creation of empty WLProgram with just relation declaration
+  def test_020_empty_program
     program = nil
     File.open('test_string_1',"w"){ |file| file.write "collection ext persistent local@p1(atom1*);"}
     assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_1', 'localhost', '11111', {:debug => true})}
     assert_not_nil program
+    assert_equal 1, program.wlcollections.size
+    assert_equal "local_at_p1", program.wlcollections.first[0]
+    assert_equal 1, program.wlcollections.first[1].arity
     File.delete('test_string_1')
   end
 
   # word accept _ only in the middle of a name
-  #
   def test_030_string_word
     program = nil
     File.open('test_string_word',"w"){ |file| file.write "collection ext persistent local_1@p1(atom1*);"}
@@ -52,7 +54,7 @@ class TcWlProgramTreetop < Test::Unit::TestCase
 
   # Test if the collection type is well interpreted
   #
-  def test_040_string_rel_type
+  def test_040_string_relation_type
     program = nil
     begin
       File.open('test_string_rel_type',"w"){ |file| file.write "collection ext persistent local_1@p1(atom1*);"}
@@ -204,19 +206,19 @@ end
 
 # Put here some sample test program that must be correct syntactically
 class TcParseProgram < Test::Unit::TestCase
-  include MixinTcWlTest
+  include MixinTcWlTest  
 
-  PROG = <<-EOF
+  # Check collection declaration syntax
+  def test_sample_program
+    prog = <<-EOF
 peer sigmod_peer = localhost:10000;
-collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
+collection ext persistent contact@local(username*,    peerlocation*
+, online*,email*, facebook*);
 fact contact@local(sigmod_peer, localhost:10000, false, none, none);
 end
   EOF
-
-  # Use to check the bootstrap program launched by the wepic app
-  def test_sample_program
     begin
-      File.open('test_program_2',"w"){ |file| file.write PROG}
+      File.open('test_program_2',"w"){ |file| file.write prog}
       program = nil
       assert_nothing_raised do
         program = WLBud::WLProgram.new(
@@ -226,6 +228,7 @@ end
           '11111',
           {:debug => true} )
       end
+      assert_equal 5, program.wlcollections.first[1].arity
     ensure
       File.delete('test_program_2') if File.exists?('test_program_2')
     end
@@ -235,10 +238,10 @@ end
 
 # Test variables in rules and rule rewriting in rule_mapping
 #
-class TcWLVocabulary < Test::Unit::TestCase
+class TcRulesWLVocabulary < Test::Unit::TestCase
   include MixinTcWlTest 
   
-  def test_vocabulary
+  def test_vocabulary_rules
     prog = <<-EOF
 peer sigmod_peer = localhost:10000;
 collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
