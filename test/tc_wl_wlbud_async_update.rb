@@ -60,8 +60,9 @@ EOF
                   "facts"=>{"new_rel_at_p0"=>[["1"], ["2"], ["3"], ["4"]]},
                   "declarations"=>["collection ext persistent new_rel@p0(attr1*);"]
                 }]]
-          end
+          end                                         
           assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_rel should have been created")
+          #wl_peer.each { |p| p.tick}
           assert_equal [["1"], ["2"], ["3"], ["4"]], p.new_rel_at_p0.to_a.sort
         end
       end
@@ -93,6 +94,7 @@ EOF
           end
           assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_real should have been created")
           assert(p.tables.has_key?("join_at_p0".to_sym), "join should have been created")
+          assert_equal [["3"], ["4"], ["5"], ["6"]], p.new_rel_at_p0.to_a.sort
           assert_equal [["3"], ["4"]], p.join_at_p0.to_a.sort
         end
       end

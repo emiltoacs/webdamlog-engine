@@ -44,6 +44,7 @@ if ARGV.include?("ordered")
   require "tc_wl_wlbud_delegation_1_simple.rb"
   require "tc_wl_wlbud_delegation_2_complex.rb"
   require "tc_wl_wlbud_deletion.rb"
+  require "tc_wl_wlbud_dynamic.rb"
   require "tc_wl_wlbud_local_1_evaluation.rb"
   require "tc_wl_wlbud_local_2_add_source_relation.rb"
   require "tc_wl_wlbud_misc.rb"

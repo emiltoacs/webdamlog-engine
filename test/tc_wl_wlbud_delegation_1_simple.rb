@@ -223,8 +223,12 @@ Hash[@tcoption#{i}.each_pair.to_a])")
         "srcTimeStamp"=>1},
       WLTools::SerializeObjState.obj_to_hash(wl_peer[0].test_received_on_chan.first))
 
-    assert_equal 0, wl_peer[0].join_delegated_at_p0.length, "there is no facts in the join since it is a scratch hence all facts written by a chan a erased at the beginning of eval"
-    assert_equal [], wl_peer[0].join_delegated_at_p0.to_a.sort, "delegated_at_p1 has not the expected content"
+    assert_equal 2, wl_peer[0].join_delegated_at_p0.length, "there is facts in the join although it is a scratch, all facts written by a chan are present at this tick"
+    assert_equal [["3"], ["4"]], wl_peer[0].join_delegated_at_p0.to_a.sort, "delegated_at_p1 has not the expected content"
+
+    wl_peer[0].tick;
+    assert_equal 0, wl_peer[0].join_delegated_at_p0.length, "facts in the scratch inserted via channel has disappear since they have not been rederivated"
+    assert_equal [], wl_peer[0].join_delegated_at_p0.to_a.sort, "join is anew empty"
   
     # TODO: change last and finish here (last is scratch without external updates)
     
