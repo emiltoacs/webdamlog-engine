@@ -157,7 +157,7 @@ module WLBud
     #
     def rule_id= int
       @rule_id = int
-      #@rule_id.freeze
+      # #@rule_id.freeze
     end
 
     def rule_id
@@ -256,13 +256,19 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       if @schema.nil?
         keys = [];
         values=[];
-        self.col_fields.keys.text_value.split(',').each {|s| keys << s.split('*').first.to_sym}
-        self.col_fields.values.text_value.split(',').each {|s| values << s.to_sym}
+        self.col_fields.keys.text_value.split(',').each do |s|
+          key = s.split('*').first.strip.to_sym
+          keys << key unless key.empty?
+        end
+        self.col_fields.values.text_value.split(',').each do |s|
+          val = s.strip.to_sym
+          values << val unless val.empty?
+        end
         h = {keys => values}
         @schema=h
-      end
+      end # if @schema.nil?
       return @schema
-    end
+    end # schema
 
     # Return the relation type
     def get_type

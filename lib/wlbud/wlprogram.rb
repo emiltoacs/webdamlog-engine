@@ -164,15 +164,15 @@ module WLBud
         rewrite_non_local rule
       end
     end
-
     
     public
     
     def add_peer(peername,ip,port)
       # TODO add filter to sanitize IP and port
-      @peername=peername
+      peername=peername
       address = "#{ip}:#{port}"
-      @wlpeers[@peername]=address
+      @wlpeers[peername]=address
+      return peername, address
     end
 
     # The print_content method prints the content of the relations

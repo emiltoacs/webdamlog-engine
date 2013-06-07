@@ -4,6 +4,7 @@ require_relative '../lib/webdamlog_runner'
 
 require 'test/unit'
 
+# test create and run in {WLRunner}
 class TcWlRunner < Test::Unit::TestCase
   include MixinTcWlTest
 
@@ -35,8 +36,8 @@ end
     ObjectSpace.garbage_collect
   end
 
-  def test_create    
-    begin      
+  def test_create
+    begin     
       wl_obj = nil
       assert_nothing_raised do
         wl_obj = WLRunner.create(@username, @pg_file, @port)
@@ -76,12 +77,11 @@ end
         wl_obj.wl_program.rule_mapping["rule join_delegated@p0($x):-deleg_from_test_create_user_1_1@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"]
 
     ensure
+      wl_obj.stop
       File.delete(@pg_file) if File.exists?(@pg_file)
     end
   end # test_create
 
-
-  
   def test_run
     begin
       runner = WLRunner.create(@username, @pg_file, @port)
@@ -91,10 +91,79 @@ end
       assert_not_nil runner.tables[:local2_at_test_create_user]
       assert_equal 4, runner.tables[:local2_at_test_create_user].to_a.size
     ensure
+      runner.stop
       File.delete(@pg_file) if File.exists?(@pg_file)
     end
-  end # test_run
+  end # test_run  
+end # class TcWlRunner
 
-  
+# test update_add_collection in {WLRunner}
+class TcWlAddCollection < Test::Unit::TestCase
+  include MixinTcWlTest
 
+  def  setup
+    @pg = <<-EOF
+peer test_create_user=localhost:11110;
+collection ext persistent local@test_create_user(atom1*);
+collection int local2@test_create_user(atom1*);
+fact local@test_create_user(1);
+fact local@test_create_user(2);
+rule local2@test_create_user($x) :- local@test_create_user($x);
 end
+    EOF
+    @username = "test_create_user"
+    @port = "11110"
+    @pg_file = "test_create_user_program"
+    File.open(@pg_file,"w"){ |file| file.write @pg }
+  end
+
+  def teardown
+    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    ObjectSpace.garbage_collect
+  end
+
+  class KlassAddCollection < WLBud::WL; end;
+
+  # Test add_collection in {WLBud::WL}
+  def test_add_collection
+    begin
+      runner = nil
+      assert_nothing_raised do
+        runner = WLRunner.create(@username, @pg_file, @port)
+      end
+      runner.tick
+      assert_not_nil runner.tables[:local_at_test_create_user]
+      assert_equal 2, runner.tables[:local_at_test_create_user].to_a.size
+      name, schema = nil, nil
+      # #assert_nothing_raised do
+      name, schema = runner.update_add_collection("collection ext persistent added@test_create_user(field1*, field2*, field3);")
+      # #end
+      assert_not_nil name
+      assert_not_nil schema
+      assert_equal "added_at_test_create_user", name
+      assert_equal({[:field1, :field2]=>[:field3]}, schema)
+
+      #      assert_equal 1, valid.size
+      #      assert_equal({"local_at_test_create_user"=>[["5"]]}, valid)
+      #      assert_equal 0, err.size
+      #      assert_equal({}, err)
+      #      wl_obj.tick
+      #      assert_equal 5, wl_obj.tables[:local_at_test_create_user].to_a.size
+      #
+      #      valid, err = wl_obj.add_facts({ "local_at_test_create_user" => [["5", "6"], "", ["6"]] })
+      #      assert_equal 1, valid.size
+      #      assert_equal({"local_at_test_create_user"=>[["6"]]}, valid)
+      #      assert_equal 2, err.size
+      #      assert_equal(
+      #        {["local_at_test_create_user", ["5", "6"]]=>
+      #            "fact of arity 2 in relation local_at_test_create_user of arity 1",
+      #          ["local_at_test_create_user", ""]=>
+      #            "fact of arity 0 in relation local_at_test_create_user of arity 1"}, err)
+      #      wl_obj.tick
+      #      assert_equal 6, wl_obj.tables[:local_at_test_create_user].to_a.size
+
+    ensure
+      File.delete(@pg_file) if File.exists?(@pg_file)
+    end
+  end
+end # class TcWlAddCollection 

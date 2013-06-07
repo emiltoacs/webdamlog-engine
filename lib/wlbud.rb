@@ -687,35 +687,35 @@ module WLBud
     # WLCollection @param args optional args if colltype is a channel then args
     # could be "loopback"
     #
-    # TODO refine the declaration according to type
-    #
     def schema_init(wlcollection, colltype=nil, *args)
-      if colltype.nil?
-        if wlcollection.persistent? then
-          self.table(wlcollection.atom_name.to_sym,wlcollection.schema)
+      name = wlcollection.atom_name.to_sym
+      if colltype.nil?        
+        if wlcollection.persistent?          
+          self.table(name,wlcollection.schema)          
         else
           self.scratch(wlcollection.atom_name.to_sym,wlcollection.schema)
-        end
+        end        
       else
         # Force the type of the collection to declare (non-conventional policy
         # for test)
         if colltype=="table"
-          self.table(wlcollection.atom_name.to_sym,wlcollection.schema)
+          self.table(name,wlcollection.schema)
         else if colltype=="scratch"
-            self.scratch(wlcollection.atom_name.to_sym,wlcollection.schema)
+            self.scratch(name,wlcollection.schema)
           else if colltype=="channel"
               if args.first=="loopback"
-                self.channel(wlcollection.atom_name.to_sym,wlcollection.schema,true)
+                self.channel(name,wlcollection.schema,true)
               else
-                self.channel(wlcollection.atom_name.to_sym,wlcollection.schema)
+                self.channel(name,wlcollection.schema)
               end
             else
               raise WLError, "trying to force the type of a collection to a non-supported format"
             end
           end
         end
-      end
-    end
+      end # if colltype.nil? 
+      return @tables[name].tabname, @tables[name].schema
+    end # schema_init
     
     # Adds dynamically facts
     #
@@ -750,6 +750,7 @@ module WLBud
     #
     # * +wlpg_relation+ is a string representing the rule in the wlprogram file
     #   format(wlgrammar).
+    # @return [String, Hash] name, schema of the collection added
     #
     def add_collection(wlpg_relation)
       if wlpg_relation.is_a?(WLBud::WLCollection)
@@ -761,8 +762,9 @@ module WLBud
       valid, msg = @wl_program.valid_collection? collection
       raise WLErrorProgram, msg unless valid
       puts "Adding a collection: \n #{collection.show}" if @options[:debug]
-      self.schema_init(collection)
+      name, schema = self.schema_init(collection)
       @collection_added = true
+      return name.to_s, schema
     end
 
     # Takes in a string representing a WLRule, parses it and adds it directly

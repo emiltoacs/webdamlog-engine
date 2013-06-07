@@ -21,55 +21,61 @@ module WLRunner
 
   def delete
     self.stop if self.running_async
-    WLEnginePool.delete self
+    WLEnginePool.delete self.class
   end
 
   def run_engine
     run_bg
   end
 
-  def add_peer peername, ip, port
-    self.wl_program.add_peer peername, ip, port
+  # @return [String, String] peername, address as added in webdamlog
+  def update_add_peer peername, ip, port
+    return self.wl_program.add_peer peername, ip, port
   end
 
   # add collection with declaration as a string or WLRule object
-  def add_collection wl_relation
+  def update_add_collection wl_relation
     self.add_collection(wl_relation)
   end
 
   # add new facts with declarations Hash, WLFacts or String representing a
   # webdamlog facts in a program
-  def add_fact facts
+  def update_add_fact facts
     self.add_facts facts
   end
 
-  def add_rule
-    
+  # TODO doc and customize return value
+  def update_add_rule rule
+    self.add_rule rule
   end
 
   private
 
   class WLEnginePool
     class << self
+
+      attr_reader :engines
+
+      # Create the new class to instantiate to be a webdamlog engine
       def create username, port
         @engines ||= {}
-        ano_klass = Class.new WLBud::WL        
-        klass = Object.const_set(create_new_class_name(username, port), ano_klass)
-        @engines[klass.object_id] = klass
+        ano_klass = Class.new WLBud::WL
+        klass_name = create_new_class_name(username, port)
+        klass = Object.const_set(klass_name, ano_klass)
+        @engines[klass.object_id] = [klass_name, klass]
         return klass
       end
       
       # Remove WLRunner from the pool
       def delete obj
-        raise(WLBud::WLErrorRunner, "try to delete from the pool of engine an object that is not a webdamlog engine") unless obj.is_a? WLRunner
-        obj.stop if obj.running_async
-        const = @engines[obj.object_id]
+        raise(WLBud::WLErrorRunner, "try to delete from the pool the class of an engine which is not a Class object type") unless obj.is_a? Class
+        klass_name, klass = @engines[obj.object_id]
         @engines.delete(obj.object_id)
-        Object.remove_const const.to_sym unless const.nil? or !Object.const_defined?(const.to_sym)
+        Object.send(:remove_const, klass_name) unless klass_name.nil? or !Object.const_defined?(klass_name)
       end
 
       def create_new_class_name username, port
-        return "ClassWLEngineOf#{username}On#{port}".split('_').collect!{ |w| w.capitalize }.join
+        return "ClassWLEngineOf#{username}On#{port}".split('_').collect!{ |w| w.capitalize }.join.to_sym
       end
     end
   end # end class WLEnginePool
