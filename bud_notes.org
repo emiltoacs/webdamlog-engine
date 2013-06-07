@@ -78,6 +78,9 @@ collection type via the keywords (table, scratch, interface, ...) in bud
 DSL. A state block is usually used to embed bloom collection
 declarations but I prefer to use the methods in state.rb
 
+Bloom blocks are described in monkey patch which call for each block the
+right methods according to keywords of the bloom DSL.
+
 *** Collection
 
 **** Internal Hashes for collection

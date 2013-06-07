@@ -132,27 +132,30 @@ module WLBud
         rule relation_name
           ( '_' / word )
         end
+
         #### fields ####
         rule fields
            items / [ ]* <WLFields>
         end
+        #### fields for collection declaration ####
         rule col_fields
           keys values / [ ]* <WLFields>
         end
-        # value+ for key fields in relations
-        rule keys
-          ( key sep )+
-        end
-        #value* for non-key fields in relations
-        rule values
-          ( value sep )*
-        end
-        rule key
-          item '*' sep ',' / item '*'
-        end
-        rule value
-          item ',' / item
-        end
+            # value+ for key fields in relations
+            rule keys
+              ( key sep )+
+            end
+            #value* for non-key fields in relations
+            rule values
+              ( value sep )*
+            end
+                rule key
+                  item '*' sep ',' / item '*'
+                end
+                rule value
+                  item (!'*') sep ',' / item (!'*')
+                end
+
         rule items
             first_item:item list_items:( sep ',' sep other_item:item )* {
                 def get_items
@@ -167,9 +170,6 @@ module WLBud
         rule item
           ( word / ('"' (word / ' ')* '"') / '_' ) <WLItem>
         end
-        #rule items
-        #  item ','
-        #end
             
       ### for rules ###
         #### atom in rules ####
