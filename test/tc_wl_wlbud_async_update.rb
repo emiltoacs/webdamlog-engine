@@ -12,7 +12,7 @@ class TcWlbudAsyncUpdate < Test::Unit::TestCase
   @@first_test=true
   NUMBER_OF_TEST_PG = 1
   TEST_FILENAME_VAR = "test_filename_"
-  CLASS_PEER_NAME = "Peer"
+  CLASS_PEER_NAME = "PeerAsyncUpdate"
   PREFIX_PORT_NUMBER = "1111"
 
   STR0 = <<EOF
@@ -50,7 +50,7 @@ EOF
     begin
       wl_peer = []
       (0..NUMBER_OF_TEST_PG-1).each do |i|
-        wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
+        wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
         wl_peer.each { |p| p.run_bg }
         wl_peer.each do |p|
           p.sync_do do
@@ -80,7 +80,7 @@ EOF
     begin
       wl_peer = []
       (0..NUMBER_OF_TEST_PG-1).each do |i|
-        wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
+        wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
         wl_peer.each { |p| p.run_bg }
         wl_peer.each do |p|
           p.sync_do do

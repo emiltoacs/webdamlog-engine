@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 #  File name ts_webdamlog.rb
 #  Copyright © by INRIA
@@ -19,10 +20,12 @@ require 'header_test'
 
 # This flag $quick-mode could be use to skip the most expensive time test file
 if  ARGV.include?("quick")
+  ARGV.delete("quick")
   $quick_mode = true
 end
 
 if  ARGV.include?("verbose")
+  ARGV.delete("verbose")
   $test_verbose = true
 end
 
@@ -31,14 +34,16 @@ end
  end
 #files = Dir.chdir(File.dirname(__FILE__)) { Dir.glob('tc_*\.rb').sort }
 
+# Invoke with ./ts_webdamlog.rb ordered
 if ARGV.include?("ordered")
+  ARGV.delete("ordered")
   require "tc_bud_collection.rb"
   require "tc_bud_delete_fact.rb"
   require "tc_meta_test.rb"
   require "tc_project_conf.rb"
   require "tc_tools.rb"
   require "tc_wl_program_treetop.rb"
-  require "tc_wl_runner.rb"
+  #require "tc_wl_runner.rb"
   require "tc_wl_wlbud_async_update.rb"
   require "tc_wl_wlbud_callback.rb"
   require "tc_wl_wlbud_delegation_1_simple.rb"
@@ -53,11 +58,8 @@ if ARGV.include?("ordered")
 else
   # files.each { |file| puts "require \"#{file}\"" }
   #
+#  int = 0
+#  files.each { |file| p "#{int+=1} #{file}"; require file }
   files.each { |file| require file }
-
-#  files.each do |file|
-#    p file
-#    require file
-#  end
 end
 

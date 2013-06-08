@@ -71,7 +71,7 @@ module WLRunner
         raise(WLBud::WLErrorRunner, "try to delete from the pool the class of an engine which is not a Class object type") unless obj.is_a? Class
         klass_name, klass = @engines[obj.object_id]
         @engines.delete(obj.object_id)
-        Object.send(:remove_const, klass_name) unless klass_name.nil? or !Object.const_defined?(klass_name)
+        #Object.send(:remove_const, klass_name) unless klass_name.nil? or !Object.const_defined?(klass_name)
       end
 
       def create_new_class_name username, port
