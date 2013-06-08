@@ -20,7 +20,7 @@ class TcWlBudSendPacket < Test::Unit::TestCase
   @@first_test=true
   NUMBER_OF_TEST_PG = 2
   TEST_FILENAME_VAR = "test_filename_"
-  CLASS_PEER_NAME = "Peer"
+  CLASS_PEER_NAME = "PeerSendPacket"
   PREFIX_PORT_NUMBER = "1111"
 
   def setup
@@ -63,7 +63,7 @@ fact local2@p0(4,24);
 fact local2@p0(5,25);
 fact local2@p0(6,26);
 fact local2@p0(7,27);
-rule join@p0($x):- local@p0($x,_),local2@p0($x,_);
+rule join@p0($x):- local@p0($x,$_),local2@p0($x,$_);
 rule join@p1($x,$y):- local@p0($x,$y),local2@p0($x,$y);
 end
 EOF
@@ -87,7 +87,7 @@ EOF
     wl_peer = []
     (0..1).each do |i|
       assert_nothing_raised do
-        wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
+        wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
       end
     end
     

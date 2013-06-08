@@ -51,7 +51,7 @@ module WLBud
 
       ### The generic filter for words ###
       rule word
-        char_in_word+ ('_'* char_in_word+)*
+        '_'* char_in_word ( char_in_word / '_')*
       end
       rule char_in_word
         [a-zA-Z0-9!?:]
@@ -130,7 +130,7 @@ module WLBud
       ### for fact ###
         #### relation name ####
         rule relation_name
-          ( '_' / word )
+          word
         end
 
         #### fields ####
@@ -168,7 +168,7 @@ module WLBud
              }
         end
         rule item
-          ( word / ('"' (word / ' ')* '"') / '_' ) <WLItem>
+          ( word / ('"' (word / ' ')* '"') ) <WLItem>
         end
             
       ### for rules ###
@@ -204,9 +204,9 @@ module WLBud
               (variable / item) <WLRToken>
             end
             rule variable
-              '$' char_in_word+ <WLVar>
+              '$' word <WLVar>
               /
-              '_' <WLVar>
+              '$_' <WLVar>
             end
 
    end # grammar WebdamLogGrammar

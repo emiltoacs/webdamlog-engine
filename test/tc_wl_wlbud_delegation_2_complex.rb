@@ -18,7 +18,7 @@ class TcWlDelegation2Complex < Test::Unit::TestCase
   @@first_test=true
   NUMBER_OF_TEST_PG = 4
   TEST_FILENAME_VAR = "test_filename_"
-  CLASS_PEER_NAME = "PeerDelegComplex"
+  CLASS_PEER_NAME = "PeerDeleg2Complex"
   PREFIX_PORT_NUMBER = "1111"
 
   STR0 = <<EOF

@@ -48,7 +48,7 @@ class TcWlProgramTreetop < Test::Unit::TestCase
     File.open('test_string_word',"w"){ |file| file.write "collection ext persistent local_1@p1(atom1*);"}
     assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_word', 'localhost', '11111', {:debug => true})}
     File.open('test_string_word',"w"){ |file| file.write "collection ext persistent local_1_@p1(atom1*);"}
-    assert_raise(WLBud::WLErrorGrammarParsing){program = WLBud::WLProgram.new('the_peername', 'test_string_word', 'localhost', '11111', {:debug => true}) }
+    assert_nothing_raised(WLBud::WLErrorGrammarParsing){program = WLBud::WLProgram.new('the_peername', 'test_string_word', 'localhost', '11111', {:debug => true}) }
     File.delete('test_string_word')
   end
 

@@ -13,13 +13,13 @@ require 'header_test'
 # TODO Test the deletion of facts according ot the type of relations in which it
 # spreads
 #
-class TcWlWlbudDeletion < Test::Unit::TestCase
+class TcWlWlBudDeletion < Test::Unit::TestCase
   include MixinTcWlTest
 
   @@first_test=true
   NUMBER_OF_TEST_PG = 2
   TEST_FILENAME_VAR = "test_filename_"
-  CLASS_PEER_NAME = "Peer"
+  CLASS_PEER_NAME = "PeerBudDeletion"
   PREFIX_PORT_NUMBER = "1111"
 
   def setup
@@ -66,7 +66,7 @@ end
 EOF
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|      
-      wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', str#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
+      wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', str#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
     end
     # #TODO current finish the test to try the delta according to collection
     # type in bud: use WLBud::schema_init method to force the type of the
@@ -107,7 +107,7 @@ end
 EOF
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|
-      wl_peer << eval("@@Peer#{i}.new(\'p#{i}\', str#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
+      wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', str#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
     end
 
     wl_peer.reverse_each do |p|
