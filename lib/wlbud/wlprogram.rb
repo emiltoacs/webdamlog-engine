@@ -10,7 +10,6 @@
 #
 #   Encoding - UTF-8
 # ####License####
-
 module WLBud
  
   # :title: WLProgram WLProgram is a class that parses and interprets WebdamLog

@@ -1,5 +1,4 @@
-#!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
+# #!/usr/bin/env ruby -*- coding: utf-8 -*-
 #  File name ts_webdamlog.rb
 #  Copyright © by INRIA
 #
@@ -29,10 +28,10 @@ if  ARGV.include?("verbose")
   $test_verbose = true
 end
 
- files = Dir.entries(File.dirname(__FILE__)).select do |file|
+files = Dir.entries(File.dirname(__FILE__)).select do |file|
   file =~ /tc_.*\.rb$/
- end
-#files = Dir.chdir(File.dirname(__FILE__)) { Dir.glob('tc_*\.rb').sort }
+end
+# #files = Dir.chdir(File.dirname(__FILE__)) { Dir.glob('tc_*\.rb').sort }
 
 # Invoke with ./ts_webdamlog.rb ordered
 if ARGV.include?("ordered")
@@ -43,7 +42,7 @@ if ARGV.include?("ordered")
   require "tc_project_conf.rb"
   require "tc_tools.rb"
   require "tc_wl_program_treetop.rb"
-  #require "tc_wl_runner.rb"
+  require "tc_wl_runner.rb"
   require "tc_wl_wlbud_async_update.rb"
   require "tc_wl_wlbud_callback.rb"
   require "tc_wl_wlbud_delegation_1_simple.rb"
@@ -56,10 +55,8 @@ if ARGV.include?("ordered")
   require "tc_wl_wlbud_parse_program.rb"
   require "tc_wl_wlbud_send_packet.rb"
 else
-  # files.each { |file| puts "require \"#{file}\"" }
-  #
-#  int = 0
-#  files.each { |file| p "#{int+=1} #{file}"; require file }
+  #  int = 0
+  #  files.each { |file| p "#{int+=1} #{file}"; require file }
   files.each { |file| require file }
 end
 
