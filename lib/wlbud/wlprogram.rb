@@ -169,7 +169,6 @@ module WLBud
     
     def add_peer(peername,ip,port)
       # TODO add filter to sanitize IP and port
-      peername=peername
       address = "#{ip}:#{port}"
       @wlpeers[peername]=address
       return peername, address
@@ -248,17 +247,19 @@ line in the rule #{@parser.failure_line}
 column:#{@parser.failure_column}
 In the string: #{line}
         MSG
-      else
-        #result = output.elements.first
+      else        
         result = output.get_inst
-        result.rule_id = rule_id_generator if result.is_a? WLBud::WLRule
-
+        if result.is_a? WLBud::NamedSentence
+          result.map_peername! { |i| WLTools.sanitize!(i) }
+          disamb_peername!(result)          
+        end
+        result.rule_id = rule_id_generator if result.is_a? WLBud::WLRule        
         if add_to_program
           case result
-          when WLBud::WLPeerName
-            @wlpeers[WLTools.sanitize!(result.name)] = WLTools.sanitize!(result.address)
+          when WLBud::WLPeerDec            
+            @wlpeers[result.peername] = WLTools.sanitize!(result.address)
           when WLBud::WLCollection
-            @wlcollections[WLTools.sanitize!(result.atom_name)] = result
+            @wlcollections[(WLTools.sanitize!(result.atom_name))] = result
           when WLBud::WLFact
             @wlfacts << result
           when WLBud::WLRule
@@ -550,7 +551,7 @@ In the string: #{line}
       # Note that a rule is local if the body is local whatever the state of the
       # head
       #
-      def local? (wlword)        
+      def local? (wlword)      
         if wlword.is_a? WLBud::WLCollection or wlword.is_a? WLBud::WLAtom
           if @localpeername.include?(wlword.peername)
             return true
@@ -565,7 +566,6 @@ In the string: #{line}
           }
           return true
         elsif wlword.is_a? String
-          WLTools.sanitize! wlword
           if @localpeername.include?(wlword)
             true
           else
@@ -575,6 +575,23 @@ In the string: #{line}
           raise WLErrorProgram,
             "Try to determine if #{wlword} is local but it has wrong type #{wlword.class}"
         end
+      end
+
+      # Disambiguate peername, it replace alias such as local or me by the local
+      # peername id. Hence subsequent call to peername will use the unique id of
+      # this peer.
+      # @param [WLBud::NamedSentence] a {WLBud::NamedSentence} object
+      # @return [String] the disambiguated namedSentence
+      def disamb_peername! namedSentence
+        raise WLErrorTyping, "expect an object extending WLBud::NamedSentence" unless namedSentence.is_a? WLBud::NamedSentence
+        namedSentence.map_peername! do |pname|
+          if @localpeername.include?(pname)
+            @peername
+          else
+            pname
+          end
+        end
+        return namedSentence
       end
 
       # return true if wlcollection is sound compared to current program already
@@ -631,7 +648,7 @@ In the string: #{line}
             else
               raise( WLErrorGrammarParsing,
                 "In rule "+wlrule.text_value+" #{f} is present in the head but not in the body. This is not WebdamLog syntax." )
-            end            
+            end
           else
             str << "#{quotes(f)}, "
           end
@@ -875,8 +892,9 @@ In the string: #{line}
               combos=true
             else
               # str << WLProgram.get_bud_var_by_pos(rel_first) << attr_first <<
-              # ' => ' << WLProgram.get_bud_var_by_pos(rel_other) << attr_other
-              # << ',' ;
+              # '
+              # => ' << WLProgram.get_bud_var_by_pos(rel_other) << attr_other <<
+              # ',' ;
               str << rel_first_name << '.' << col_name_first << ' => ' << rel_other_name << '.' << col_name_other
               combos=true
             end
@@ -923,7 +941,8 @@ In the string: #{line}
         return "deleg_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
       end
 
-      # Simple successor function useful to create id for rules in this WLprogram.
+      # Simple successor function useful to create id for rules in this
+      # WLprogram.
       #
       def rule_id_generator
         while @rule_mapping.has_key? @next

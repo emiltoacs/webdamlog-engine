@@ -17,10 +17,33 @@ module WLBud
     def comment?
       false
     end
+  end  
+
+  # A webdamlog sentence with a peer name in it.
+  #
+  # It could be a WLPeerDec, WLColletion, WLFact, or a WLAtom in this case it
+  # returns a String which is the peer name. Or it could be WLRule, in this case
+  # it returns an array with the list of peername.
+  #
+  module NamedSentence
+
+    attr_accessor :peername
+
+    # the peer name of this sentence
+    def peername
+      raise MethodNotImplementedError, "a WLSentence subclass must implement the method peername"
+    end
+
+    # Assign value returned by block on each peername
+    def map_peername! &block
+      raise MethodNotImplementedError, "a WLSentence subclass must implement the method map_peername!"
+    end
   end
-  
+
   # The WLrule class is used to store the content of parsed WLRules
   class WLRule < WLVocabulary
+    include WLBud::NamedSentence
+
     attr_accessor :has_self_join
     attr_reader :index, :dic_made
     # The budvar dictionary is a hash defines variables included in the
@@ -100,8 +123,23 @@ module WLBud
     end
 
     # returns all atoms of the rule in an array (head + body).
-    def atoms
-      [self.head,self.body].flatten
+#    def atoms
+#      [self.head,self.body].flatten
+#    end
+    
+    # Return the list of name of peers appearing in atoms, it could be different
+    # from self.peer_name.text_value when called by {WLProgram} since
+    # disambiguation could have modified this field.
+    #
+    def peername
+      arr = [head.peername]
+      atoms.get_atoms.each { |atom| arr << atom.peername }
+      arr
+    end
+
+    def map_peername! &block
+      head.peername = yield head.peername
+      atoms.get_atoms.each { |atom| atom.peername = yield atom.peername } if block_given?
     end
 
     # Make dictionary : creates hash dictionaries for WLvariables and constants.
@@ -195,8 +233,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   
   # The WLrule class is used to store the content of parsed WL facts.
   class WLFact < WLVocabulary
-    public
-    
+    include WLBud::NamedSentence
+        
     def initialize (a1,a2,a3)
       @contents=nil
       super(a1,a2,a3)
@@ -219,9 +257,25 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
       return @contents
     end
+
+    # Return the name of the peer, it could be different from
+    # self.peer_name.text_value when called by {WLProgram} since disambiguation
+    # could have modified this field
+    #
+    def peername
+      unless @peername
+        @peername = self.peer_name.text_value
+      end
+      return @peername
+    end
+
+    def map_peername! &block
+      @peername = yield peername if block_given?
+    end
+
     # returns the name of the relation of the fact.
     def relname
-      return "#{self.relation_name.text_value}_at_#{self.peer_name.text_value}"
+      return "#{self.relation_name.text_value}_at_#{self.peername}"
     end
   end
   
@@ -229,7 +283,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   # names (Bloom collection) that is the declaration of predicate in the
   # beginning of the program file.
   class WLCollection < WLVocabulary
-
+    include WLBud::NamedSentence
+    
     attr_reader :type, :persistent
 
     def initialize(a1,a2,a3)
@@ -280,10 +335,19 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return rel_type.persistent?
     end
 
-    # Return the name of the peer
+    # Return the name of the peer, it could be different from
+    # self.peer_name.text_value when called by {WLProgram} since disambiguation
+    # could have modified this field
     #
     def peername
-      self.peer_name.text_value
+      unless @peername
+        @peername = self.peer_name.text_value
+      end
+      return @peername
+    end
+
+    def map_peername!
+      @peername = yield peername if block_given?
     end
     
     # Return an array of strings containing each element of the Fact.
@@ -380,9 +444,6 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   class WLFields < WLVocabulary
   end
   
-  class WLRelation < WLVocabulary
-  end
-
   # This is the text part of fields in relation, it could be a constant or a
   # variable
   module WLRToken
@@ -412,22 +473,27 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   
   # WebdamLog Atom, element of a WLrule: rrelation@rpeer(rfields)
   class WLAtom < WLVocabulary
+    include WLBud::NamedSentence
+    
     def initialize (a1,a2,a3)
       @name_choice=false
       @variables=nil
       super(a1,a2,a3)
     end
-    public
-    # #return true if the atom is local, false otherwise
-    #
-    #    def local?(peername)
-    #      self.rpeer.text_value.eql?('me') or self.rpeer.text_value.eql?(peername)
-    #    end
 
-    # Return peer name
+    # Return the name of the peer, it could be different from
+    # self.peer_name.text_value when called by {WLProgram} since disambiguation
+    # could have modified this field
     #
     def peername
-      return self.rpeer.text_value
+      unless @peername
+        @peername = self.rpeer.text_value
+      end
+      return @peername
+    end
+
+    def map_peername! &block
+      @peername = yield peername if block_given?
     end
 
     # return the variables included in the atom in an array format e.g. :
@@ -483,10 +549,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str << fields.inspect << "\n"
     end
   end
-
-  class WLPeer < WLVocabulary
-  end
-  
+ 
   # The Rfields class corresponds contains the fields of atoms in rules.
   class WLRfields < WLVocabulary
     def initialize(a1,a2,a3)
@@ -533,10 +596,24 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
   
-  class WLPeerName < WLVocabulary
-    def name
-      self.peer_name.text_value
+  class WLPeerDec < WLVocabulary
+    include WLBud::NamedSentence
+    
+    # Return the name of the peer, it could be different from
+    # self.peer_name.text_value when called by {WLProgram} since disambiguation
+    # could have modified this field
+    #
+    def peername
+      unless @peername
+        @peername = self.peer_name.text_value
+      end
+      return @peername
     end
+
+    def map_peername! &block
+      @peername = yield peername if block_given?
+    end
+    
     def address
       self.peer_address.text_value
     end
