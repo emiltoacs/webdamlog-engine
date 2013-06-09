@@ -59,9 +59,9 @@ module WLBud
 
       ### Type of entry (peername, fact, collection or rul) ###
       #
-        #### peername extended with WLPeerName module
+        #### peername extended with WLPeerDec module
         rule peer_dec
-          'peer ' sep peer_name sep '=' sep peer_address <WLPeerName>
+          'peer ' sep peer_name sep '=' sep peer_address <WLPeerDec>
         end
         
         #### fact extended with WLFact module

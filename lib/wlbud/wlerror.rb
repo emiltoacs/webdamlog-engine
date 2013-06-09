@@ -10,6 +10,9 @@
 #   Encoding - UTF-8
 module WLBud
 
+  # Raise when a method supposed to be override in subclass has not been defined
+  class MethodNotImplementedError < StandardError; end
+
   #The standard error for our WebdamLog software
   class WLError < StandardError;
   end

@@ -12,7 +12,6 @@
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
 
-
 # Test the treetop parser implementation in WLProgram and WLVocabulary objects
 # instantiation.
 #
@@ -95,37 +94,74 @@ class TcWlProgramTreetop < Test::Unit::TestCase
     end
   end
 
-  # test alias for declaration of local relation
-  def test_050_relation_alias_local
-    pg = <<-EOF
+  # test disambiguation mechanism
+  def test_050_peername_NamedSentence
+    program = nil
+    begin      
+      # test disambiguation with real name
+      File.open('test_050_peername_NamedSentence',"w"){ |file| file.write "collection ext persistent picture@myself(atom1*);"}
+      assert_nothing_raised {program = WLBud::WLProgram.new('myself', 'test_050_peername_NamedSentence', 'localhost', '4100', {:debug => true})}
+      rel = program.wlcollections["picture_at_myself"]
+      assert_not_nil rel
+      assert_kind_of WLBud::WLCollection, rel
+      program.disamb_peername!(program.wlcollections["picture_at_myself"])
+      assert_equal "myself", program.wlcollections["picture_at_myself"].peername
+
+      # test disambiguation with alias
+      File.open('test_050_peername_NamedSentence',"w"){ |file| file.write "collection ext persistent picture@local(atom1*);"}
+      assert_nothing_raised {program = WLBud::WLProgram.new('myself', 'test_050_peername_NamedSentence', 'localhost', '4100', {:debug => true})}
+      rel = program.wlcollections["picture_at_myself"]
+      assert_not_nil rel
+      assert_kind_of WLBud::WLCollection, rel
+      program.disamb_peername!(program.wlcollections["picture_at_myself"])
+      assert_equal "myself", program.wlcollections["picture_at_myself"].peername
+
+      # test disambiguation with alias in rules
+      pg = <<-EOF
     peer sigmod_peer = localhost:4100;
     peer myself = localhost:4150;
     collection ext persistent picture@myself(title*, owner*, _id*, image_url*); #image data fields not added
     collection ext persistent picturelocation@me(_id*, location*);
-    collection ext persistent rating@myself(_id*, rating*);
+    collection ext persistent rating@local(_id*, rating*);
     collection ext persistent comment@myself(_id*,author*,text*,date*);
     collection ext persistent contact@myself(username*, peerlocation*, online*, email*, facebook*);
-    rule contact@myself($username, $peerlocation, $online, $email, $facebook):-contact@sigmod_peer($username, $peerlocation, $online, $email, $facebook);
+    rule contact@local($username, $peerlocation, $online, $email, $facebook):-contact@sigmod_peer($username, $peerlocation, $online, $email, $facebook);
     end
-    EOF
-    File.open('test_050_relation_alias_local_program',"w"){ |file| file.write pg}
-    program = nil
-    assert_nothing_raised do
-      program = WLBud::WLProgram.new(
-        'the_peername',
-        'test_050_relation_alias_local_program',
-        'localhost',
-        '4100',
-        {:debug => true} )
-    end
-    assert_not_nil program
-    assert_equal 5, program.wlcollections.length
-    #assert_equal "", program.wlcollections
-    assert_not_nil program.wlcollections["picture_at_myself"]
-    assert_kind_of WLBud::WLCollection , program.wlcollections["picture_at_myself"]
-    assert_not_nil program.wlcollections["picturelocation_at_myself"]
-    assert_kind_of WLBud::WLCollection , program.wlcollections["picturelocation_at_myself"]
-  end
+      EOF
+      File.open('test_050_peername_NamedSentence',"w"){ |file| file.write pg}
+      program = nil
+      assert_nothing_raised do
+        program = WLBud::WLProgram.new(
+          'myself',
+          'test_050_peername_NamedSentence',
+          'localhost',
+          '4150',
+          {:debug => true} )
+      end
+      # test collection with alias me
+      rel = program.wlcollections["picturelocation_at_myself"]
+      assert_not_nil rel
+      assert_kind_of WLBud::WLCollection, rel
+      assert_equal "myself", rel.peername
+      # test collection with alias local
+      rel = program.wlcollections["rating_at_myself"]
+      assert_not_nil rel
+      assert_kind_of WLBud::WLCollection, rel
+      assert_equal "myself", rel.peername
+      # test collection without alias
+      rel = program.wlcollections["contact_at_myself"]
+      assert_not_nil rel
+      assert_kind_of WLBud::WLCollection, rel
+      assert_equal "myself", rel.peername
+      # test rule
+      rule = program.rule_mapping[1][0]
+      assert_not_nil rule
+      assert_kind_of WLBud::WLRule, rule
+      assert_equal ["myself", "sigmod_peer"], rule.peername
+    ensure
+      File.delete('test_050_peername_NamedSentence') if File.exists?('test_050_peername_NamedSentence')
+    end    
+  end 
 
   # This is just a test file, in regular use it is forbidden to declare
   # intermediary relation
@@ -254,7 +290,7 @@ end
       program = nil
       assert_nothing_raised do
         program = WLBud::WLProgram.new(
-          'the_peername',
+          'sigmod_peer',
           'test_program_2',
           'localhost',
           '11111',
@@ -283,14 +319,14 @@ end
   
     File.open('test_program_2',"w"){ |file| file.write prog}
     program = nil
-    assert_nothing_raised do
-      program = WLBud::WLProgram.new(
-        'the_peername',
-        'test_program_2',
-        'localhost',
-        '11111',
-        {:debug => true} )
-    end
+    # #assert_nothing_raised do
+    program = WLBud::WLProgram.new(
+      'the_peername',
+      'test_program_2',
+      'localhost',
+      '11111',
+      {:debug => true} )
+    # #end
     assert_equal 2, program.rule_mapping.size
 
     delegation = "rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);"
