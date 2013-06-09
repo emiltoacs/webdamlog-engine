@@ -95,6 +95,38 @@ class TcWlProgramTreetop < Test::Unit::TestCase
     end
   end
 
+  # test alias for declaration of local relation
+  def test_050_relation_alias_local
+    pg = <<-EOF
+    peer sigmod_peer = localhost:4100;
+    peer myself = localhost:4150;
+    collection ext persistent picture@myself(title*, owner*, _id*, image_url*); #image data fields not added
+    collection ext persistent picturelocation@me(_id*, location*);
+    collection ext persistent rating@myself(_id*, rating*);
+    collection ext persistent comment@myself(_id*,author*,text*,date*);
+    collection ext persistent contact@myself(username*, peerlocation*, online*, email*, facebook*);
+    rule contact@myself($username, $peerlocation, $online, $email, $facebook):-contact@sigmod_peer($username, $peerlocation, $online, $email, $facebook);
+    end
+    EOF
+    File.open('test_050_relation_alias_local_program',"w"){ |file| file.write pg}
+    program = nil
+    assert_nothing_raised do
+      program = WLBud::WLProgram.new(
+        'the_peername',
+        'test_050_relation_alias_local_program',
+        'localhost',
+        '4100',
+        {:debug => true} )
+    end
+    assert_not_nil program
+    assert_equal 5, program.wlcollections.length
+    #assert_equal "", program.wlcollections
+    assert_not_nil program.wlcollections["picture_at_myself"]
+    assert_kind_of WLBud::WLCollection , program.wlcollections["picture_at_myself"]
+    assert_not_nil program.wlcollections["picturelocation_at_myself"]
+    assert_kind_of WLBud::WLCollection , program.wlcollections["picturelocation_at_myself"]
+  end
+
   # This is just a test file, in regular use it is forbidden to declare
   # intermediary relation
   STR1 = <<EOF
@@ -216,7 +248,7 @@ collection ext persistent contact@local(username*,    peerlocation*
 , online*,email*, facebook*);
 fact contact@local(sigmod_peer, localhost:10000, false, none, none);
 end
-  EOF
+    EOF
     begin
       File.open('test_program_2',"w"){ |file| file.write prog}
       program = nil
