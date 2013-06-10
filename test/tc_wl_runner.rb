@@ -44,7 +44,7 @@ end
       end
       assert_kind_of WLBud, wl_obj
       assert_kind_of WLBud::WLProgram, wl_obj.wl_program
-      assert_equal 6, wl_obj.wl_program.wlpeers.size
+      assert_equal 4, wl_obj.wl_program.wlpeers.size
       assert_equal 4, wl_obj.wl_program.wlcollections.size
       assert_equal 4, wl_obj.wl_program.wlfacts.size
       assert_equal 4, wl_obj.wl_program.rule_mapping.size
@@ -82,19 +82,21 @@ end
     end
   end # test_create
 
-#  def test_run
-#    begin
-#      runner = WLRunner.create(@username, @pg_file, @port)
-#      runner.run_engine
-#      assert runner.running_async
-#      assert_equal 19, runner.tables.size
-#      assert_not_nil runner.tables[:local2_at_test_create_user]
-#      assert_equal 4, runner.tables[:local2_at_test_create_user].to_a.size
-#    ensure
-#      runner.stop
-#      File.delete(@pg_file) if File.exists?(@pg_file)
-#    end
-#  end # test_run
+  def test_run
+    begin
+      runner = WLRunner.create(@username, @pg_file, @port)
+      assert_kind_of Integer, runner.port, "port method should return the port on which webdamlog is listening"
+      assert_equal 11110, runner.port
+      runner.run_engine
+      assert runner.running_async
+      assert_equal 19, runner.tables.size
+      assert_not_nil runner.tables[:local2_at_test_create_user]
+      assert_equal 4, runner.tables[:local2_at_test_create_user].to_a.size      
+    ensure
+      runner.stop
+      File.delete(@pg_file) if File.exists?(@pg_file)
+    end
+  end # test_run
 end # class TcWlRunner
 
 # test update_add_collection in {WLRunner}

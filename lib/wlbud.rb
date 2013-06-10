@@ -107,7 +107,10 @@ module WLBud
       if options[:mesure]
         @start_time = Time.now        
       end
-      @peername=peername
+      # Name of that peer
+      @peername = peername
+      # TODO check if already created it may contains previous entries to load since it may be a peer that has been restarted
+      # Directory to store rules in files to be parsed by bud
       @rule_dir = create_rule_dir(options[:rule_dir])
       raise WLError, "you must give or provide read and write access to a file for reading rules to provide to bud, but it seems impossible with: #{@rule_dir}" unless File.writable?(@rule_dir)
       # #debug message
@@ -405,7 +408,7 @@ module WLBud
           end
         end
         
-        # ### WLBud:Begin adding to Bud        
+        # ### WLBud:Begin adding to Bud
         #
         # #part 2: logic
         #
@@ -749,8 +752,8 @@ module WLBud
     # It will dynamically add a collection to the program
     #
     # * +wlpg_relation+ is a string representing the rule in the wlprogram file
-    #   format(wlgrammar).
-    # @return [String, Hash] name, schema of the collection added
+    #   format(wlgrammar). @return [String, Hash] name, schema of the collection
+    #   added
     #
     def add_collection(wlpg_relation)
       if wlpg_relation.is_a?(WLBud::WLCollection)
@@ -1009,23 +1012,25 @@ module WLBud
       @wl_callback.delete(cb_id)
     end
 
-    # Create if needed the directory for the rules
+    # Create if needed the directory for the rules if rule_dir does not exists
+    # or is not writable.
     #
-    # === return the name of dir created
+    # @return [String] the name of dir where rule files will be stored
     #
     def create_rule_dir(rule_dir)
-      rule_dir ||= "wlrdir_#{@peername}_#{Time.now}_#{self.class}_#{@peername.object_id}"
-      # rule file to pass to bud parser in the wlrule directory
-      base_dir = WL::get_path_to_rule_dir
-      unless (File::directory?(base_dir))
-        Dir.mkdir(base_dir)
-      end
-      rule_dir = File.join(base_dir,WLTools.friendly_filename(rule_dir))
-      unless (File::directory?(rule_dir))
-        Dir.mkdir(rule_dir)
-      end
+      if rule_dir.nil? or not File.directory?(rule_dir) or not File.writable?(rule_dir)
+        rule_dir ||= "wlrdir_#{@peername}_#{Time.now}_#{self.class}_#{@peername.object_id}"
+        base_dir = WL::get_path_to_rule_dir
+        unless (File::directory?(base_dir))
+          Dir.mkdir(base_dir)
+        end
+        rule_dir = File.join(base_dir,WLTools.friendly_filename(rule_dir))
+        unless (File::directory?(rule_dir))
+          Dir.mkdir(rule_dir)
+        end        
+      end # unless File.directory?(rule_dir)
       return rule_dir
-    end
+    end # create_rule_dir
 
     # Clear the content of the rule dir for this peer
     #
@@ -1043,6 +1048,7 @@ module WLBud
       end
     end
 
+    # a default path to create a rule dir
     def self.get_path_to_rule_dir
       base_dir = File.expand_path(File.dirname(__FILE__))
       return File.join(base_dir, RULE_DIR_NAME)

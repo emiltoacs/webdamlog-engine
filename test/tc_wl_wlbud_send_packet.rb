@@ -140,7 +140,7 @@ EOF
     assert_nothing_raised do 
       packet = WLBud::WLPacket.deserialize_from_channel(wl_peer[1].inbound[:chan].first)     
     end
-    assert_equal wl_peer[1].wl_program.wlpeers['me'], packet.dest, 
+    assert_equal wl_peer[1].wl_program.wlpeers[wl_peer[1].peername], packet.dest,
       "one new packet for local peer named p1"
     assert_equal 1, packet.data.length, 
       "data in packet value must have only new facts updates"
