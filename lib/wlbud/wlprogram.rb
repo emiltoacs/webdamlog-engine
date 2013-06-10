@@ -77,9 +77,6 @@ module WLBud
       # List of known peers
       #
       @wlpeers={}
-      @wlpeers[@peername]=my_address
-      @wlpeers['local']=my_address
-      @wlpeers['me']=my_address
       # List of bootstrap facts ie. the facts given in the program file
       # === data struct
       # Array:(WLBud:WLFact)
@@ -250,7 +247,7 @@ In the string: #{line}
         result = output.get_inst
         if result.is_a? WLBud::NamedSentence
           result.map_peername! { |i| WLTools.sanitize!(i) }
-          disamb_peername!(result)          
+          disamb_peername!(result)
         end
         result.rule_id = rule_id_generator if result.is_a? WLBud::WLRule        
         if add_to_program
