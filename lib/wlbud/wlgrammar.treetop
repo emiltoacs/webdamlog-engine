@@ -51,7 +51,7 @@ module WLBud
 
         ### The generic filter for words ###
         rule word
-          '_'* char_in_word ( char_in_word / '_')*
+          '_'* char_in_word ( char_in_word / '_')* <WLWord>
         end
         rule char_in_word
           [a-zA-Z0-9!?:]
@@ -66,7 +66,7 @@ module WLBud
         
         #### fact extended with WLFact module
         rule fact
-          'fact ' sep relation_name '@' peer_name '(' sep fields sep ')' <WLFact>
+          'fact ' sep relation_name '@' peer_name '(' sep items sep ')' <WLFact>
         end
         
         #### collection extended with WLCollection module
@@ -133,10 +133,7 @@ module WLBud
           word
         end
 
-        #### fields ####
-        rule fields
-           items / [ ]* <WLFields>
-        end
+        
         #### fields for collection declaration ####
         rule col_fields
           keys values / [ ]* <WLFields>
@@ -157,7 +154,7 @@ module WLBud
                 end
 
         rule items
-            first_item:item list_items:( sep ',' sep other_item:item )* {
+            sep first_item:item list_items:( sep ',' sep other_item:item sep )* {
                 def get_items
                   [first_item] + list_items
                 end
@@ -168,7 +165,10 @@ module WLBud
              }
         end
         rule item
-          ( word / ('"' [^"]* '"') ) <WLItem>
+          ( word / ('"' complex_string '"') ) <WLItem>
+        end
+        rule complex_string
+            [^"]+ <WLComplexString>
         end
             
       ### for rules ###
@@ -194,12 +194,9 @@ module WLBud
           end
           ###### attributes name in atom #####
           rule rfields
-            first_rtoken:rtoken list_rtokens:( sep ',' sep other_rtoken:rtoken )* <WLRfields>
+            sep first_rtoken:rtoken list_rtokens:( sep ',' sep other_rtoken:rtoken sep )* <WLRfields>
           end
             ####### attributes name in atom ######
-            #rule rtokens
-            # (rtoken ',')*
-            #end
             rule rtoken
               (variable / item) <WLRToken>
             end

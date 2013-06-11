@@ -298,6 +298,7 @@ end
           {:debug => true} )
       end
       assert_equal 5, program.wlcollections.first[1].arity
+      assert_equal ["username", "peerlocation", "online", "email", "facebook"], program.wlcollections["contact_at_sigmod_peer"].fields
     ensure
       File.delete('test_program_2') if File.exists?('test_program_2')
     end
