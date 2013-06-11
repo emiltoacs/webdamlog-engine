@@ -17,7 +17,7 @@ module WLBud
     def comment?
       false
     end
-  end  
+  end
 
   # A webdamlog sentence with a peer name in it.
   #
@@ -123,9 +123,9 @@ module WLBud
     end
 
     # returns all atoms of the rule in an array (head + body).
-#    def atoms
-#      [self.head,self.body].flatten
-#    end
+    #    def atoms
+    #      [self.head,self.body].flatten
+    #    end
     
     # Return the list of name of peers appearing in atoms, it could be different
     # from self.peer_name.text_value when called by {WLProgram} since
@@ -251,9 +251,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     # return an array of strings containing each attribute value of the fact.
     def content
       if @contents.nil?
-        array=[]
-        self.fields.text_value.split(',').each {|s| array << s}
-        @contents=array
+        array = []
+        self.items.get_items.each {|s| array << s.item_text_value}
+        @contents = array
       end
       return @contents
     end
@@ -277,6 +277,29 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def relname
       return "#{self.relation_name.text_value}_at_#{self.peername}"
     end
+  end
+
+  module WLItem
+    def item_text_value
+      self.elements.each do |e|
+        if self.is_a? WLWord
+          return self.text_value
+        elsif self.is_a? WLComplexString
+          return self.text_value
+        end
+      end
+      return ''
+    end
+
+    def variable?
+      false
+    end
+  end
+
+  class WLWord < WLVocabulary
+  end
+
+  class WLComplexString < WLVocabulary
   end
   
   # The WLcollection class is used to store the content of parsed WL relation
@@ -455,12 +478,6 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       else
         false
       end
-    end
-  end
-
-  module WLItem
-    def variable?
-      false
     end
   end
 
