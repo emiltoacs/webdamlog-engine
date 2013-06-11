@@ -49,6 +49,14 @@ module WLRunner
     self.add_rule rule
   end
 
+  # Helpers to check syntax of one line of webdamlog program
+  # @return [WLBud::WLVocabulary] object
+  # @raise [WLErrorTyping, WLErrorGrammarParsing]
+  #
+  def parse line
+    self.program.parse line
+  end
+
   private
 
   class WLEnginePool
