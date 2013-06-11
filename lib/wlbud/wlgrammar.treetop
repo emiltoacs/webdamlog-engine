@@ -49,13 +49,13 @@ module WLBud
             '/*' (!'*/' . )* '*/'
         end
 
-      ### The generic filter for words ###
-      rule word
-        '_'* char_in_word ( char_in_word / '_')*
-      end
-      rule char_in_word
-        [a-zA-Z0-9!?:]
-      end
+        ### The generic filter for words ###
+        rule word
+          '_'* char_in_word ( char_in_word / '_')*
+        end
+        rule char_in_word
+          [a-zA-Z0-9!?:]
+        end
 
       ### Type of entry (peername, fact, collection or rul) ###
       #
@@ -168,7 +168,7 @@ module WLBud
              }
         end
         rule item
-          ( word / ('"' (word / ' ')* '"') ) <WLItem>
+          ( word / ('"' [^"]* '"') ) <WLItem>
         end
             
       ### for rules ###

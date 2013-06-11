@@ -91,7 +91,7 @@ end
       assert runner.running_async
       assert_equal 19, runner.tables.size
       assert_not_nil runner.tables[:local2_at_test_create_user]
-      assert_equal 4, runner.tables[:local2_at_test_create_user].to_a.size      
+      assert_equal 4, runner.tables[:local2_at_test_create_user].to_a.size
     ensure
       runner.stop
       File.delete(@pg_file) if File.exists?(@pg_file)
@@ -142,26 +142,6 @@ end
       assert_not_nil schema
       assert_equal "added_at_test_add_collection", name
       assert_equal({[:field1, :field2]=>[:field3]}, schema)
-
-      #      assert_equal 1, valid.size
-      #      assert_equal({"local_at_test_create_user"=>[["5"]]}, valid)
-      #      assert_equal 0, err.size
-      #      assert_equal({}, err)
-      #      wl_obj.tick
-      #      assert_equal 5, wl_obj.tables[:local_at_test_create_user].to_a.size
-      #
-      #      valid, err = wl_obj.add_facts({ "local_at_test_create_user" => [["5", "6"], "", ["6"]] })
-      #      assert_equal 1, valid.size
-      #      assert_equal({"local_at_test_create_user"=>[["6"]]}, valid)
-      #      assert_equal 2, err.size
-      #      assert_equal(
-      #        {["local_at_test_create_user", ["5", "6"]]=>
-      #            "fact of arity 2 in relation local_at_test_create_user of arity 1",
-      #          ["local_at_test_create_user", ""]=>
-      #            "fact of arity 0 in relation local_at_test_create_user of arity 1"}, err)
-      #      wl_obj.tick
-      #      assert_equal 6, wl_obj.tables[:local_at_test_create_user].to_a.size
-
     ensure
       runner.stop true
       File.delete(@pg_file) if File.exists?(@pg_file)
