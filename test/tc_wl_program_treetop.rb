@@ -276,14 +276,15 @@ end
 class TcParseProgram < Test::Unit::TestCase
   include MixinTcWlTest  
 
-  # Check collection declaration syntax on multiple lines with special character in attributes
+  # Check collection declaration syntax on multiple lines with special character
+  # in attributes
   def test_sample_program
     prog = <<-EOF
 peer sigmod_peer = localhost:10000;
 collection ext persistent contact@local(username*,    peerlocation*
 , online*,email*, facebook*);
 fact contact@local(sigmod_peer, localhost:10000, false, none, none);
-fact contact@local(Jules, SIGMOD_peer, false, "jules.testard@mail.mcgill.ca", "Jules Testard");
+fact contact@local(Jules, localhost:10000, false, "jules.testard@mail.mcgill.ca", "Jules Testard");
 end
     EOF
     begin
@@ -297,6 +298,9 @@ end
           '11111',
           {:debug => true} )
       end
+      assert_equal 2, program.wlfacts.size
+      assert_equal ["sigmod_peer", "localhost:10000", "false", "none", "none"], program.wlfacts[0].content      
+      assert_equal ["Jules", "localhost:10000", "false", "jules.testard@mail.mcgill.ca", "Jules Testard"], program.wlfacts[1].content
       assert_equal 5, program.wlcollections.first[1].arity
       assert_equal ["username", "peerlocation", "online", "email", "facebook"], program.wlcollections["contact_at_sigmod_peer"].fields
     ensure
