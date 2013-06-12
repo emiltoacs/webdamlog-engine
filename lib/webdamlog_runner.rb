@@ -28,30 +28,44 @@ module WLRunner
     run_bg
   end
 
-  # @return [String, String] peername, address as added in webdamlog
+  # TODO should be called in callback when adding contact @return [String,
+  # String] peername, address as added in webdamlog
   def update_add_peer peername, ip, port
     return self.wl_program.add_peer peername, ip, port
   end
 
   # add collection with declaration as a string or WLRule object
   def update_add_collection wl_relation
-    self.add_collection(wl_relation)
+    name, schema = ""
+    sync_do do
+      name, schema = self.add_collection(wl_relation)
+    end
+    return name, schema
   end
 
-  # add new facts with declarations Hash, WLFacts or String representing a
-  # webdamlog facts in a program
+  # Add new facts with declarations Hash, WLFacts or String representing a
+  # webdamlog fact in a program
+  #
+  # @return [Hash, Hash] valid and error, valid is a list of facts that have
+  # been successfully inserted, err is a list of facts that has not been insert
+  # due to error in the format !{["relation_name", [tuple]] => "error message"}
   def update_add_fact facts
-    self.add_facts facts
+    facts, err = {}
+    sync_do do
+      self.add_facts facts
+    end
+    return facts, err
   end
 
-  # TODO doc and customize return value
+  # XXX doc and customize return value if needed
   def update_add_rule rule
-    self.add_rule rule
+    sync_do do
+      self.add_rule rule
+    end
   end
 
-  # Helpers to check syntax of one line of webdamlog program
-  # @return [WLBud::WLVocabulary] object
-  # @raise [WLErrorTyping, WLErrorGrammarParsing]
+  # Helpers to check syntax of one line of webdamlog program @return
+  # [WLBud::WLVocabulary] object @raise [WLErrorTyping, WLErrorGrammarParsing]
   #
   def parse line
     self.program.parse line
