@@ -69,11 +69,17 @@ module WLRunner
     end
   end
 
-  # Helpers to check syntax of one line of webdamlog program @return
-  # [WLBud::WLVocabulary] object @raise [WLErrorTyping, WLErrorGrammarParsing]
+  # Helpers to check syntax of one line of webdamlog program
   #
-  def parse line
-    self.program.parse line
+  # @return [Array] array of WLBud::WLVocabulary or WLErrorGrammarParsing
+  def parse pg
+    ret = []
+    begin
+      ret = self.program.parse_lines pg, false
+    rescue WLError=> err
+      ret << err
+    end
+    return ret
   end
 
   private
