@@ -3,11 +3,11 @@
 
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
-
+require_relative '../lib/webdamlog_runner'
 require 'test/unit'
 
 # Test dynamic facts addition
-class TcWlWlbudAddFacts < Test::Unit::TestCase
+class Tc1WlWlbudAddFacts < Test::Unit::TestCase
 
   def  setup
     @pg = <<-EOF
@@ -72,6 +72,55 @@ end
       File.delete(@pg_file) if File.exists?(@pg_file)
     end
   end
+end # class TcWlWlbudAddFacts
 
-  
+
+# test update_add_collection in {WLRunner}
+class TcWl2AddCollection < Test::Unit::TestCase
+  include MixinTcWlTest
+
+  def  setup
+    @pg = <<-EOF
+peer test_add_collection = localhost:11110;
+collection ext persistent local@test_add_collection(atom1*);
+collection int local2@test_add_collection(atom1*);
+fact local@test_add_collection(1);
+fact local@test_add_collection(2);
+rule local2@test_add_collection($x) :- local@test_add_collection($x);
 end
+    EOF
+    @username = "test_add_collection"
+    @port = "11110"
+    @pg_file = "test_add_collection_program"
+    File.open(@pg_file,"w"){ |file| file.write @pg }
+  end
+
+  def teardown
+    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    # ObjectSpace.garbage_collect
+  end
+
+  # Test add_collection in {WLBud::WL}
+  def test_add_collection
+    begin
+      runner = nil
+      assert_nothing_raised do
+        runner = WLRunner.create(@username, @pg_file, @port)
+      end
+      runner.tick
+      assert_not_nil runner.tables[:local_at_test_add_collection]
+      assert_equal 2, runner.tables[:local_at_test_add_collection].to_a.size
+      name, schema = nil, nil
+      # #assert_nothing_raised do
+      name, schema = runner.update_add_collection("collection ext persistent added@test_add_collection(field1*, field2*, field3);")
+      # #end
+      assert_not_nil name
+      assert_not_nil schema
+      assert_equal "added_at_test_add_collection", name
+      assert_equal({[:field1, :field2]=>[:field3]}, schema)
+    ensure
+      runner.stop true
+      File.delete(@pg_file) if File.exists?(@pg_file)
+    end
+  end
+end # class TcWlAddCollection 
