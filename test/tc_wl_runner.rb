@@ -8,6 +8,40 @@ require 'test/unit'
 class TcWl1Runner < Test::Unit::TestCase
   include MixinTcWlTest
 
+  @pg = <<-EOF
+peer test_create_user=localhost:11110;
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+peer p3=localhost:11113;
+collection ext persistent local@test_create_user(atom1*);
+collection ext per join_delegated@test_create_user(atom1*);
+collection int local2@test_create_user(atom1*);
+fact local@test_create_user(1);
+fact local@test_create_user(2);
+fact local@test_create_user(3);
+fact local@test_create_user(4);
+rule join_delegated@p0($x):- local@test_create_user($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);
+rule local2@test_create_user($x) :- local@test_create_user($x);
+end
+  EOF
+  @username = "test_create_user"
+  @port = "11110"
+  @pg_file = "test_create_user_program"
+  File.open(@pg_file,"w"){ |file| file.write @pg }
+
+  def test_parse
+    wl_obj = nil
+    assert_nothing_raised do
+      wl_obj = WLRunner.create(@username, @pg_file, @port)
+    end
+    
+  end
+end
+
+# test create and run in {WLRunner}
+class TcWl1Runner < Test::Unit::TestCase
+  include MixinTcWlTest
+
   def setup
     @pg = <<-EOF
 peer test_create_user=localhost:11110;
@@ -33,7 +67,7 @@ end
 
   def teardown    
     ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
-    #ObjectSpace.garbage_collect
+    # #ObjectSpace.garbage_collect
   end
 
   def test_create

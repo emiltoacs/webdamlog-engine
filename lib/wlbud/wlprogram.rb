@@ -213,15 +213,17 @@ module WLBud
     #   Usually lines is the result of IO.readlines.
     #
     def parse_lines (lines, add_to_program=false)
+      ans=[]
       current=""
       lines.each_index do |i|
         l=lines[i]
         current << l
         next unless l =~ /;/
         current << "\n"
-        parse(current, add_to_program, false, {:line_nb=>i+1})
+        ans << parse(current, add_to_program, false, {:line_nb=>i+1})
         current = "" #reset current line after parsing
       end
+      return ans
     end
     
     # Parses one line of WLcode and adds it to the proper WL collection if the
@@ -243,7 +245,7 @@ line in the rule #{@parser.failure_line}
 column:#{@parser.failure_column}
 In the string: #{line}
         MSG
-      else        
+      else
         result = output.get_inst
         if result.is_a? WLBud::NamedSentence
           result.map_peername! { |i| WLTools.sanitize!(i) }
