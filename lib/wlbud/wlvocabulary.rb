@@ -241,12 +241,12 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
     # prints to the screen information about the extensional fact.
     def show
-      puts "Class name : #{self.class}"
-      puts "Content : #{self.text_value}"
-      puts "Relation name : #{self.relname}"
-      puts "Peer name: #{self.peer_name.text_value}"
-      puts "Data content : #{self.fields.text_value}"
-      puts "--------------------------------------------------------"
+      str = "Class name : #{self.class}"
+      str << "Content : #{self.text_value}"
+      str <<  "Relation name : #{self.relname}"
+      str <<  "Peer name: #{self.peer_name.text_value}"
+      str <<  "Data content : #{self.content}"
+      return str
     end
     # return an array of strings containing each attribute value of the fact.
     def content
@@ -284,8 +284,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       self.elements.each do |e|
         if self.is_a? WLWord
           return self.text_value
-        elsif self.is_a? WLComplexString
-          return self.text_value
+        elsif self.is_a? WLItem and self.complex_string.is_a? WLComplexString
+          return self.complex_string.text_value
         end
       end
       return ''
