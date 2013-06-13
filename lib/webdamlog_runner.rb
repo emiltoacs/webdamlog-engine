@@ -51,15 +51,15 @@ module WLRunner
   # been successfully inserted, err is a list of facts that has not been insert
   # due to error in the format !{["relation_name", [tuple]] => "error message"}
   def update_add_fact facts
-    facts, err = {}
+    fct, err = {}
     sync_do do
       begin
-        facts, err = self.add_facts facts
+        fct, err = self.add_facts facts
       rescue WLError => e
         err = e
       end
     end
-    return facts, err
+    return fct, err
   end
 
   # XXX doc and customize return value if needed
