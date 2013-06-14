@@ -1,15 +1,13 @@
-# ####License####
-#  File name wlprogram.rb
-#  Copyright © by INRIA
+# File name wlprogram.rb
+# Copyright © by INRIA
 #
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
+# Contributors : Webdam Team <webdam.inria.fr>
+#      Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
+#      Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
 #
 #   WebdamLog - 30 juin 2011
 #
-#   Encoding - UTF-8
-# ####License####
+#  Encoding - UTF-8
 module WLBud
  
   # :title: WLProgram WLProgram is a class that parses and interprets WebdamLog
@@ -77,6 +75,7 @@ module WLBud
       # List of known peers
       #
       @wlpeers={}
+      @wlpeers[@peername]="#{@ip}:#{@port}"
       # List of bootstrap facts ie. the facts given in the program file
       # === data struct
       # Array:(WLBud:WLFact)
@@ -162,13 +161,6 @@ module WLBud
     end
     
     public
-    
-    def add_peer(peername,ip,port)
-      # TODO add filter to sanitize IP and port
-      address = "#{ip}:#{port}"
-      @wlpeers[peername]=address
-      return peername, address
-    end
 
     # The print_content method prints the content of the relations
     # declarations, extensional facts and rules of the program to the screen.
@@ -254,8 +246,11 @@ In the string: #{line}
         result.rule_id = rule_id_generator if result.is_a? WLBud::WLRule        
         if add_to_program
           case result
-          when WLBud::WLPeerDec            
-            @wlpeers[result.peername] = WLTools.sanitize!(result.address)
+          when WLBud::WLPeerDec
+            pname = WLTools.sanitize(result.peername)
+            ip = WLTools.sanitize(result.ip)
+            port = WLTools.sanitize(result.port)
+            add_peer pname, ip, port
           when WLBud::WLCollection
             @wlcollections[(WLTools.sanitize!(result.atom_name))] = result
           when WLBud::WLFact
@@ -276,9 +271,20 @@ In the string: #{line}
               end
             end
           end
-        end
-        return result
+        end        
       end
+      return result
+    end
+
+    # this will never override the original declaration of the current peer this
+    # is to prevent changing address while running
+    def add_peer(peername,ip,port)
+      # TODO add filter to sanitize IP and port
+      address = "#{ip}:#{port}"
+      unless @localpeername.include? peername
+        @wlpeers[peername]=address
+      end
+      return peername, address
     end
 
     # This method creates a body-local rule with destination peer p and a
@@ -317,7 +323,7 @@ In the string: #{line}
         MSG
         #The destination peer is the peer of the first nonlocal atom.
         destination_peer = nonlocalstack.first.peername
-        raise WLErrorProgram, "following peer is unknown it should have declared: #{destination_peer}" if @wlpeers[destination_peer].nil?
+        raise WLErrorProgram, "In #{nonlocalstack.first.text_value} peer is unknown it should have declared: #{destination_peer}" if @wlpeers[destination_peer].nil?
         addr_destination_peer = @wlpeers[destination_peer]
       
         # RULE REWRITING If local atoms are present at the beginning of the non
@@ -390,7 +396,7 @@ In the string: #{line}
         end
         if @wlpeers[head_atom_peername].nil?
           raise WLErrorPeerId,
-            "This peer name: #{head_atom_peername} cannot be found in the list of known peer: #{@wlpeers.inspect}"
+            "In #{wlrule.text_value} the peer name: #{head_atom_peername} cannot be found in the list of known peer: #{@wlpeers.inspect}"
         end
         str_res=''
         str_self_join=''
@@ -581,13 +587,20 @@ In the string: #{line}
       # @param [WLBud::NamedSentence] a {WLBud::NamedSentence} object
       # @return [String] the disambiguated namedSentence
       def disamb_peername! namedSentence
-        raise WLErrorTyping, "expect an object extending WLBud::NamedSentence" unless namedSentence.is_a? WLBud::NamedSentence
-        namedSentence.map_peername! do |pname|
-          if @localpeername.include?(pname)
-            @peername
-          else
-            pname
+        if namedSentence.is_a? String
+          if @localpeername.include? namedSentence
+            namedSentence.replace @peername
           end
+        elsif
+          namedSentence.map_peername! do |pname|
+            if @localpeername.include?(pname)
+              @peername
+            else
+              pname
+            end   
+          end
+        else
+          raise WLErrorTyping, "expect an object extending WLBud::NamedSentence or a string representing the name"
         end
         return namedSentence
       end
@@ -596,7 +609,7 @@ In the string: #{line}
       # running otherwise return false with error message
       def valid_collection? wlcollection
         return false, "" unless wlcollection.is_a? WLBud::WLCollection
-        return false, "peername #{wlcollection.peername} should have been declared before" unless @wlpeers[wlcollection.peername]
+        return false, "In #{wlcollection.text_value} peername #{wlcollection.peername} should have been declared before" unless @wlpeers[wlcollection.peername]
         return true, "collection valid"
       end
 

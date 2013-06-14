@@ -634,6 +634,14 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def address
       self.peer_address.text_value
     end
+
+    def ip
+      self.peer_address.ip.text_value
+    end
+
+    def port
+      self.peer_address.port.text_value
+    end
   end
   
   module WLComment

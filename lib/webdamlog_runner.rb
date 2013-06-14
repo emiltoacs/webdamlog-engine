@@ -73,12 +73,12 @@ module WLRunner
   #
   # @return [Array] array of WLBud::WLVocabulary or WLErrorGrammarParsing
   def parse pg
-    file = StringIO.new("pg")
+    file = StringIO.new(pg)
     line = file.readlines
     ret = []
     begin
       ret = self.wl_program.parse_lines line, false
-    rescue WLError=> err
+    rescue WLError => err
       ret << err
     end
     return ret
