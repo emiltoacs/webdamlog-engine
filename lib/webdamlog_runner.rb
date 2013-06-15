@@ -14,7 +14,8 @@ module WLRunner
   # Create a new webdamlog engine object ready to be run
   def self.create (username, pg_file, port, options={})
     klass = WLEnginePool.create username, port
-    obj = klass.new(username, pg_file, {:port => port, :rule_dir => options[:rule_dir]})
+    options[:port] = port
+    obj = klass.new(username, pg_file, options)
     obj.extend WLRunner
     return obj
   end

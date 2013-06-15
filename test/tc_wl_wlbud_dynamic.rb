@@ -65,7 +65,7 @@ end
         {["local_at_test_create_user", ["5", "6"]]=>
             "fact of arity 2 in relation local_at_test_create_user of arity 1",
           ["local_at_test_create_user", ""]=>
-            "fact of arity 0 in relation local_at_test_create_user of arity 1"}, err)
+            "fact in relation local_at_test_create_user with value \"\" should be an Array or struct instead found a String"}, err)
       wl_obj.tick
       assert_equal 6, wl_obj.tables[:local_at_test_create_user].to_a.size
     ensure

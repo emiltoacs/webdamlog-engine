@@ -56,9 +56,9 @@ module WLBud
   
 
   # TODO: remove class to force user to create a new class that include WLBud.
-  # It is very unlikely that any user wants to instantiate this class directly
-  # since all the method adding(and so the rules) would be share by all the
-  # instances.
+  #   It is very unlikely that any user wants to instantiate this class directly
+  #   since all the method adding(and so the rules) would be share by all the
+  #   instances.
   #
   # Alternative: we could change the code code to add methods to instance of
   # objects instead of the class (lots of refactoring)
@@ -70,14 +70,14 @@ module WLBud
     attr_reader :peername
     # The name of the file to read with the program
     attr_reader :filename
-    attr_reader :options, :wl_program, :rules_to_delegate, :relation_to_declare
+    attr_reader :options, :wl_program, :rules_to_delegate, :relation_to_declare, :program_loaded
     # the directory where the peer write its rules
     attr_reader :rule_dir
 
     # TODO: define the following attributes only if options[:wl_test]
 
     # @return the content returned by read_packet_channel at the beginning of
-    # the tick (an array of WLPacketData)
+    #   the tick (an array of WLPacketData)
     attr_reader :test_received_on_chan
     attr_reader :test_send_on_chan, :wl_callback, :wl_callback_step
 
@@ -100,8 +100,10 @@ module WLBud
     # * +:debug+ very verbose debug
     # * +:measure+ put this flag to generate a report with measurement of
     #   internal tick steps.
-    #
-    #
+    # * +:delay_fact_loading+ if true does not load the program hence before you
+    #   can run the peer you shall call the load_program method. Used with
+    #   wrapper that required to be bind before we have started to add facts
+    #   into them
     def initialize (peername, pgfilename, options={})
       # ### WLBud:Begin adding to Bud special bud parameter initialization
       if options[:mesure]
@@ -109,8 +111,9 @@ module WLBud
       end
       # Name of that peer
       @peername = peername
-      # TODO check if already created it may contains previous entries to load since it may be a peer that has been restarted
-      # Directory to store rules in files to be parsed by bud
+      # TODO check if already created it may contains previous entries to load
+      # since it may be a peer that has been restarted Directory to store rules
+      # in files to be parsed by bud
       @rule_dir = create_rule_dir(options[:rule_dir])
       raise WLError, "you must give or provide read and write access to a file for reading rules to provide to bud, but it seems impossible with: #{@rule_dir}" unless File.writable?(@rule_dir)
       # #debug message
@@ -200,12 +203,12 @@ module WLBud
       
       load_lattice_defs
       builtin_state
-
+      
       # #### WLBud:Begin adding to Bud
       #
-      # #Loads .wl file containing the setup(facts and rules) for the Webdamlog
-      # instance.
-      @wl_program = WLBud::WLProgram.new(@peername, @filename, @ip, @options[:port], false, {:debug => @options[:debug]} )
+      # #Loads .wl file containing the setup(facts and rules) for the
+      #   Webdamlog instance.
+      @wl_program = WLBud::WLProgram.new( @peername, @filename, @ip, @options[:port], false, {:debug => @options[:debug]} )
       # if @options[:debug]
       #   WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment
       #   debug_comment="Peer #{@peername} classify rules of input files")
@@ -241,7 +244,7 @@ module WLBud
       end
       @fist_tick_after_make_program=true
       # ### WLBud:End adding to Bud
-      
+
       resolve_imports
       call_state_methods
 
@@ -271,8 +274,18 @@ module WLBud
       # dependency graph and organize it in strata for bud semi-naive
       # evaluation. Some bud legacy code plus incremental adding rule methods
       rewrite_strata
-      WLTools::Debug_messages.h1 "Peer #{@peername} end of initialization" if @options[:debug]
+      WLTools::Debug_messages.h1 "Peer #{@peername} end of initialization" if @options[:debug]      
       # ### WLBud:End alternative to Bud
+    end
+
+    # if :delay_fact_loading is true you should call this to evaluate facts in
+    # the bootstrap program. This will insert all the facts parsed by the
+    # program from the beginning.
+    def load_bootstrap_fact
+      self.sync_do do
+        @wl_program.wlfacts.each { |fact| add_facts(fact) }
+        @program_loaded = true
+      end
     end
        
     # It is not intended to be called directly by client code. From client code,
@@ -338,9 +351,9 @@ module WLBud
               if block.respond_to?(:call)
                 block.call(self)
               else
-                raise WLErrorCallback, 
+                raise WLErrorCallback,
                   "Trying to call a callback method that is not responding to call #{block}"
-              end        
+              end
             end
           end
         end
@@ -502,8 +515,8 @@ module WLBud
           if callback[0] == :callback_step_end_tick
             block = callback[1]
             unless block.respond_to?(:call)
-              raise WLErrorCallback, 
-                "Trying to call a callback method that is not responding to call #{block}" 
+              raise WLErrorCallback,
+                "Trying to call a callback method that is not responding to call #{block}"
             end
             block.call(self)
           end
@@ -570,7 +583,7 @@ module WLBud
     # put it in a separated method to be called after program update.
     #
     def rewrite_strata
-      WLTools::Debug_messages.h2 "Peer #{@peername} start to rewrite strata" if @options[:debug]      
+      WLTools::Debug_messages.h2 "Peer #{@peername} start to rewrite strata" if @options[:debug]
       # Rebuild the list of methods to shred in do_rewrite->shred_rules
       @declarations = self.class.instance_methods.select {|m| m =~ /^__bloom__.+$/}.map {|m| m.to_s}
       # Erase all previous rules and dependence as we rebuild the graph from
@@ -693,12 +706,12 @@ module WLBud
     #
     def schema_init(wlcollection, colltype=nil, *args)
       name = wlcollection.atom_name.to_sym
-      if colltype.nil?        
-        if wlcollection.persistent?          
-          self.table(name,wlcollection.schema)          
+      if colltype.nil?
+        if wlcollection.persistent?
+          self.table(name,wlcollection.schema)
         else
           self.scratch(wlcollection.atom_name.to_sym,wlcollection.schema)
-        end        
+        end
       else
         # Force the type of the collection to declare (non-conventional policy
         # for test)
@@ -717,7 +730,7 @@ module WLBud
             end
           end
         end
-      end # if colltype.nil? 
+      end # if colltype.nil?
       return @tables[name].tabname, @tables[name].schema
     end # schema_init
     
@@ -734,7 +747,7 @@ module WLBud
         end
       else
         if wl_facts.is_a? WLBud::WLFact
-          fact = {wl_facts.fullrelname.to_sym => wl_facts.content}
+          fact = {wl_facts.fullrelname => [wl_facts.content] }
           facts, err = add_facts fact
         elsif wl_facts.is_a? String
           fact = @wl_program.parse(wl_facts, true)
@@ -815,10 +828,15 @@ module WLBud
       if @options[:debug]
         WLTools::Debug_messages.h3 "make_program start generate_facts"
       end
-      generate_bootstrap(@wl_program.wlfacts,@wl_program.wlcollections)
+      # :delay_fact_loading is used in application to delay facts loading when
+      # wrappers needs to be defined and bind before we can add facts
+      unless @options[:delay_fact_loading]
+        generate_bootstrap(@wl_program.wlfacts,@wl_program.wlcollections)
+        @program_loaded = true
+      end
       # #WLTools::Debug_messages.h3 "make_program translate" if @options[:debug]
       WLTools::Debug_messages.h2(WLTools::Debug_messages.end_comment comment) if @options[:debug]
-      create_rule_blocks      
+      create_rule_blocks
     end
 
     # The generate_bootstrap method creates an array containing all extensional
@@ -834,7 +852,7 @@ module WLBud
     #
     def generate_bootstrap(facts,collections)
       if collections.empty? then puts "no relations yet..." if @options[:debug]; return; end
-      if facts.empty? then puts "no facts yet..." if @options[:debug]; return; end      
+      if facts.empty? then puts "no facts yet..." if @options[:debug]; return; end
       str="{\n"
       collections.each_value {|wlcollection|
         tbl=[]
@@ -843,7 +861,6 @@ module WLBud
         str << "#{wlcollection.atom_name} <= " + tbl.inspect + ";\n"
       }
       str << "}"
-      # #if @options[:debug] then puts "bootstrap block : #{str}" end
       block = eval("Proc.new" + str)
       # #this is the same as what is done in bootstrap method in monkeypatch.rb
       meth_name = "__bootstrap__#{self.class.to_s}".to_sym
@@ -887,26 +904,30 @@ module WLBud
       valid = {}
       err = {}
       facts.each_pair do |k,tuples|
-        relation_name = k        
+        relation_name = k
         # translate into internal relation name and check for existence of
         # relation
         relation_name = k.gsub /@/, "_at_" if k.to_s.include?'@'
-        unless @wl_program.wlcollections.has_key? relation_name
-          err[[k,tuples]] = "relation name #{k} translated to #{relation_name} has not been declared previously"
-        else
+        if @wl_program.wlcollections.has_key? relation_name
           arity = @wl_program.wlcollections[relation_name].arity
           tuples.each do |tuple|
-            unless tuple.size == @wl_program.wlcollections[relation_name].arity
-              err[[k,tuple]] = "fact of arity #{tuple.size} in relation #{k} of arity #{arity}"
-            else
-              begin
-                tables[k.to_sym] <+ [tuple]
-                (valid[k] ||= []) << tuple
-              rescue StandardError => error
-                err[[k,tuple]]=error.inspect
+            if tuple.is_a? Array or tuple.is_a? Struct
+              if tuple.size == @wl_program.wlcollections[relation_name].arity
+                begin
+                  tables[k.to_sym] <+ [tuple]
+                  (valid[k] ||= []) << tuple
+                rescue StandardError => error
+                  err[[k,tuple]]=error.inspect
+                end
+              else
+                err[[k,tuple]] = "fact of arity #{tuple.size} in relation #{k} of arity #{arity}"
               end
+            else
+              err[[k,tuple]] = "fact in relation #{k} with value \"#{tuple}\" should be an Array or struct instead found a #{tuple.class}"
             end
-          end
+          end # tuples.each do |tuple|
+        else
+          err[[k,tuples]] = "relation name #{k} translated to #{relation_name} has not been declared previously"          
         end
       end # end facts.each_pair
       return valid, err
@@ -1029,7 +1050,7 @@ module WLBud
         rule_dir = File.join(base_dir,WLTools.friendly_filename(rule_dir))
         unless (File::directory?(rule_dir))
           Dir.mkdir(rule_dir)
-        end        
+        end
       end # unless File.directory?(rule_dir)
       return rule_dir
     end # create_rule_dir
