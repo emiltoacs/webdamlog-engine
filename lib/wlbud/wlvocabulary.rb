@@ -260,7 +260,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str <<  "Data content : #{self.content}"
       return str
     end
-    # return an array of strings containing each attribute value of the fact.
+    
+    # @return [Array] list of strings containing each attribute value of the fact.
     def content
       if @contents.nil?
         array = []
