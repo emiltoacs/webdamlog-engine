@@ -734,7 +734,7 @@ module WLBud
         end
       else
         if wl_facts.is_a? WLBud::WLFact
-          fact = {wl_facts.relname.to_sym => wl_facts.content}
+          fact = {wl_facts.fullrelname.to_sym => wl_facts.content}
           facts, err = add_facts fact
         elsif wl_facts.is_a? String
           fact = @wl_program.parse(wl_facts, true)
@@ -839,7 +839,7 @@ module WLBud
       collections.each_value {|wlcollection|
         tbl=[]
         @wl_program.disamb_peername!(wlcollection)
-        facts.each {|wlf| tbl << wlf.content if wlf.relname.eql?(wlcollection.atom_name)}
+        facts.each {|wlf| tbl << wlf.content if wlf.fullrelname.eql?(wlcollection.atom_name)}
         str << "#{wlcollection.atom_name} <= " + tbl.inspect + ";\n"
       }
       str << "}"

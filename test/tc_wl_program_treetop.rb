@@ -208,7 +208,7 @@ EOF
       assert_equal :Intermediary, program.wlcollections["relintermed_2_at_p1"].get_type
       assert program.wlcollections["relintermed_2_at_p1"].persistent?
       assert_equal 4, program.wlfacts.length
-      program.wlfacts.each { |fact| assert_equal "local_at_p1",fact.relname }
+      program.wlfacts.each { |fact| assert_equal "local_at_p1",fact.fullrelname }
       program.wlfacts.each_with_index { |fact,num|
         assert_equal [(num+1).to_s], fact.content
       }

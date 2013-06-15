@@ -242,8 +242,7 @@ In the string: #{line}
         if result.is_a? WLBud::NamedSentence
           result.map_peername! { |i| WLTools.sanitize!(i) }
           disamb_peername!(result)
-        end
-        result.rule_id = rule_id_generator if result.is_a? WLBud::WLRule        
+        end              
         if add_to_program
           case result
           when WLBud::WLPeerDec
@@ -256,6 +255,7 @@ In the string: #{line}
           when WLBud::WLFact
             @wlfacts << result
           when WLBud::WLRule
+            result.rule_id = rule_id_generator
             if rewritten
               if local?(result)
                 @rewrittenlocal << result                
@@ -398,8 +398,8 @@ In the string: #{line}
           raise WLErrorPeerId,
             "In #{wlrule.text_value} the peer name: #{head_atom_peername} cannot be found in the list of known peer: #{@wlpeers.inspect}"
         end
-        str_res=''
-        str_self_join=''
+        str_res = ""
+        str_self_join = ""
         body = wlrule.body
 
         #Generate rule head
@@ -407,9 +407,9 @@ In the string: #{line}
         unless local?(wlrule.head)
           str_res << "sbuffer <= "
         else if is_tmp?(wlrule.head)
-            str_res << "temp :#{wlrule.head.relname} <= "
+            str_res << "temp :#{wlrule.head.fullrelname} <= "
           else
-            str_res << "#{wlrule.head.relname} <= "
+            str_res << "#{wlrule.head.fullrelname} <= "
           end
         end
 
@@ -437,7 +437,7 @@ In the string: #{line}
           str_res << "];"
         else
           if body.length==1
-            str_res << body.first.relname
+            str_res << body.first.fullrelname
           else
             #Generate rule collection names using pairs and combos keywords.
             #          if @make_binary_rules
@@ -640,7 +640,7 @@ In the string: #{line}
           #add location specifier
           raise WLErrorPeerId, "impossible to define the peer that should receive a message" if destination.nil? or destination.empty?
           str << "\"#{destination}\", "
-          relation = "#{wlrule.head.relname}"
+          relation = "#{wlrule.head.fullrelname}"
           raise WLErrorProgram, "impossible to define the relation that should receive a message" if destination.nil? or destination.empty?
           str << "\"#{relation}\", "
           str << "["
@@ -793,7 +793,7 @@ In the string: #{line}
       #    end
 
       def make_pairs (wlrule)
-        str = "(#{wlrule.body.first.relname} * #{wlrule.body.last.rrelation.text_value}).pairs(" ;
+        str = "(#{wlrule.body.first.fullrelname} * #{wlrule.body.last.rrelation.text_value}).pairs(" ;
         pairs=false
         wlrule.dic_wlvar.each { |key,value| next unless value.length > 1
           rel_first , attr_first =value.first.split('.')
@@ -848,7 +848,7 @@ In the string: #{line}
       # relation so return true.
       def is_tmp? (result)
         if result.is_a?(WLBud::WLAtom)
-          if result.relname=~/temp_/ or result.relname=~/tmp_/ then return true else return false end
+          if result.fullrelname=~/temp_/ or result.fullrelname=~/tmp_/ then return true else return false end
         else
           raise WLErrorGrammarParsing, "is_tmp? is called on non-WLAtom object, of class #{result.class}"
         end
@@ -874,7 +874,7 @@ In the string: #{line}
         raise WLError, "The dictionary should have been created before calling this method" unless wlrule.dic_made
         str = '('; if_str = '' ;
         wlrule.body.each do |atom|
-          str <<  "#{atom.relname} * "
+          str <<  "#{atom.fullrelname} * "
         end
         str.slice!(-2..-1) unless wlrule.body.empty?
         str << ').combos('

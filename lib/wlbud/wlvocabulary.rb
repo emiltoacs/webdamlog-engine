@@ -184,12 +184,12 @@ module WLBud
         # TODO list all the useful relation, a relation is useless if it's arity
         # is more than zero and none variable and constant inside are used in
         # other relation of this rule insert here the function
-        if self.dic_relation_name.has_key?(atom.relname)
-          self.dic_relation_name[atom.relname] << n
+        if self.dic_relation_name.has_key?(atom.fullrelname)
+          self.dic_relation_name[atom.fullrelname] << n
         else
-          self.dic_relation_name[atom.relname]=[n]
+          self.dic_relation_name[atom.fullrelname]=[n]
         end
-        self.dic_invert_relation_name[n] = atom.relname
+        self.dic_invert_relation_name[n] = atom.fullrelname
       end
       @dic_made = true
     end
@@ -209,6 +209,11 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       else
         return @rule_id
       end
+    end
+
+    def show_wdl_format
+      str = "#{head.show_wdl_format} :- "
+      body.each { |atom| str << "#{atom.show_wdl_format}, " }
     end
 
     private
@@ -248,7 +253,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def show
       str = "Class name : #{self.class}"
       str << "Content : #{self.text_value}"
-      str <<  "Relation name : #{self.relname}"
+      str <<  "Relation name : #{self.fullrelname}"
       str <<  "Peer name: #{self.peer_name.text_value}"
       str <<  "Data content : #{self.content}"
       return str
@@ -274,13 +279,20 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @peername
     end
 
+    def relname
+      unless @relname
+        @relname = self.relation_name.text_value
+      end
+      return @relname
+    end
+
     def map_peername! &block
       @peername = yield peername if block_given?
     end
 
     # returns the name of the relation of the fact.
-    def relname
-      return "#{self.relation_name.text_value}_at_#{self.peername}"
+    def fullrelname
+      return "#{self.relname}_at_#{self.peername}"
     end
   end
 
@@ -328,7 +340,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def show
       puts "Class name : #{self.class}"
       puts "Content : #{self.text_value}"
-      puts "Relation name : #{self.relname}"
+      puts "Relation name : #{self.fullrelname}"
       puts "Schema key(s) : #{self.col_fields.keys.text_value}"
       puts "Schema value(s) : #{self.col_fields.values.text_value}"
       puts "--------------------------------------------------------"
@@ -516,6 +528,14 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @peername
     end
 
+    # @return [String] relationname without the peer name
+    def relname
+      unless @relname
+        @relname = self.rrelation.text_value
+      end
+      return @relname
+    end
+
     def map_peername! &block
       @peername = yield peername if block_given?
     end
@@ -546,14 +566,16 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     
     # This method gives the name of the relation. It may also change the name of
     # the relation on this rule only, in order to implement renaming strategies
-    # for self joins.
-    def relname(newname=nil)
-      if !@name_choice then @name = "#{self.rrelation.text_value}_at_#{self.rpeer.text_value}" end
-      unless newname.nil?
-        @name = newname
-        @name_choice = true
+    # for self joins. @return [String] relationname_at_peername
+    def fullrelname(newname=nil)
+      if newname
+        @fullrelname = newname=nil
+      else
+        unless @fullrelname
+          @fullrelname = "#{self.relname}_at_#{self.peername}"
+        end
       end
-      return @name
+      return @fullrelname
     end
 
     # Pretty print for atoms
@@ -571,6 +593,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
         @variables[1]
       end
       str << fields.inspect << "\n"
+    end
+
+    def show_wdl_format
+      return "#{fullrelname}(#{self.rfields.show_wdl_format})"
     end
   end
  
@@ -617,6 +643,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
         @fields=f
       end
       return @fields
+    end
+
+    def show_wdl_format
+      return "#{fields.each { |f| f.text_value }}"
     end
   end
   

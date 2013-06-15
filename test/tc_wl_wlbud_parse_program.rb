@@ -279,8 +279,8 @@ EOF
   def test_disambiguiate
     wlpeer = []
     wlpeer[0] = ParseRuleAndDisambuguiate.new('thisismyname')
-    assert_equal "", wlpeer[0].wlprogram.rule_mapping.keys
-    #wlpeer[0].tick
+    assert_equal [1, 2], wlpeer[0].wl_program.rule_mapping.keys
+    assert_equal [1, 2], wlpeer[0].wl_program.rule_mapping.values.each{ |rules| rules.first.show_wdl_format }
   ensure
     wlpeer.each { |item| assert item.clear_rule_dir }
     if EventMachine::reactor_running?
