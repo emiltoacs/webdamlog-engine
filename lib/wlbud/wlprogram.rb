@@ -63,8 +63,7 @@ module WLBud
       @next=1
       @make_binary_rules=make_binary_rules #Use binary rule format (use Bloom pairs keyword instead of combos).
       my_address = "#{ip}:#{port}"
-      # List of the webdamlog relation inserted in that peer
-      #
+      # @!attribute [Hash] !{name => WLCollection} List of the webdamlog relation inserted in that peer
       @wlcollections={}
       # Define here some std alias for local peer
       # * @peername
