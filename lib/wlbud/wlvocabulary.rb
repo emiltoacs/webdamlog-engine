@@ -109,7 +109,7 @@ module WLBud
       @head
     end
 
-    # return the body atoms of the rule in an array
+    # @return [Array] array of WLAtoms in the body of this rule
     def body
       if @body.nil?
         array=[];
@@ -214,6 +214,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def show_wdl_format
       str = "#{head.show_wdl_format} :- "
       body.each { |atom| str << "#{atom.show_wdl_format}, " }
+      str.slice!(-2..-1)
+      str
     end
 
     private
@@ -646,7 +648,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     def show_wdl_format
-      return "#{fields.each { |f| f.text_value }}"
+      str = ""
+      fields.each { |f| str << "#{f.text_value}, " }
+      str.slice!(-2..-1)
+      str
     end
   end
   

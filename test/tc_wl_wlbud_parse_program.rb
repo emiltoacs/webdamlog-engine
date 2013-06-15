@@ -1,12 +1,12 @@
 # ####License####
 #  File name tc_parse_program.rb
 #  Copyright © by INRIA
-# 
+#
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
+#
 #   WebdamLog - Jul 6, 2012
-# 
+#
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
@@ -213,11 +213,11 @@ EOF
         if /^__bootstrap__/.match m
           assert_equal(wl_peer[0].class, wl_peer[0].method(m.to_sym).owner,
             "bootstrap is defined in class #{wl_peer[0].method(m.to_sym).owner} instead of #{wl_peer[0].class}")
-#          if RUBY_VERSION < "1.9"
-#            puts wl_peer[0].method(m.to_sym).to_ruby
-#          else
-#            puts wl_peer[0].method(m.to_sym).to_source
-#          end
+          #          if RUBY_VERSION < "1.9"
+          #            puts wl_peer[0].method(m.to_sym).to_ruby
+          #          else
+          #            puts wl_peer[0].method(m.to_sym).to_source
+          #          end
         end
       end
     end
@@ -259,6 +259,7 @@ EOF
 
   class ParseRuleAndDisambuguiate < WLBud::WL
     STR1 = <<EOF
+    peer otherguy = localhost:11111;
 collection ext persistent person@local(atom1*,atom2*);
 collection ext persistent friend@local(atom1*,atom2*);
 collection ext persistent family@local(atom1*,atom2*);
@@ -269,6 +270,7 @@ fact family@local(5,5);
 fact family@local(6,6);
 rule person@local($id,$name) :- friend@local($id,$name);
 rule person@local($id,$name) :- family@local($id,$name);
+rule person@local($id,$name) :- family@otherguy($id,$name);
 end
 EOF
     def initialize(peername, options={})
@@ -279,8 +281,16 @@ EOF
   def test_disambiguiate
     wlpeer = []
     wlpeer[0] = ParseRuleAndDisambuguiate.new('thisismyname')
-    assert_equal [1, 2], wlpeer[0].wl_program.rule_mapping.keys
-    assert_equal [1, 2], wlpeer[0].wl_program.rule_mapping.values.each{ |rules| rules.first.show_wdl_format }
+    assert_equal [1, 2, 3, "rule person@local($id,$name) :- family@otherguy($id,$name);"],
+      wlpeer[0].wl_program.rule_mapping.keys
+    ar = wlpeer[0].wl_program.rule_mapping.values.first
+    assert_equal "person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name)", ar.first.show_wdl_format
+    assert_equal ["person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name)",
+      "person_at_thisismyname($id, $name) :- family_at_thisismyname($id, $name)",
+      "person_at_thisismyname($id, $name) :- family_at_otherguy($id, $name)",
+      nil],
+      wlpeer[0].wl_program.rule_mapping.values.map{ |rules| rules.first.show_wdl_format if rules.first.is_a? WLBud::WLRule }
+    
   ensure
     wlpeer.each { |item| assert item.clear_rule_dir }
     if EventMachine::reactor_running?
