@@ -256,4 +256,37 @@ EOF
       wl_peer[1].stop(true) # here I also stop EM to be clean
     end
   end
+
+  class ParseRuleAndDisambuguiate < WLBud::WL
+    STR1 = <<EOF
+collection ext persistent person@local(atom1*,atom2*);
+collection ext persistent friend@local(atom1*,atom2*);
+collection ext persistent family@local(atom1*,atom2*);
+fact family@local(0,0);
+fact friend@local(1,1);
+fact person@local(1,1);
+fact family@local(5,5);
+fact family@local(6,6);
+rule person@local($id,$name) :- friend@local($id,$name);
+rule person@local($id,$name) :- family@local($id,$name);
+end
+EOF
+    def initialize(peername, options={})
+      File.open(TEST_FILENAME1,"w"){ |file| file.write STR1}
+      super(peername, TEST_FILENAME1, options)
+    end
+  end
+  def test_disambiguiate
+    wlpeer = []
+    wlpeer[0] = ParseRuleAndDisambuguiate.new('thisismyname')
+    assert_equal "", wlpeer[0].wlprogram.rule_mapping.keys
+    #wlpeer[0].tick
+  ensure
+    wlpeer.each { |item| assert item.clear_rule_dir }
+    if EventMachine::reactor_running?
+      wlpeer[0].stop
+      wlpeer[1].stop(true) # here I also stop EM to be clean
+    end
+  end
+
 end

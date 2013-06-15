@@ -626,6 +626,7 @@ module WLBud
     # dynamically created.
     #
     def translate_rule(wlrule)
+      @wl_program.disamb_peername!(wlrule)
       rule = "#{@wl_program.translate_rule_str(wlrule)}"
       name = "webdamlog_#{@peername}_#{wlrule.rule_id}"
       str = build_string_rule_to_include(name, rule)
@@ -751,7 +752,7 @@ module WLBud
     
     # It will dynamically add a collection to the program
     #
-    # * +wlpg_relation+ is a string representing the rule in the wlprogram file
+    # * +wlpg_relation+ is a string representing the rule in the wl_program file
     #   format(wlgrammar). @return [String, Hash] name, schema of the collection
     #   added
     #
@@ -794,7 +795,7 @@ module WLBud
     end
 
     # Make program is called in the initializer of the WL instance. Its role is
-    # to create the bud structure corresponding to the wlprogram instance
+    # to create the bud structure corresponding to the wl_program instance
     # loaded.
     #
     # In detail, it create and add methods to this class. The methods created
@@ -833,10 +834,11 @@ module WLBud
     #
     def generate_bootstrap(facts,collections)
       if collections.empty? then puts "no relations yet..." if @options[:debug]; return; end
-      if facts.empty? then puts "no facts yet..." if @options[:debug]; return; end
+      if facts.empty? then puts "no facts yet..." if @options[:debug]; return; end      
       str="{\n"
       collections.each_value {|wlcollection|
         tbl=[]
+        @wl_program.disamb_peername!(wlcollection)
         facts.each {|wlf| tbl << wlf.content if wlf.relname.eql?(wlcollection.atom_name)}
         str << "#{wlcollection.atom_name} <= " + tbl.inspect + ";\n"
       }
@@ -849,9 +851,9 @@ module WLBud
     end
 
     # The create_rule_blocks_rules method creates Bloom blocks from previously
-    # parsed rules in @wlprogram, for each local rules ie.
-    # * the rules in +wlprogram#localrules+
-    # * the rules in +wlprogram#rewrittenlocal+
+    # parsed rules in @wl_program, for each local rules ie.
+    # * the rules in +wl_program#localrules+
+    # * the rules in +wl_program#rewrittenlocal+
     #
     def create_rule_blocks
       WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment comment="Peer #{@peername} translate wlvocabulary internal representation into bud rules") if @options[:debug]

@@ -103,7 +103,10 @@ module WLBud
      
     # return the head atom of the rule
     def head
-      self.atom
+      unless @head
+        @head = self.atom
+      end
+      @head
     end
 
     # return the body atoms of the rule in an array
@@ -234,6 +237,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   # The WLrule class is used to store the content of parsed WL facts.
   class WLFact < WLVocabulary
     include WLBud::NamedSentence
+
+    attr_accessor :peername
         
     def initialize (a1,a2,a3)
       @contents=nil
@@ -308,7 +313,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   class WLCollection < WLVocabulary
     include WLBud::NamedSentence
     
-    attr_reader :type, :persistent
+    attr_reader :type, :persistent, :peername
 
     def initialize(a1,a2,a3)
       @schema=nil
@@ -491,6 +496,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   # WebdamLog Atom, element of a WLrule: rrelation@rpeer(rfields)
   class WLAtom < WLVocabulary
     include WLBud::NamedSentence
+
+    attr_accessor :peername
     
     def initialize (a1,a2,a3)
       @name_choice=false
@@ -615,7 +622,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   
   class WLPeerDec < WLVocabulary
     include WLBud::NamedSentence
-    
+
+    attr_accessor :peername
+
     # Return the name of the peer, it could be different from
     # self.peer_name.text_value when called by {WLProgram} since disambiguation
     # could have modified this field
