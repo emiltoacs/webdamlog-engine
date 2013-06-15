@@ -325,14 +325,14 @@ end
   
     File.open('test_program_2',"w"){ |file| file.write prog}
     program = nil
-    # #assert_nothing_raised do
+    assert_nothing_raised do
     program = WLBud::WLProgram.new(
       'the_peername',
       'test_program_2',
       'localhost',
       '11111',
       {:debug => true} )
-    # #end
+    end
     assert_equal 2, program.rule_mapping.size
 
     delegation = "rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);"
