@@ -367,7 +367,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @schema
     end # schema
 
-    # Return the relation type
+    # @return [String] the relation type intensional extensional
     def get_type
       rel_type.type
     end
@@ -417,6 +417,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       self.relation_name.text_value
     end
 
+    def fullrelname
+      return "#{relname}@#{peername}"
+    end
+
     # Return the name of this atom in the format "relation_at_peer"
     #
     # Create a string for the name of the relation that fits bud restriction
@@ -426,6 +430,14 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def atom_name
       raise WLErrorTyping, "try to create a name for an atom: #{self.class} which is not a WLCollection object." unless self.is_a?(WLCollection)
       return "#{self.relation_name.text_value}_at_#{self.peername}"
+    end
+
+    def show_wdl_format
+      str = ""
+      str << get_type.to_s.downcase + " "
+      str << "persitent" + " " if self.persistent?
+      str << fullrelname
+      str << "( #{col_fields.text_value} )"
     end
   end
 
@@ -447,7 +459,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       @type = :Extensional
       @persistent = nil
     end
-    
+    def to_s
+      return "extensional"
+    end
     def persistent?
       if @persistent.nil?
         @persistent = (not persistent.elements.nil?)
@@ -465,6 +479,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       @type = :Intensional
       @persistent=false
     end
+    def to_s
+      return "intensional"
+    end
   end
 
   class WLIntermediary < WLRelType
@@ -473,7 +490,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       @type = :Intermediary
       @persistent = nil
     end
-    
+    def to_s
+      return "intermediary"
+    end
     def persistent?
       if @persistent.nil?
         @persistent = (not persistent.elements.nil?)
@@ -483,7 +502,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
   
-  class WLFields < WLVocabulary
+  class WLFields < WLVocabulary    
   end
   
   # This is the text part of fields in relation, it could be a constant or a
@@ -685,6 +704,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
 
     def port
       self.peer_address.port.text_value
+    end
+
+    def show_wdl_format
+      return "#{peername} #{ip} : #{port}"
     end
   end
   

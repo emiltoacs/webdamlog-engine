@@ -130,6 +130,97 @@ end
       runner.stop
       File.delete(@pg_file) if File.exists?(@pg_file)
     end
-  end # test_run
-  
+  end # test_run  
 end # class TcWlRunner
+
+class SnapshotTester < Test::Unit::TestCase
+  include MixinTcWlTest
+
+  def setup
+    @pg = <<-EOF
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+peer p3=localhost:11113;
+collection ext persistent local@local(atom1*);
+collection ext per join_delegated@local(atom1*);
+collection int local2@local(atom1*);
+fact local@local(1);
+fact local@local(2);
+fact local@local(3);
+fact local@local(4);
+rule join_delegated@p0($x):- local@local($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);
+rule local2@local($x) :- local@local($x);
+end
+    EOF
+    @username = "test_snapshot_collection"
+    @port = "11110"
+    @pg_file = "test_snapshot_collection_program"
+    File.open(@pg_file,"w"){ |file| file.write @pg }
+  end
+
+  def teardown
+    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    ObjectSpace.garbage_collect
+  end
+
+  def test_snapshot_collections
+    wl_obj = nil
+    assert_nothing_raised do
+      wl_obj = WLRunner.create(@username, @pg_file, @port)
+    end
+    wl_obj.run_engine
+    assert_equal ["extensional persitent local@test_snapshot_collection( atom1* )",
+      "extensional persitent join_delegated@test_snapshot_collection( atom1* )",
+      "intensional local2@test_snapshot_collection( atom1* )",
+      "intermediary deleg_from_test_snapshot_collection_1_1@p1( deleg_from_test_snapshot_collection_1_1_x_0* )"],
+      wl_obj.snapshot_collections
+  end
+
+  def test_snapshot_peers
+    wl_obj = nil
+    assert_nothing_raised do
+      wl_obj = WLRunner.create(@username, @pg_file, @port)
+    end
+    wl_obj.run_engine
+    assert_equal ["test_snapshot_collection 127.0.0.1:11110",
+      "p1 localhost:11111",
+      "p2 localhost:11112",
+      "p3 localhost:11113"],
+      wl_obj.snapshot_peers
+  end
+
+  def test_snapshot_rules
+    wl_obj = nil
+    assert_nothing_raised do
+      wl_obj = WLRunner.create(@username, @pg_file, @port)
+    end
+    wl_obj.run_engine
+    assert_equal({1=>"join_delegated_at_p0($x) :- local_at_test_snapshot_collection($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x)",
+        2=>"local2_at_test_snapshot_collection($x) :- local_at_test_snapshot_collection($x)",
+        3=>"deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x)"},
+      wl_obj.snapshot_rules)
+  end
+
+  def test_snapshot_full_state
+    wl_obj = nil
+    assert_nothing_raised do
+      wl_obj = WLRunner.create(@username, @pg_file, @port)
+    end
+    wl_obj.run_engine
+    assert_equal([["test_snapshot_collection 127.0.0.1:11110",
+          "p1 localhost:11111",
+          "p2 localhost:11112",
+          "p3 localhost:11113"],
+        ["extensional persitent local@test_snapshot_collection( atom1* )",
+          "extensional persitent join_delegated@test_snapshot_collection( atom1* )",
+          "intensional local2@test_snapshot_collection( atom1* )",
+          "intermediary deleg_from_test_snapshot_collection_1_1@p1( deleg_from_test_snapshot_collection_1_1_x_0* )"],
+        {1=>
+            "join_delegated_at_p0($x) :- local_at_test_snapshot_collection($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x)",
+          2=>
+            "local2_at_test_snapshot_collection($x) :- local_at_test_snapshot_collection($x)",
+          3=>
+            "deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x)"}],
+      wl_obj.snapshot_full_state)
+  end
+end

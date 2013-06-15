@@ -19,11 +19,13 @@ module WLRunner
     return obj
   end
 
+  # Stop and delete the webdamlog engine
   def delete
     self.stop if self.running_async
     WLEnginePool.delete self.class
   end
 
+  # Start the webdamlog engine as an event machine task
   def run_engine
     run_bg
   end
@@ -82,6 +84,41 @@ module WLRunner
       ret << err
     end
     return ret
+  end
+
+  # @return [Array] with in this order: array of peers, array of collection and
+  # hash of rules
+  def snapshot_full_state
+    [ snapshot_peers, snapshot_collections, snapshot_rules ]
+  end
+
+  # @return [Array] list of peers declared in wdl
+  def snapshot_peers
+    peers = []
+    sync_do do
+      peers = self.wl_program.wlpeers
+    end
+    return peers.map { |name,address| "#{name} #{address}" }
+  end
+
+  # @return [Array] list of String of collection declared in wdl
+  def snapshot_collections
+    coll = []
+    sync_do do
+      coll = self.wl_program.wlcollections
+    end
+    return coll.map { |name,wlrule| wlrule.show_wdl_format }
+  end  
+
+  # return [Hash] !{id=>rule} id is the wdl internal id for rules and rule is the string parsed and exectued by the wdl engine
+  def snapshot_rules
+    res = {}
+    rule_map = {}
+    sync_do do
+      rule_map = self.wl_program.rule_mapping
+    end
+    rule_map.each { |id,rules| res[id]=rules.first.show_wdl_format if rules.first.is_a? WLBud::WLRule }
+    return res
   end
 
   private
