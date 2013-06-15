@@ -830,7 +830,9 @@ module WLBud
       end
       # :delay_fact_loading is used in application to delay facts loading when
       # wrappers needs to be defined and bind before we can add facts
-      unless @options[:delay_fact_loading]
+      if @options[:delay_fact_loading]
+        @program_loaded = false
+      else
         generate_bootstrap(@wl_program.wlfacts,@wl_program.wlcollections)
         @program_loaded = true
       end

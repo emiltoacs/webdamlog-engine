@@ -77,8 +77,8 @@ end
     assert_equal ["join_delegated_at_p0($x) :- local_at_test_delay_fact_loading($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x)",
       "local2_at_test_delay_fact_loading($x) :- local_at_test_delay_fact_loading($x)",
       "deleg_from_test_delay_fact_loading_1_1_at_p1($x) :- local_at_test_delay_fact_loading($x)",
-      nil],
-      wl_obj.wl_program.rule_mapping.values.map{ |rules| rules.first.show_wdl_format if rules.first.is_a? WLBud::WLRule }
+      "rule join_delegated@p0($x):-deleg_from_test_delay_fact_loading_1_1@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"],
+      wl_obj.wl_program.rule_mapping.values.map{ |rules| rules.first.is_a?(WLBud::WLRule) ? rules.first.show_wdl_format : rules.first }
 
     # Run engine as usual except that it has not facts inserted
     assert_nothing_raised do
