@@ -79,6 +79,7 @@ module WLRunner
   #
   # @return [Array] array of WLBud::WLVocabulary or WLErrorGrammarParsing
   def parse pg
+    return "" if pg.nil?
     file = StringIO.new(pg)
     line = file.readlines
     ret = []
