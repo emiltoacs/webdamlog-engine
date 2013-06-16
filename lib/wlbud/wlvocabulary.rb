@@ -68,7 +68,7 @@ module WLBud
     # 'relation_position.field_position' Remark: position always start from 0
     #
     attr_reader :dic_wlconst
-    
+
     # Creates a new WLRule and instantiate empty dictionaries for that rule.
     #
     # The parameters are given by WebdamLogGrammarParser the
@@ -90,17 +90,17 @@ module WLBud
       @dic_wlconst = {}
       super(a1,a2,a3)
     end
-    
+
     public
-            
+
     # prints to the screen information about the rule
     def show
       puts "Class name : #{self.class}"
-      puts "Head : #{show_head}" 
+      puts "Head : #{show_head}"
       puts "Body : #{show_body}"
       puts "--------------------------------------------------------"
     end
-     
+
     # return the head atom of the rule
     def head
       unless @head
@@ -129,7 +129,7 @@ module WLBud
     #    def atoms
     #      [self.head,self.body].flatten
     #    end
-    
+
     # Return the list of name of peers appearing in atoms, it could be different
     # from self.peer_name.text_value when called by {WLProgram} since
     # disambiguation could have modified this field.
@@ -180,7 +180,7 @@ module WLBud
             end
           end
         end
-        
+
         # TODO list all the useful relation, a relation is useless if it's arity
         # is more than zero and none variable and constant inside are used in
         # other relation of this rule insert here the function
@@ -211,15 +211,16 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
     end
 
+    # show the instruction as stored in the wl_program
     def show_wdl_format
-      str = "#{head.show_wdl_format} :- "
+      str = "rule #{head.show_wdl_format} :- "
       body.each { |atom| str << "#{atom.show_wdl_format}, " }
       str.slice!(-2..-1)
-      str
+      str << ";"
     end
 
     private
-    
+
     def show_head
       self.head.show
     end
@@ -240,13 +241,13 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
     end
   end
-  
+
   # The WLrule class is used to store the content of parsed WL facts.
   class WLFact < WLVocabulary
     include WLBud::NamedSentence
 
     attr_accessor :peername
-        
+
     def initialize (a1,a2,a3)
       @contents=nil
       super(a1,a2,a3)
@@ -260,8 +261,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str <<  "Data content : #{self.content}"
       return str
     end
-    
-    # @return [Array] list of strings containing each attribute value of the fact.
+
+    # @return [Array] list of strings containing each attribute value of the
+    # fact.
     def content
       if @contents.nil?
         array = []
@@ -297,6 +299,15 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def fullrelname
       return "#{self.relname}_at_#{self.peername}"
     end
+
+    def show_wdl_format
+      str = ""
+      str << fullrelname
+      str << "( "
+      items.get_items.each { |i| str << "#{i.item_text_value}, " }
+      str.slice!(-2..-1)
+      str << " ) ;"
+    end
   end
 
   module WLItem
@@ -321,13 +332,13 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
 
   class WLComplexString < WLVocabulary
   end
-  
+
   # The WLcollection class is used to store the content of parsed WL relation
   # names (Bloom collection) that is the declaration of predicate in the
   # beginning of the program file.
   class WLCollection < WLVocabulary
     include WLBud::NamedSentence
-    
+
     attr_reader :type, :persistent, :peername
 
     def initialize(a1,a2,a3)
@@ -348,9 +359,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       puts "Schema value(s) : #{self.col_fields.values.text_value}"
       puts "--------------------------------------------------------"
     end
-    
-    # This method generates the schema corresponding to this 'collection' in a
-    # bud way that is a list of keys => values as symbol for field name
+
+    # This method generates the schema corresponding to this 'collection'
     def schema
       if @schema.nil?
         keys = [];
@@ -393,7 +403,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def map_peername!
       @peername = yield peername if block_given?
     end
-    
+
     # Return an array of strings containing each element of the Fact.
     #
     def fields
@@ -413,7 +423,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
       return @arity
     end
-    
+
     # This method gives the name of the relation.
     def relname
       self.relation_name.text_value
@@ -439,7 +449,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str << get_type.to_s.downcase + " "
       str << "persitent" + " " if self.persistent?
       str << fullrelname
-      str << "( #{col_fields.text_value} )"
+      str << "( #{col_fields.text_value} ) ;"
     end
   end
 
@@ -472,7 +482,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
     end
   end
-  
+
   class WLIntensional < WLRelType
     def initialize (a1,a2,a3=nil)
       # a3 default value is nil since WLIntensional rule is terminal node the
@@ -503,10 +513,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
     end
   end
-  
-  class WLFields < WLVocabulary    
+
+  class WLFields < WLVocabulary
   end
-  
+
   # This is the text part of fields in relation, it could be a constant or a
   # variable
   module WLRToken
@@ -527,13 +537,13 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       true
     end
   end
-  
+
   # WebdamLog Atom, element of a WLrule: rrelation@rpeer(rfields)
   class WLAtom < WLVocabulary
     include WLBud::NamedSentence
 
     attr_accessor :peername
-    
+
     def initialize (a1,a2,a3)
       @name_choice=false
       @variables=nil
@@ -579,14 +589,14 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
       return @variables
     end
-    
+
     # returns the fields of the atom (variables and constants) in an array
     # format
     #
     def fields
       self.rfields.fields
     end
-    
+
     # This method gives the name of the relation. It may also change the name of
     # the relation on this rule only, in order to implement renaming strategies
     # for self joins. @return [String] relationname_at_peername
@@ -622,7 +632,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return "#{fullrelname}(#{self.rfields.show_wdl_format})"
     end
   end
- 
+
   # The Rfields class corresponds contains the fields of atoms in rules.
   class WLRfields < WLVocabulary
     def initialize(a1,a2,a3)
@@ -675,7 +685,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str
     end
   end
-  
+
   class WLPeerDec < WLVocabulary
     include WLBud::NamedSentence
 
@@ -695,7 +705,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def map_peername! &block
       @peername = yield peername if block_given?
     end
-    
+
     def address
       self.peer_address.text_value
     end
@@ -709,10 +719,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     def show_wdl_format
-      return "#{peername} #{ip} : #{port}"
+      return "#{peername} #{ip} : #{port};"
     end
   end
-  
+
   module WLComment
     def show
       puts "--------------------------------------------------------"

@@ -278,16 +278,24 @@ EOF
       super(peername, TEST_FILENAME1, options)
     end
   end
-  def test_disambiguiate
+
+  # test disambiguate peer via show_wdl_format
+  def test_disambiguate
     wlpeer = []
     wlpeer[0] = ParseRuleAndDisambuguiate.new('thisismyname')
+    assert_equal ["family_at_thisismyname( 0, 0 ) ;",
+      "friend_at_thisismyname( 1, 1 ) ;",
+      "person_at_thisismyname( 1, 1 ) ;",
+      "family_at_thisismyname( 5, 5 ) ;",
+      "family_at_thisismyname( 6, 6 ) ;"], wlpeer[0].wl_program.wlfacts.map { |fact| fact.show_wdl_format }
+
     assert_equal [1, 2, 3, "rule person@local($id,$name) :- family@otherguy($id,$name);"],
       wlpeer[0].wl_program.rule_mapping.keys
     ar = wlpeer[0].wl_program.rule_mapping.values.first
-    assert_equal "person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name)", ar.first.show_wdl_format
-    assert_equal ["person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name)",
-      "person_at_thisismyname($id, $name) :- family_at_thisismyname($id, $name)",
-      "person_at_thisismyname($id, $name) :- family_at_otherguy($id, $name)",
+    assert_equal "rule person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name);", ar.first.show_wdl_format
+    assert_equal ["rule person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name);",
+      "rule person_at_thisismyname($id, $name) :- family_at_thisismyname($id, $name);",
+      "rule person_at_thisismyname($id, $name) :- family_at_otherguy($id, $name);",
       nil],
       wlpeer[0].wl_program.rule_mapping.values.map{ |rules| rules.first.show_wdl_format if rules.first.is_a? WLBud::WLRule }
     

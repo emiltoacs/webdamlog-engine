@@ -10,6 +10,10 @@ https://github.com/ooyala/scope
 
 * Bug
 
+** dsock is nill
+unclear errror message usually comes from a engine not started when invoking a sync_do
+
+
 ** Channel stop receiving
    Testing multiple wlbud instance fails because it makes communication via
    channel broke. Message are not received at the right time or not at all.
@@ -42,6 +46,7 @@ https://github.com/ooyala/scope
    Netbeans freeze because of a bg in ruby plugins
    auto-completion mechanism.
    : pkill -KILL -f netbeans
+
 
 ** Ruby event machine mess-up
    Eventmachine is going messy because of some non-regular stop, It
