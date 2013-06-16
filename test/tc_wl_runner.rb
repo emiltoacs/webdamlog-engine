@@ -20,7 +20,6 @@ fact local@test_create_user(1);
 fact local@test_create_user(2);
 fact local@test_create_user(3);
 fact local@test_create_user(4);
-rule join_delegated@p0($x):- local@test_create_user($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);
 rule local2@test_create_user($x) :- local@test_create_user($x);
 end
   EOF
@@ -34,9 +33,18 @@ end
     assert_nothing_raised do
       wl_obj = WLRunner.create(@username, @pg_file, @port)
     end
+    assert_equal "join_delegated_at_p0($x) :- local_at_test_create_user($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x)",
+      wl_obj.parse("rule join_delegated@p0($x):- local@test_create_user($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);").first.show_wdl_format
+    assert_equal 2,
+      wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);").size
+    assert_equal "intensional query1@test_create_user( title* )",
+      wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[0].show_wdl_format
+    assert_equal "query1_at_test_create_user($title) :- pictures_at_test_create_user($title, $_, $_, $_)",
+      wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[1].show_wdl_format
     
-  end
-end
+  end # test_parse
+
+end # class TcWl1Runner
 
 # test create and run in {WLRunner}
 class TcWl1Runner < Test::Unit::TestCase

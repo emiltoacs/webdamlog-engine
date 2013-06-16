@@ -349,7 +349,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       puts "--------------------------------------------------------"
     end
     
-    # This method generates the schema corresponding to this 'collection'
+    # This method generates the schema corresponding to this 'collection' in a
+    # bud way that is a list of keys => values as symbol for field name
     def schema
       if @schema.nil?
         keys = [];
