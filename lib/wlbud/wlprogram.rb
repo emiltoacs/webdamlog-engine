@@ -9,7 +9,7 @@
 #
 #  Encoding - UTF-8
 module WLBud
- 
+
   # :title: WLProgram WLProgram is a class that parses and interprets WebdamLog
   # files (.wl). Parsing is done using the Treetop module (and wlgrammar.treetop
   # file). Interpretation is done using the three following methods. They all
@@ -24,10 +24,10 @@ module WLBud
   # * <tt>--print_content</tt> print all rules, facts and relations to the
   #   screen.
   #
-  class WLProgram    
+  class WLProgram
     attr_reader :wlcollections, :peername, :wlpeers, :wlfacts
     attr_accessor :localrules, :nonlocalrules, :delegations, :rewrittenlocal, :rule_mapping
-    
+
     # The initializer for the WLBud program takes in a filename corresponding to
     # a WebdamLog file (.wl) and parses each line in the file either as a
     # relation declaration, a fact or a WebdamLog rule.
@@ -158,7 +158,7 @@ module WLBud
         rewrite_non_local rule
       end
     end
-    
+
     public
 
     # The print_content method prints the content of the relations
@@ -173,7 +173,7 @@ module WLBud
       @localrules.each {|wl| wl.show}
       puts "\n\n--------------------------------------------------------"
     end
-    
+
     # Returns true if no rules are loaded for evaluation.
     def rules_empty? ; return @rule_mapping.empty?; end
 
@@ -185,13 +185,13 @@ module WLBud
 
     # Return true if the whole program to evaluate is empty
     def empty? ; return (rules_empty? and facts_empty? and collection_empty?) ; end
-    
+
     def print_arg_tab(target,str)
       string=""
       target.each {|r| string << "#{r};\n"}
       puts "#{str} :{\n#{string}}"
     end
-    
+
     # Parse a program. Notice that ';' is a reserved keyword for end sentence. A
     # sentence could define a peer, a collection, a fact or a rule.
     #
@@ -216,7 +216,7 @@ module WLBud
       end
       return ans
     end
-    
+
     # Parses one line of WLcode and adds it to the proper WL collection if the
     # add_to_program boolean is true.
     #
@@ -241,7 +241,7 @@ In the string: #{line}
         if result.is_a? WLBud::NamedSentence
           result.map_peername! { |i| WLTools.sanitize!(i) }
           disamb_peername!(result)
-        end              
+        end
         if add_to_program
           case result
           when WLBud::WLPeerDec
@@ -257,7 +257,7 @@ In the string: #{line}
             result.rule_id = rule_id_generator
             if rewritten
               if local?(result)
-                @rewrittenlocal << result                
+                @rewrittenlocal << result
               else
                 @delegations << result
               end
@@ -270,7 +270,7 @@ In the string: #{line}
               end
             end
           end
-        end        
+        end
       end
       return result
     end
@@ -324,7 +324,7 @@ In the string: #{line}
         destination_peer = nonlocalstack.first.peername
         raise WLErrorProgram, "In #{nonlocalstack.first.text_value} peer is unknown it should have declared: #{destination_peer}" if @wlpeers[destination_peer].nil?
         addr_destination_peer = @wlpeers[destination_peer]
-      
+
         # RULE REWRITING If local atoms are present at the beginning of the non
         # local rule, then we have to add a local rule to the program.
         # Otherwise, the nonlocal rule can be sent as is to its destination.
@@ -351,7 +351,7 @@ In the string: #{line}
               dec_fields << local_var.gsub( /(^\$)(.*)/ , relation_name+"_\\2_"+i.to_s+"\*," )
               var_fields << local_var << ","
             end ; dec_fields.slice!(-1);var_fields.slice!(-1);
-            
+
             intermediary_relation_atom_in_rule = "#{relation_name}@#{destination_peer}(#{var_fields})"
             intermediary_relation_declaration_for_remote_peer = "collection inter persistent #{relation_name}@#{destination_peer}(#{dec_fields});"
             intermediary_relation_declaration_for_local_peer = intermediary_relation_declaration_for_remote_peer.gsub("persistent ", "")
@@ -380,7 +380,7 @@ In the string: #{line}
         end
         return intermediary_relation_declaration_for_local_peer
       end
-    
+
       # Generates the string representing the rule in the Bud format from a
       # WLrule.
       #
@@ -429,7 +429,7 @@ In the string: #{line}
         #          dic_invert_relation_name - #{wlrule.dic_invert_relation_name.inspect}
         #        END
         #      end
-      
+
         if body.length==0
           str_res << " ["
           str_res << def_projection(wlrule)
@@ -490,7 +490,7 @@ In the string: #{line}
         end
         return flush
       end
-    
+
       # Read the content and erase. It return the hash of the delegation to send
       # and clear it after.
       #
@@ -554,11 +554,11 @@ In the string: #{line}
       # Note that a rule is local if the body is local whatever the state of the
       # head
       #
-      def local? (wlword)      
+      def local? (wlword)
         if wlword.is_a? WLBud::WLCollection or wlword.is_a? WLBud::WLAtom
           if @localpeername.include?(wlword.peername)
             return true
-          else 
+          else
             return false
           end
         elsif wlword.is_a? WLBud::WLRule
@@ -596,7 +596,7 @@ In the string: #{line}
               @peername
             else
               pname
-            end   
+            end
           end
         else
           raise WLErrorTyping, "expect an object extending WLBud::NamedSentence or a string representing the name"
@@ -644,7 +644,7 @@ In the string: #{line}
           str << "\"#{relation}\", "
           str << "["
         end
-        
+
         # add the list of variable and constant that should be projected
         fields = wlrule.head.fields
         fields.each_with_index do |f,i|
@@ -672,7 +672,7 @@ In the string: #{line}
         str << ']'
         return str
       end
-    
+
 =begin
     # Generates a string corresponding to the appropriate delegation.
     # Ensure that the delegation string is created according to the specifications.    #
@@ -770,8 +770,8 @@ In the string: #{line}
       #        puts rewritten_rules.inspect
       #        return rewritten_rules
       #      end
-    
-    
+
+
       # Update nonlocal updates the head_nonlocal. Has to be called each time
       # program collection changes (new rules or new peers added to the
       # program).
@@ -792,7 +792,7 @@ In the string: #{line}
       #    end
 
       def make_pairs (wlrule)
-        str = "(#{wlrule.body.first.fullrelname} * #{wlrule.body.last.rrelation.text_value}).pairs(" ;
+        str = "(#{wlrule.body.first.fullrelname} * #{wlrule.body.last.fullrelname}).pairs(" ;
         pairs=false
         wlrule.dic_wlvar.each { |key,value| next unless value.length > 1
           rel_first , attr_first =value.first.split('.')
@@ -913,14 +913,19 @@ In the string: #{line}
         end
         str.slice!(-1) if combos
         str << ')'
-        
+
         return str, if_str
       end
 
       # Get the the name specified for the column of the relation in given atom
       # as it is declared in the collection
       def get_column_name_of_relation (atom, column_number)
-        @wlcollections["#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"].fields.fetch(column_number)
+        wlcoll = @wlcollections["#{atom.relname}_at_#{atom.peername}"]
+        unless wlcoll.nil?
+          wlcoll.fields.fetch(column_number)
+        else
+          raise WLErrorProgram, "in get_column_name_of_relation #{atom.relname}_at_#{atom.peername} not found in wlcollections"
+        end
       end
 
       # Add quotes around s if it is a string
@@ -940,7 +945,7 @@ In the string: #{line}
         raise WLBud::WLErrorGrammarParsing, "#{obj} is a lone variable" unless table.include?(obj)
         table.each_with_index {|a,i| if obj.eql?(a) then return i else next end}
       end
-    
+
       # Generate a new unique relation name for intermediary relation due to
       # delegation rewritings.
       #

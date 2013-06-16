@@ -430,7 +430,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     def fullrelname
-      return "#{relname}@#{peername}"
+      return "#{relname}_at_#{peername}"
     end
 
     # Return the name of this atom in the format "relation_at_peer"
