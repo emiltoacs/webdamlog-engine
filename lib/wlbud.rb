@@ -787,6 +787,8 @@ module WLBud
     # Takes in a string representing a WLRule, parses it and adds it directly
     # into the WLBud instance.
     #
+    # @raise [WLError] if something goes wrong
+    # @return [Array] rule_id, rule string to display
     def add_rule(wlpg_rule)
       rule = @wl_program.parse(wlpg_rule, true)
       raise WLErrorProgram, "parse rule and get #{rule.class}" unless rule.is_a?(WLBud::WLRule)
@@ -805,6 +807,7 @@ module WLBud
       puts "Adding a rule: #{wlpg_rule}" if @options[:debug]
       translate_rule(rule)
       @need_rewrite_strata = true
+      return rule.rule_id, rule.show_wdl_format
     end
 
     # Make program is called in the initializer of the WL instance. Its role is
