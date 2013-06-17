@@ -224,7 +224,6 @@ module WLBud
     # been declared. The atoms in the head that are not local should also be
     # declared but I can also make my parser declare them automatically since
     # the type is not important.
-    #
     def parse(line, add_to_program=false, rewritten=false, options={})
       raise WLErrorTyping, "I could only parse string not #{line.class}" unless line.is_a?(String)
       unless (output=@parser.parse(line))
