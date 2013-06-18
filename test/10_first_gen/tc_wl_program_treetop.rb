@@ -95,7 +95,7 @@ class TcWlProgramTreetop < Test::Unit::TestCase
   end
 
   # test disambiguation mechanism
-  def test_050_peername_NamedSentence
+  def test_050_peername_namedsentence
     program = nil
     begin      
       # test disambiguation with real name

@@ -15,7 +15,15 @@ module WLRunner
   def self.create (username, pg_file, port, options={})
     klass = WLEnginePool.create username, port
     options[:port] = port
+    # FIXME Hacky way to get the rules and collections from bootstrap program
+    klass.module_eval { attr_accessor :bootstrap_program}
+    klass.module_eval { attr_accessor :bootstrap_collections}
+    klass.module_eval { attr_accessor :bootstrap_rules}
     obj = klass.new(username, pg_file, options)
+    #Loading twice the file from io. could find another way but need clear interface from wl_bud
+    obj.bootstrap_program = pg_file ? open(pg_file).readlines.join("").split(";").map {|stmt| "#{stmt};"} : []
+    obj.bootstrap_collections = obj.bootstrap_program ? obj.bootstrap_program.select {|stmt| stmt.lstrip()[0..9]=='collection' } : []
+    obj.bootstrap_rules = obj.bootstrap_program ? obj.bootstrap_program.select {|stmt| stmt.lstrip()[0..3]=='rule' } : []
     obj.extend WLRunner
     return obj
   end

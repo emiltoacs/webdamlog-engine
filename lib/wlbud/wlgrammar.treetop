@@ -200,6 +200,7 @@ module WLBud
             rule rtoken
               (variable / item) <WLRToken>
             end
+            # useless to parse $_ since words now accepts _ but think to improve to parse as anonymous variable
             rule variable
               '$' word <WLVar>
               /

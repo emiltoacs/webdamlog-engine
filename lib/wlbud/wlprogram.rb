@@ -881,7 +881,7 @@ In the string: #{line}
         combos=false
         wlrule.dic_wlvar.each do |key,value|
           next unless value.length > 1 # skip free variable (that is occurring only once in the body)
-          next if key == '_' # skip anonymous variable
+          next if key == '$_' # skip anonymous variable PENDING parsing string directly here is subject to bugs in general create good data structure
 
           v1 = value.first
           rel_first , attr_first = v1.split('.')
