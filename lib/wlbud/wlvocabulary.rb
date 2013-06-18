@@ -31,12 +31,16 @@ module WLBud
 
     # the peer name of this sentence
     def peername
-      raise MethodNotImplementedError, "a WLSentence subclass must implement the method peername"
+      raise MethodNotImplementedError, "a WLBud::NamedSentence subclass must implement the method peername"
     end
 
     # Assign value returned by block on each peername
     def map_peername! &block
-      raise MethodNotImplementedError, "a WLSentence subclass must implement the method map_peername!"
+      raise MethodNotImplementedError, "a WLBud::NamedSentence subclass must implement the method map_peername!"
+    end
+
+    def show_wdl_format
+      raise MethodNotImplementedError, "a WLBud::NamedSentence subclass must implement the method show_wdl_format"
     end
   end
 
@@ -86,7 +90,9 @@ module WLBud
       @body = nil
       @dic_relation_name = {}
       @dic_invert_relation_name = {}
+      # !@attribute [Hash] list of variables "name of variable" => ["relpos.atompos", ... ] eg. {"$_"=>["0.0", "0.1"], "$id"=>["0.2"]}
       @dic_wlvar = {}
+      # !@attribute [Hash] list of constants name of variable => ["relpos.atompos", ... ]
       @dic_wlconst = {}
       super(a1,a2,a3)
     end
@@ -146,7 +152,7 @@ module WLBud
     end
 
     # Make dictionary : creates hash dictionaries for WLvariables and constants.
-    # These dictionaries take as key the field value as it appears in the .wl
+    # These dictionaries takes as key the field value as it appears in the .wl
     # file along with their position in the rule to disambiguate in case of self
     # joins. As value it's location in the following format :
     # 'relation_pos.field_pos'
@@ -158,13 +164,7 @@ module WLBud
         # field variable goes to dic_wlvar and constant to dic_wlconst
         atom.fields.each_with_index do |f,i|
           str = "#{n}.#{i}"
-          # if the rule is not a temporary variable
-          #          unless is_tmp
-          #            str = "#{atom.name}.#{@wlcollections["#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"].fields.fetch(i)}"
-          #          else
-          #            str = "#{atom.name}.pos#{i}"
-          #          end
-          if f.variable? #f.=~ /'^$*'/.nil?
+          if f.variable?
             var = f.text_value
             if self.dic_wlvar.has_key?(var)
               self.dic_wlvar[var] << str

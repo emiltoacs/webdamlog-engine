@@ -58,7 +58,7 @@ class TcBudCollection < Test::Unit::TestCase
     program.tick
     assert_equal [['c', 'd', 5, 6]], program.scrtch.to_a.sort
     assert_equal [], program.scrtch2.to_a.sort
-    assert_equal [['c', 'd', 5, 6],['z', 'y', 9, 8]], program.tbl.to_a.sort
+    assert_equal [['c', 'd', 5, 6],['z', 'y', 9, 8]], program.tbl.to_a.sort    
   end
 
   # Check how the internal buffers in collections reacts

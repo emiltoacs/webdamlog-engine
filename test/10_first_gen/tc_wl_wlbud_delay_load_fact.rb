@@ -91,12 +91,12 @@ end
 
     # TODO check fact has been added and rules evaluated
     wl_obj.load_bootstrap_fact
-    assert_equal [["1"], ["2"], ["3"], ["4"]], 
-      wl_obj.tables[:local_at_test_delay_fact_loading].to_a.sort.map { |t| t.to_a },
+    assert_equal [{:atom1=>"1"}, {:atom1=>"2"}, {:atom1=>"3"}, {:atom1=>"4"}],
+      wl_obj.tables[:local_at_test_delay_fact_loading].map { |t| Hash[t.each_pair.to_a] },
       "some facts should have been added directly by load_bootstrap_fact"
     assert_equal [], wl_obj.tables[:join_delegated_at_test_delay_fact_loading].to_a.sort.map { |t| t.to_a }
-    assert_equal [["1"], ["2"], ["3"], ["4"]], 
-      wl_obj.tables[:local2_at_test_delay_fact_loading].to_a.sort.map { |t| t.to_a },
+    assert_equal [{:atom1=>"1"}, {:atom1=>"2"}, {:atom1=>"3"}, {:atom1=>"4"}],
+      wl_obj.tables[:local2_at_test_delay_fact_loading].map { |t| Hash[t.each_pair.to_a] },
       "some facts should have been derived beause of adding by load_bootstrap_fact"
     assert_equal [], wl_obj.tables[:deleg_from_test_delay_fact_loading_1_1_at_p1].to_a.sort.map { |t| t.to_a }    
   end

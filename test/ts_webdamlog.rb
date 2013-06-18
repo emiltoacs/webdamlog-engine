@@ -28,10 +28,13 @@ if  ARGV.include?("verbose")
   $test_verbose = true
 end
 
-files = Dir.entries(File.dirname(__FILE__)).select do |file|
-  file =~ /tc_.*\.rb$/
+files = []
+Dir.chdir(File.dirname(__FILE__)) do
+  Dir.glob('**/tc_*.rb').each do|f|
+    files << f
+  end  
 end
-# #files = Dir.chdir(File.dirname(__FILE__)) { Dir.glob('tc_*\.rb').sort }
+
 
 # Invoke with ./ts_webdamlog.rb ordered
 if ARGV.include?("ordered")
