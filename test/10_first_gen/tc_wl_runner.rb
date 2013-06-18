@@ -1,6 +1,6 @@
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
-require_relative '../lib/webdamlog_runner'
+require_relative '../../lib/webdamlog_runner'
 
 require 'test/unit'
 
