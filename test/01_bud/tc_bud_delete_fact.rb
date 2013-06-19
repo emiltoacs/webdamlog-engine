@@ -122,9 +122,6 @@ class TcBudDeleteFact < Test::Unit::TestCase
     end
   end
 
-
-
-
 end
 
 

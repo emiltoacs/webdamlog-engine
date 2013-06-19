@@ -428,7 +428,7 @@ In the string: #{line}
 
       if body.length==0
         str_res << " ["
-        str_res << def_projection(wlrule)
+        str_res << projection_bud_string(wlrule)
         str_res << "];"
       else
         if body.length==1
@@ -443,26 +443,19 @@ In the string: #{line}
           str_res << s
         end
         str_res << " {|";
-        wlrule.dic_invert_relation_name.keys.sort.each {|v| str_res << "#{WLProgram.get_bud_var_by_pos(v)}, "}
+        wlrule.dic_invert_relation_name.keys.sort.each {|v| str_res << "#{WLProgram.atom_iterator_by_pos(v)}, "}
         str_res.slice!(-2..-1) #remove last and before last
         str_res << "| "
-        str_res << def_projection(wlrule)
-        wlrule.dic_wlconst.each do |key,value|
-          value.each do |v|
-            relation_position , attribute_position = v.first.split('.')
-            if wlrule.dic_wlconst.keys.first==key
-              str_res << " if "
-            else
-              str_res << " && "
-            end
-            str_res << "#{wlrule.dic_relation_name[relation_position]}.#{attribute_position}==#{quote_string(key)}"
-          end
-        end
-        unless wlrule.dic_wlconst.empty?
-          str_res << str_self_join.sub(/&&/,'if')
-        else
-          str_res << str_self_join
-        end
+        
+        str_res << projection_bud_string(wlrule)
+        str_res << condition_bud_string(wlrule)
+        
+#        unless wlrule.dic_wlconst.empty?
+#          str_res << str_self_join.sub(/&&/,'if')
+#        else
+#          str_res << str_self_join
+#        end
+
         str_res << "};"
       end
     end
@@ -612,7 +605,7 @@ In the string: #{line}
 
     # Define the format of the name of the variable for the name of the
     # relation inside the block of the bud rules
-    def self.get_bud_var_by_pos(position)
+    def self.atom_iterator_by_pos(position)
       "atom#{position}"
     end
 
@@ -625,7 +618,7 @@ In the string: #{line}
     #
     # !{descendant_at_emilien <= child_at_emilien {|atom0| *[atom0[0],
     # atom0[2]]*}
-    def def_projection(wlrule)
+    def projection_bud_string (wlrule)
       str = '['
 
       # add the remote peer and relation name which should receive the fact.
@@ -643,12 +636,12 @@ In the string: #{line}
 
       # add the list of variable and constant that should be projected
       fields = wlrule.head.fields
-      fields.each_with_index do |f,i|
+      fields.each do |f|
         if f.variable?
           var = f.token_text_value
           if wlrule.dic_wlvar.has_key?(var)
             relation , attribute = wlrule.dic_wlvar.fetch(var).first.split('.')
-            str << "#{WLBud::WLProgram.get_bud_var_by_pos(relation)}[#{attribute}], "
+            str << "#{WLBud::WLProgram.atom_iterator_by_pos(relation)}[#{attribute}], "
           else
             if var.anonymous?
               raise(WLErrorGrammarParsing,
@@ -669,6 +662,24 @@ In the string: #{line}
       end
 
       str << ']'
+      return str
+    end
+
+    # define the if condition for each constant it assign its value
+    # return [String] the string to append to make the wdl rule
+    def condition_bud_string wlrule
+      str = ""
+      wlrule.dic_wlconst.each do |key,value|
+        value.each do |v|
+          relation_position , attribute_position = v.split('.')
+          if wlrule.dic_wlconst.keys.first == key
+            str << " if "
+          else
+            str << " && "
+          end
+          str << "#{WLBud::WLProgram.atom_iterator_by_pos(relation_position)}[#{attribute_position}]==#{quote_string(key)}"
+        end
+      end
       return str
     end
 
@@ -869,7 +880,7 @@ In the string: #{line}
 
       # list all the useful relation in combo
       raise WLError, "The dictionary should have been created before calling this method" unless wlrule.dic_made
-      str = '('; if_str = '' ;
+      str = '(';
       wlrule.body.each do |atom|
         str <<  "#{atom.fullrelname} * "
       end
@@ -899,8 +910,8 @@ In the string: #{line}
             str << ":#{col_name_first}" << ' => ' << ":#{col_name_other}"
             combos=true
           else
-            # str << WLProgram.get_bud_var_by_pos(rel_first) << attr_first << '
-            # => ' << WLProgram.get_bud_var_by_pos(rel_other) << attr_other <<
+            # str << WLProgram.atom_iterator_by_pos(rel_first) << attr_first << '
+            # => ' << WLProgram.atom_iterator_by_pos(rel_other) << attr_other <<
             # ',' ;
             str << rel_first_name << '.' << col_name_first << ' => ' << rel_other_name << '.' << col_name_other
             combos=true
@@ -911,7 +922,7 @@ In the string: #{line}
       str.slice!(-1) if combos
       str << ')'
 
-      return str, if_str
+      return str
     end
 
     # Get the the name specified for the column of the relation in given atom as
