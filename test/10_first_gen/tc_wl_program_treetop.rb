@@ -32,12 +32,19 @@ class TcWlProgramTreetop < Test::Unit::TestCase
   # Test creation of empty WLProgram with just relation declaration
   def test_020_empty_program
     program = nil
-    File.open('test_string_1',"w"){ |file| file.write "collection ext persistent local@p1(atom1*);"}
+    File.open('test_string_1',"w") do |file|
+      file.write <<-END
+collection ext persistent local@p1(atom1*);
+collection ext persistent localempty@p1();
+      END
+    end
     assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_1', 'localhost', '11111', {:debug => true})}
     assert_not_nil program
-    assert_equal 1, program.wlcollections.size
+    assert_equal 2, program.wlcollections.size
     assert_equal "local_at_p1", program.wlcollections.first[0]
+    assert_equal "localempty_at_p1", program.wlcollections.to_a[1][0]
     assert_equal 1, program.wlcollections.first[1].arity
+    assert_equal 0, program.wlcollections.to_a[1][1].arity
     File.delete('test_string_1')
   end
 
@@ -326,12 +333,12 @@ end
     File.open('test_program_2',"w"){ |file| file.write prog}
     program = nil
     assert_nothing_raised do
-    program = WLBud::WLProgram.new(
-      'the_peername',
-      'test_program_2',
-      'localhost',
-      '11111',
-      {:debug => true} )
+      program = WLBud::WLProgram.new(
+        'the_peername',
+        'test_program_2',
+        'localhost',
+        '11111',
+        {:debug => true} )
     end
     assert_equal 2, program.rule_mapping.size
 

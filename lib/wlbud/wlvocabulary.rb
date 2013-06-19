@@ -90,9 +90,11 @@ module WLBud
       @body = nil
       @dic_relation_name = {}
       @dic_invert_relation_name = {}
-      # !@attribute [Hash] list of variables "name of variable" => ["relpos.atompos", ... ] eg. {"$_"=>["0.0", "0.1"], "$id"=>["0.2"]}
+      # !@attribute [Hash] list of variables "name of variable" =>
+      # ["relpos.atompos", ... ] eg. {"$_"=>["0.0", "0.1"], "$id"=>["0.2"]}
       @dic_wlvar = {}
-      # !@attribute [Hash] list of constants name of variable => ["relpos.atompos", ... ]
+      # !@attribute [Hash] list of constants name of variable =>
+      # ["relpos.atompos", ... ]
       @dic_wlconst = {}
       super(a1,a2,a3)
     end
@@ -419,7 +421,11 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     # Number of fields for this relation
     def arity
       if @arity.nil?
-        @arity = self.col_fields.keys.elements.size + self.col_fields.values.elements.size
+        if self.col_fields.empty?
+          @arity = 0
+        else
+          @arity = self.col_fields.keys.elements.size + self.col_fields.values.elements.size
+        end
       end
       return @arity
     end
