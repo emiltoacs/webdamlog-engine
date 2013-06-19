@@ -58,6 +58,22 @@ collection ext persistent localempty@p1();
     File.delete('test_string_word')
   end
 
+  # Facts arity 0 not allowed
+  def test_035_arity_0
+    program = nil
+    File.open('test_035_arity_0',"w") do |file|
+      file.write <<-END
+collection ext persistent local@p1();
+end
+      END
+    end
+    assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_035_arity_0', 'localhost', '11111', {:debug => true})}
+    assert_equal "local_at_p1", program.wlcollections.first[0]
+    assert_equal 0, program.wlcollections.first[1].arity
+    assert_equal 0, program.wlfacts.size
+    File.delete('test_035_arity_0')
+  end
+
   # Test if the collection type is well interpreted
   #
   def test_040_string_relation_type
@@ -318,11 +334,11 @@ end
 
 
 # Test variables in rules and rule rewriting in rule_mapping
-#
 class TcRulesWLVocabulary < Test::Unit::TestCase
   include MixinTcWlTest 
-  
-  def test_vocabulary_rules
+
+  # Test variables in atom fields
+  def test_variables_atoms_rules
     prog = <<-EOF
 peer sigmod_peer = localhost:10000;
 collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
@@ -341,11 +357,11 @@ end
         {:debug => true} )
     end
     assert_equal 2, program.rule_mapping.size
-
-    delegation = "rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);"
-
+    local = "rule contact_at_the_peername($username, $peerlocation, $online, $email, none) :- contact_at_sigmod_peer($username, $peerlocation, $online, $email, none);"
+    delegation = "rule contact_at_the_peername($username, $peerlocation, $online, $email, none) :- contact_at_sigmod_peer($username, $peerlocation, $online, $email, none);"
     keys = program.rule_mapping.keys
     assert_equal 1, keys[0]
+    assert_equal local, program.rule_mapping.first[1].first.show_wdl_format
     assert_equal delegation, keys[1]
 
     values = program.rule_mapping.values
@@ -357,9 +373,36 @@ end
     assert_kind_of String, values[1].first
     assert_equal delegation, values[1].first
 
-    assert_equal 4, program.rule_mapping[1].first.head.rfields.variables.length
     assert_equal 5, program.rule_mapping[1].first.head.rfields.fields.length
+    assert_equal 4, program.rule_mapping[1].first.head.rfields.variables.length
+    
   ensure
     File.delete('test_program_2') if File.exists?('test_program_2')
   end
+
+  def test_variables_relation_name_rules
+    prog = <<-EOF
+peer sigmod_peer = localhost:10000;
+collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
+collection ext persistent picture@local(title*, owner*, _id*, image_url*);
+collection ext persistent contact@local(username*, ip*, port*, online*, email*);
+collection int query2@local(title*,contact*,id*,image_url*);
+rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);
+rule query2@local($title, $contact, $id, $image_url):- contact@local($contact, $_, $_, $_, $_),picture@$contact($title, $contact, $id, $image_url);
+end
+    EOF
+
+    File.open('test_program_2',"w"){ |file| file.write prog}
+    program = nil
+    assert_raise WLBud::WLErrorProgram do
+      program = WLBud::WLProgram.new(
+        'the_peername',
+        'test_program_2',
+        'localhost',
+        '11111',
+        {:debug => true} )
+    end    
+    
+  end
+
 end
