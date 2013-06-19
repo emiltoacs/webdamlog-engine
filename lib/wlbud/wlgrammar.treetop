@@ -136,7 +136,7 @@ module WLBud
         
         #### fields for collection declaration ####
         rule col_fields
-          keys values / [ ]* <WLFields>
+          keys values / '' <WLFields>
         end
             # value+ for key fields in relations
             rule keys
