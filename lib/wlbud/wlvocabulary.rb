@@ -82,9 +82,9 @@ module WLBud
       # start from 0 !@attribute [Hash] list of variables "name of variable" =>
       # ["relpos.atompos", ... ] eg. {"$_"=>["0.0", "0.1"], "$id"=>["0.2"]}
       @dic_wlvar = {}
-      # The var dictionary is a hash that contains the name of the constants of
-      # each atom of the body. It takes as key the field value of the constant,
-      # e.g. 'a' and as value it's location in the following format :
+      # The const dictionary is a hash that contains the value of the constants
+      # of each atom of the body. It takes as key the field value of the
+      # constant, e.g. 'a' and as value it's location in the following format :
       # 'relation_position.field_position' Remark: position always start from 0
       # !@attribute [Hash] list of constants name of variable =>
       # ["relpos.atompos", ... ]

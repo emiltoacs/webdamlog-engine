@@ -316,6 +316,8 @@ EOF
 collection ext persistent person@local(atom1*,atom2*);
 collection ext persistent friend@local(atom1*,atom2*);
 collection ext persistent family@local(atom1*,atom2*);
+collection ext persistent rating@local(_id*, rating*, owner*);
+collection ext persistent picture@local(title*, owner*, _id*, image_url*);
 fact family@local(0,0);
 fact friend@local(1,1);
 fact person@local(1,1);
@@ -323,7 +325,7 @@ fact family@local(5,5);
 fact family@local(6,6);
 rule person@local($id," ") :- friend@local($id,$_);
 rule person@local(" ",$name) :- family@local($_,$name);
-rule person@local($id,$name) :- family@otherguy($id,$name);
+rule rating@local($id, 3, $owner):-picture@local(title, $owner, $id, url2);
 end
 EOF
       def initialize(peername, options={})
@@ -341,14 +343,13 @@ EOF
         "family_at_thisismyname( 5, 5 ) ;",
         "family_at_thisismyname( 6, 6 ) ;"], wlpeer[0].wl_program.wlfacts.map { |fact| fact.show_wdl_format }
 
-      assert_equal [1, 2, 3, "rule person_at_thisismyname($id, $name) :- family_at_otherguy($id, $name);"],
+      assert_equal [1, 2, 3],
         wlpeer[0].wl_program.rule_mapping.keys
       ar = wlpeer[0].wl_program.rule_mapping.values.first
       assert_equal "rule person_at_thisismyname($id, \" \") :- friend_at_thisismyname($id, $_);", ar.first.show_wdl_format
       assert_equal ["rule person_at_thisismyname($id, \" \") :- friend_at_thisismyname($id, $_);",
         "rule person_at_thisismyname(\" \", $name) :- family_at_thisismyname($_, $name);",
-        "rule person_at_thisismyname($id, $name) :- family_at_otherguy($id, $name);",
-        nil],
+        "rule rating_at_thisismyname($id, 3, $owner) :- picture_at_thisismyname(title, $owner, $id, url2);"],
         wlpeer[0].wl_program.rule_mapping.values.map{ |rules| rules.first.show_wdl_format if rules.first.is_a? WLBud::WLRule }
 
     ensure
