@@ -107,7 +107,7 @@ module WLBud
       puts "--------------------------------------------------------"
     end
 
-    # return the head atom of the rule
+    # @return [WLAtom] the head atom of the rule
     def head
       unless @head
         @head = self.atom
@@ -331,7 +331,6 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
       return ''
     end
-
     def variable?
       false
     end
@@ -546,12 +545,25 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
         false
       end
     end
+
+    # @return [String] the content as text of the token which could be a
+    # variable or a constant
+    def token_text_value
+      if self.is_a? WLItem
+        item_text_value
+      else
+        text_value
+      end
+    end
   end
 
   module WLVar
     # variable? is override here against previous mixins of modules
     def variable?
       true
+    end
+    def anonymous?
+      self.terminal? and self == '$_' ? true : false
     end
   end
 
@@ -609,9 +621,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       rrelation.variable? or rpeer.variable? ? true : false
     end
 
-    # returns the fields of the atom (variables and constants) in an array
-    # format
-    #
+    # @return [Array] list of WLRToken as the fields of the atom (variables and
+    # constants) in an array format
     def fields
       self.rfields.fields
     end
@@ -696,13 +707,10 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
       return @variables
     end
-    # this methods hands in all fields as WLRToken
+    # @return [Array] list of WLRToken
     def fields
       if @fields.nil?
         f = []
-        # self.rtokens.elements.each {|t| f <<
-        # t.elements.first.text_value.split(',').first}# unless
-        # t.text_value.include?(',')} f << self.rtoken.text_value
         get_rtokens.each { |t| f << t }
         @fields=f
       end
