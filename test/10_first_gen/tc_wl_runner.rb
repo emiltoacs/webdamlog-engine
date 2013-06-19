@@ -43,7 +43,6 @@ end
       wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[1].show_wdl_format
     
   end # test_parse
-
 end # class TcWl1Runner
 
 # test create and run in {WLRunner}

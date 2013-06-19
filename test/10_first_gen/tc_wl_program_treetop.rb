@@ -341,8 +341,8 @@ class TcRulesWLVocabulary < Test::Unit::TestCase
   def test_variables_atoms_rules
     prog = <<-EOF
 peer sigmod_peer = localhost:10000;
-collection ext persistent contact@local(username*, peerlocation*, online*, email*, facebook*);
-rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);
+collection ext persistent contact@local(username*, peerlocation*, online*, email*);
+rule contact@local($username, $peerlocation, $online, "asnwer@email.com"):-contact@sigmod_peer($username, $peerlocation, $online, "email@email.com");
 end
     EOF
   
@@ -357,8 +357,8 @@ end
         {:debug => true} )
     end
     assert_equal 2, program.rule_mapping.size
-    local = "rule contact_at_the_peername($username, $peerlocation, $online, $email, none) :- contact_at_sigmod_peer($username, $peerlocation, $online, $email, none);"
-    delegation = "rule contact_at_the_peername($username, $peerlocation, $online, $email, none) :- contact_at_sigmod_peer($username, $peerlocation, $online, $email, none);"
+    local = "rule contact_at_the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact_at_sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
+    delegation = "rule contact_at_the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact_at_sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
     keys = program.rule_mapping.keys
     assert_equal 1, keys[0]
     assert_equal local, program.rule_mapping.first[1].first.show_wdl_format
@@ -373,8 +373,8 @@ end
     assert_kind_of String, values[1].first
     assert_equal delegation, values[1].first
 
-    assert_equal 5, program.rule_mapping[1].first.head.rfields.fields.length
-    assert_equal 4, program.rule_mapping[1].first.head.rfields.variables.length
+    assert_equal 4, program.rule_mapping[1].first.head.rfields.fields.length
+    assert_equal 3, program.rule_mapping[1].first.head.rfields.variables.length
     
   ensure
     File.delete('test_program_2') if File.exists?('test_program_2')
