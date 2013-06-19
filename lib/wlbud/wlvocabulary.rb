@@ -49,29 +49,8 @@ module WLBud
     include WLBud::NamedSentence
 
     attr_accessor :has_self_join
-    attr_reader :index, :dic_made
-    # The budvar dictionary is a hash defines variables included in the
-    # conversion from webdamlog-formatted rule to bud-formatted rule. Its key is
-    # the name of the relation of which the variable is bound to. Its value
-    # correspond to the local variable position where this relation appear.
-    #
-    attr_reader :dic_relation_name
-    # Inverted dictionary corresponding to dic_relation_name ie. it maps body
-    # atom position to string name of the relation
-    #
-    attr_reader :dic_invert_relation_name
-    # The wlvar dictionary is a hash that contains the position of the variables
-    # of each atom of the body. It takes as key the field value of the variable,
-    # e.g. '$x' and as value it's location in the following format :
-    # 'relation_position.field_position' Remark: position always start from 0
-    #
-    attr_reader :dic_wlvar
-    # The var dictionary is a hash that contains the name of the constants of
-    # each atom of the body. It takes as key the field value of the constant,
-    # e.g. 'a' and as value it's location in the following format :
-    # 'relation_position.field_position' Remark: position always start from 0
-    #
-    attr_reader :dic_wlconst
+    attr_reader :dic_made, :dic_relation_name, :dic_invert_relation_name, :dic_wlvar, :dic_wlconst
+    attr_accessor :split, :bound, :unbound
 
     # Creates a new WLRule and instantiate empty dictionaries for that rule.
     #
@@ -88,14 +67,33 @@ module WLBud
       # perspective. See function make_combos in wlprogram @has_self_join=false
       @rule_id = nil
       @body = nil
+      # The dic_relation_name is a hash defines variables included in the
+      # conversion from webdamlog-formatted rule to bud-formatted rule. Its key
+      # is the name of the relation of which the variable is bound to. Its value
+      # correspond to the local variable position where this relation appear.
       @dic_relation_name = {}
+      # Inverted dictionary corresponding to dic_relation_name ie. it maps body
+      # atom position to string name of the relation
       @dic_invert_relation_name = {}
-      # !@attribute [Hash] list of variables "name of variable" =>
+      # The wlvar dictionary is a hash that contains the position of the
+      # variables of each atom of the body. It takes as key the field value of
+      # the variable, e.g. '$x' and as value it's location in the following
+      # format : 'relation_position.field_position' Remark: position always
+      # start from 0 !@attribute [Hash] list of variables "name of variable" =>
       # ["relpos.atompos", ... ] eg. {"$_"=>["0.0", "0.1"], "$id"=>["0.2"]}
       @dic_wlvar = {}
+      # The var dictionary is a hash that contains the name of the constants of
+      # each atom of the body. It takes as key the field value of the constant,
+      # e.g. 'a' and as value it's location in the following format :
+      # 'relation_position.field_position' Remark: position always start from 0
       # !@attribute [Hash] list of constants name of variable =>
       # ["relpos.atompos", ... ]
       @dic_wlconst = {}
+      # false until WLProgram.split_rule has been called which populate @bound,
+      # @unbound
+      @split = false
+      @bound = []
+      @unbound = []
       super(a1,a2,a3)
     end
 
@@ -133,15 +131,25 @@ module WLBud
       return @body
     end
 
-    # returns all atoms of the rule in an array (head + body).
-    #    def atoms
-    #      [self.head,self.body].flatten
-    #    end
+    def seed?
+      if @seed.nil?
+        if head.variable?
+          @seed = true
+        else
+          body.each do |atom|
+            if atom.variable?
+              return @seed = true
+            end            
+          end
+          @seed = false
+        end
+      end
+      @seed
+    end
 
-    # Return the list of name of peers appearing in atoms, it could be different
-    # from self.peer_name.text_value when called by {WLProgram} since
+    # @return [Array] the list of name of peers appearing in atoms, it could be
+    # different from self.peer_name.text_value when called by {WLProgram} since
     # disambiguation could have modified this field.
-    #
     def peername
       arr = [head.peername]
       atoms.get_atoms.each { |atom| arr << atom.peername }
@@ -330,6 +338,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   end
 
   class WLWord < WLVocabulary
+    def variable?
+      false
+    end
   end
 
   class WLComplexString < WLVocabulary
@@ -520,7 +531,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
 
-  class WLFields < WLVocabulary
+  module WLFields
   end
 
   # This is the text part of fields in relation, it could be a constant or a
@@ -537,7 +548,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
 
-  class WLVar < WLVocabulary
+  module WLVar
     # variable? is override here against previous mixins of modules
     def variable?
       true
@@ -579,21 +590,23 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       @peername = yield peername if block_given?
     end
 
-    # return the variables included in the atom in an array format e.g. :
-    # [relation_var,peer_var,[field_var1,field_var2,...]]
-    #
+    # @return [Array] the variables included in the atom in an array format e.g.
+    # : [relation_var,peer_var,[field_var1,field_var2,...]]
     def variables
       if @variables.nil?
         vars = []
-        relation=self.rrelation.text_value
-        peer=self.rpeer.text_value
         # Check if relation and/or peer are variables.
-        if relation.include?('$') then vars << relation else vars << nil end
-        if peer.include?('$') then vars << peer else vars << nil end
+        if self.rrelation.variable? then vars << self.rrelation.text_value else vars << nil end
+        if self.rpeer.variable? then vars << self.rpeer.text_value else vars << nil end
         vars << self.rfields.variables
         @variables=vars
       end
       return @variables
+    end
+
+    # return [Boolean] true if relation or peername is a variable
+    def variable?
+      rrelation.variable? or rpeer.variable? ? true : false
     end
 
     # returns the fields of the atom (variables and constants) in an array
@@ -636,6 +649,18 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
 
     def show_wdl_format
       return "#{fullrelname}(#{self.rfields.show_wdl_format})"
+    end
+  end
+
+  module WLRRelation
+    def variables?
+      self.variable ? true : false
+    end
+  end
+
+  module WLRPeer
+    def variables?
+      self.variable ? true : false
     end
   end
 

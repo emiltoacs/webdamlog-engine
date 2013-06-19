@@ -1,13 +1,3 @@
-# File name wlprogram.rb
-# Copyright © by INRIA
-#
-# Contributors : Webdam Team <webdam.inria.fr>
-#      Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
-#      Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - 30 juin 2011
-#
-#  Encoding - UTF-8
 module WLBud
 
   # :title: WLProgram WLProgram is a class that parses and interprets WebdamLog
@@ -285,7 +275,7 @@ In the string: #{line}
       return peername, address
     end
 
-    # This method creates a body-local rule with destination peer p and a
+    # This method creates a body-local rule with destination peer p and a fully
     # non-local rule that should be delegated to p.
     #
     # === Remark
@@ -298,379 +288,386 @@ In the string: #{line}
     # declaration that should be created into bud to store intermediary local
     # results of non-local rules rewritten
     #
-    def rewrite_non_local(wlrule)
-      raise WLError, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
-      intermediary_relation_declaration_for_local_peer = nil
-      localstack=[]
-      nonlocalstack=[]
-      destination_peer=""
-      local_vars=[]
-      to_delegate=false
+    def rewrite_non_local(wlrule)      
+      raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
+      raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed?
 
-      # Scan atoms and divide body in local and non-local
-      wlrule.body.each { |atom|
-        if !to_delegate and local?(atom)
-          localstack << atom
-        else
-          to_delegate=true
-          nonlocalstack << atom
-        end
-      }
-      raise WLError, <<-MSG if nonlocalstack.empty?
-      ERROR in rewrite : You are trying to rewrite a local rule. There may be an error in your rule filter
-        MSG
+      intermediary_relation_declaration_for_local_peer = nil
+      split_rule wlrule
+      if wlrule.unbound.empty?
+        raise WLErrorProgram, "rewrite_non_local : You are trying to rewrite a local rule. There may be an error in your rule filter"
+      else
         #The destination peer is the peer of the first nonlocal atom.
-        destination_peer = nonlocalstack.first.peername
-        raise WLErrorProgram, "In #{nonlocalstack.first.text_value} peer is unknown it should have declared: #{destination_peer}" if @wlpeers[destination_peer].nil?
+        destination_peer = wlrule.unbound.first.peername
+        unless wlrule.head.variable?
+          if @wlpeers[destination_peer].nil?
+            raise WLErrorProgram, "In #{wlrule.unbound.first.text_value} peer is unknown it should have been declared: #{destination_peer}"
+          end
+        end
         addr_destination_peer = @wlpeers[destination_peer]
 
-        # RULE REWRITING If local atoms are present at the beginning of the non
-        # local rule, then we have to add a local rule to the program.
-        # Otherwise, the nonlocal rule can be sent as is to its destination.
-        # Create a relation for this declaration that has an arity corresponding
-        # to the number of distinct variables present in the local stack.
-        #
-        if localstack.empty? or !(localstack.empty? or nonlocalstack.empty?)
-          if !(localstack.empty? or nonlocalstack.empty?) # if the rule must be cut in two part
-            localbody = "" ;
-            localstack.each do |atom|
-              atom.variables.flatten.each { |var|
-                local_vars << var unless var.nil? or local_vars.include?(var)
-              }
-              localbody << "#{atom},"
+        if wlrule.bound.empty? # the whole body is non-local, no rewriting are needed just delegate all the rule
+          delegation = wlrule.show_wdl_format
+        else # if the rule must be cut in two part
+          
+          # RULE REWRITING If local atoms are present at the beginning of the non
+          # local rule, then we have to add a local rule to the program.
+          # Otherwise, the nonlocal rule can be sent as is to its destination.
+          # Create a relation for this declaration that has an arity corresponding
+          # to the number of distinct variables present in the local stack.
+          localbody = ""
+          local_vars=[]
+          wlrule.bound.each do |atom|
+            atom.variables.flatten.each { |var|
+              local_vars << var unless var.nil? or local_vars.include?(var)
+            }
+            localbody << "#{atom},"
+          end
+          localbody.slice!(-1)
+          relation_name = generate_intermediary_relation_name(wlrule.rule_id)
+          # build the list of attributes for relation declaration (dec_fields)
+          # removing the '$' of variable and create attributes names
+          dec_fields=''
+          var_fields=''
+          local_vars.each_index do |i|
+            local_var=local_vars[i]
+            dec_fields << local_var.gsub( /(^\$)(.*)/ , relation_name+"_\\2_"+i.to_s+"\*," )
+            var_fields << local_var << ","
+          end ; dec_fields.slice!(-1);var_fields.slice!(-1);
+
+          intermediary_relation_atom_in_rule = "#{relation_name}@#{destination_peer}(#{var_fields})"
+          intermediary_relation_declaration_for_remote_peer = "collection inter persistent #{relation_name}@#{destination_peer}(#{dec_fields});"
+          intermediary_relation_declaration_for_local_peer = intermediary_relation_declaration_for_remote_peer.gsub("persistent ", "")
+          local_rule_which_delegate_facts = "rule #{intermediary_relation_atom_in_rule}:-#{localbody};"
+          #Declare the new remote relation as a scratch for the local peer and add it to the program
+          @new_local_declaration << parse(intermediary_relation_declaration_for_local_peer,true,true)
+          @new_relations_to_declare_on_remote_peer[addr_destination_peer] << intermediary_relation_declaration_for_remote_peer
+          #Add local rule to the set of rewritten local rules
+          @new_rewritten_local_rule_to_install << ru = parse(local_rule_which_delegate_facts, true, true)
+          @rule_mapping[wlrule.rule_id] << ru.rule_id
+          @rule_mapping[ru.rule_id] << ru
+          #Create the delegation rule string
+          nonlocalbody="" ;
+          wlrule.unbound.each { |atom| nonlocalbody << "#{atom}," } ; nonlocalbody.slice!(-1)
+          delegation="rule #{wlrule.head}:-#{intermediary_relation_atom_in_rule},#{nonlocalbody};"
+        end # if not wlrule.bound.empty? and not wlrule.unbound.empty? # if the rule must be cut in two part
+
+        # Register the delegation
+        @new_delegations_to_send[addr_destination_peer] << delegation
+        @rule_mapping[wlrule.rule_id] << delegation
+        @rule_mapping[delegation] << delegation
+      end # if wlrule.unbound.empty?
+      return intermediary_relation_declaration_for_local_peer
+    end # def rewrite_non_local(wlrule)
+
+    # Split the rule by reading atoms from left to right until non local atom
+    # or variable in relation name or peer name has been found
+    def split_rule wlrule
+      unless wlrule.split
+        to_delegate = false
+        wlrule.body.each do |atom|
+          if !to_delegate and local?(atom) and not atom.variable?
+            wlrule.bound << atom
+          else
+            to_delegate=true
+            wlrule.unbound << atom
+          end
+        end
+        wlrule.split = true
+      end
+    end
+
+    # Generates the string representing the rule in the Bud format from a
+    # WLrule.
+    #
+    def translate_rule_str(wlrule)
+      unless wlrule.is_a?(WLBud::WLRule)
+        raise WLErrorTyping,
+          "wlrule should be of type WLBud::WLRule, not #{wlrule.class}"
+      end
+      unless (head_atom_peername = wlrule.head.peername)
+        raise WLErrorGrammarParsing,
+          "In this rule: #{wlrule.show}\n Problem: the name of the peer in the relation in the head cannot be extracted. Relation in the head #{wlrule.head.text_value}"
+      end
+      if @wlpeers[head_atom_peername].nil?
+        raise WLErrorPeerId,
+          "In #{wlrule.text_value} the peer name: #{head_atom_peername} cannot be found in the list of known peer: #{@wlpeers.inspect}"
+      end
+      str_res = ""
+      str_self_join = ""
+      body = wlrule.body
+
+      #Generate rule head
+      #Send fact buffer if non-local head
+      unless local?(wlrule.head)
+        str_res << "sbuffer <= "
+      else if is_tmp?(wlrule.head)
+          str_res << "temp :#{wlrule.head.fullrelname} <= "
+        else
+          str_res << "#{wlrule.head.fullrelname} <= "
+        end
+      end
+
+      #Obsolete code when self-joins where badly implemented
+      #rename_atoms adds temp relations in case of self joins.
+      #renamed = rename_atoms(body)
+      #renamed.each {|relation| strRes <<  "#{relation};\n"} unless @make_binary_rules
+
+      #Make the locations dictionaries for this rule
+      wlrule.make_dictionaries unless wlrule.dic_made
+
+      #      if @options[:debug] then
+      #        WLTools::Debug_messages.h4("Display dictionaries generated for rule \n\t#{wlrule.to_s}\n")
+      #        puts <<-END
+      #          dic_wlvar - #{wlrule.dic_wlvar.inspect}
+      #          dic_wlconst - #{wlrule.dic_wlconst.inspect}
+      #          dic_relation_name - #{wlrule.dic_relation_name.inspect}
+      #          dic_invert_relation_name - #{wlrule.dic_invert_relation_name.inspect}
+      #        END
+      #      end
+
+      if body.length==0
+        str_res << " ["
+        str_res << def_projection(wlrule)
+        str_res << "];"
+      else
+        if body.length==1
+          str_res << body.first.fullrelname
+        else
+          #Generate rule collection names using pairs and combos keywords.
+          #          if @make_binary_rules
+          #            s , str_self_join = make_pairs(wlrule)
+          #          else
+          s , str_self_join = make_combos(wlrule)
+          #          end
+          str_res << s
+        end
+        str_res << " {|";
+        wlrule.dic_invert_relation_name.keys.sort.each {|v| str_res << "#{WLProgram.get_bud_var_by_pos(v)}, "}
+        str_res.slice!(-2..-1) #remove last and before last
+        str_res << "| "
+        str_res << def_projection(wlrule)
+        wlrule.dic_wlconst.each do |key,value|
+          value.each do |v|
+            relation_position , attribute_position = v.first.split('.')
+            if wlrule.dic_wlconst.keys.first==key
+              str_res << " if "
+            else
+              str_res << " && "
             end
-            localbody.slice!(-1)
-            relation_name = generate_intermediary_relation_name(wlrule.rule_id)
-            # build the list of attributes for relation declaration (dec_fields)
-            # removing the '$' of variable and create attributes names
-            dec_fields=''
-            var_fields=''
-            local_vars.each_index do |i|
-              local_var=local_vars[i]
-              dec_fields << local_var.gsub( /(^\$)(.*)/ , relation_name+"_\\2_"+i.to_s+"\*," )
-              var_fields << local_var << ","
-            end ; dec_fields.slice!(-1);var_fields.slice!(-1);
-
-            intermediary_relation_atom_in_rule = "#{relation_name}@#{destination_peer}(#{var_fields})"
-            intermediary_relation_declaration_for_remote_peer = "collection inter persistent #{relation_name}@#{destination_peer}(#{dec_fields});"
-            intermediary_relation_declaration_for_local_peer = intermediary_relation_declaration_for_remote_peer.gsub("persistent ", "")
-            local_rule_which_delegate_facts = "rule #{intermediary_relation_atom_in_rule}:-#{localbody};"
-            #Declare the new remote relation as a scratch for the local peer and add it to the program
-            @new_local_declaration << parse(intermediary_relation_declaration_for_local_peer,true,true)
-            @new_relations_to_declare_on_remote_peer[addr_destination_peer] << intermediary_relation_declaration_for_remote_peer
-            #Add local rule to the set of rewritten local rules
-            @new_rewritten_local_rule_to_install << ru = parse(local_rule_which_delegate_facts, true, true)
-            @rule_mapping[wlrule.rule_id] << ru.rule_id
-            @rule_mapping[ru.rule_id] << ru
-            #Create the delegation rule string
-            nonlocalbody="" ;
-            nonlocalstack.each { |atom| nonlocalbody << "#{atom}," } ; nonlocalbody.slice!(-1)
-            delegation="rule #{wlrule.head}:-#{intermediary_relation_atom_in_rule},#{nonlocalbody};"
-          elsif localstack.empty? # else if the whole body is non-local, no rewriting are needed just delegate all the rule
-            delegation="#{wlrule};"
-          end
-          @new_delegations_to_send[addr_destination_peer] << delegation
-          @rule_mapping[wlrule.rule_id] << delegation
-          @rule_mapping[delegation] << delegation
-        elsif nonlocalstack.empty?
-          raise WLErrorProgram, "\nLocal rule found in nonlocal rule table. There may have been an error in previous processing"
-        else # the last case where only the head is non-local and the body is only local, we can install it as it is
-          @new_rewritten_local_rule_to_install << wlrule
-        end
-        return intermediary_relation_declaration_for_local_peer
-      end
-
-      # Generates the string representing the rule in the Bud format from a
-      # WLrule.
-      #
-      def translate_rule_str(wlrule)
-        unless wlrule.is_a?(WLBud::WLRule)
-          raise WLErrorTyping,
-            "wlrule should be of type WLBud::WLRule, not #{wlrule.class}"
-        end
-        unless (head_atom_peername = wlrule.head.peername)
-          raise WLErrorGrammarParsing,
-            "In this rule: #{wlrule.show}\n Problem: the name of the peer in the relation in the head cannot be extracted. Relation in the head #{wlrule.head.text_value}"
-        end
-        if @wlpeers[head_atom_peername].nil?
-          raise WLErrorPeerId,
-            "In #{wlrule.text_value} the peer name: #{head_atom_peername} cannot be found in the list of known peer: #{@wlpeers.inspect}"
-        end
-        str_res = ""
-        str_self_join = ""
-        body = wlrule.body
-
-        #Generate rule head
-        #Send fact buffer if non-local head
-        unless local?(wlrule.head)
-          str_res << "sbuffer <= "
-        else if is_tmp?(wlrule.head)
-            str_res << "temp :#{wlrule.head.fullrelname} <= "
-          else
-            str_res << "#{wlrule.head.fullrelname} <= "
+            str_res << "#{wlrule.dic_relation_name[relation_position]}.#{attribute_position}==#{quotes(key)}"
           end
         end
-
-        #Obsolete code when self-joins where badly implemented
-        #rename_atoms adds temp relations in case of self joins.
-        #renamed = rename_atoms(body)
-        #renamed.each {|relation| strRes <<  "#{relation};\n"} unless @make_binary_rules
-
-        #Make the locations dictionaries for this rule
-        wlrule.make_dictionaries unless wlrule.dic_made
-
-        #      if @options[:debug] then
-        #        WLTools::Debug_messages.h4("Display dictionaries generated for rule \n\t#{wlrule.to_s}\n")
-        #        puts <<-END
-        #          dic_wlvar - #{wlrule.dic_wlvar.inspect}
-        #          dic_wlconst - #{wlrule.dic_wlconst.inspect}
-        #          dic_relation_name - #{wlrule.dic_relation_name.inspect}
-        #          dic_invert_relation_name - #{wlrule.dic_invert_relation_name.inspect}
-        #        END
-        #      end
-
-        if body.length==0
-          str_res << " ["
-          str_res << def_projection(wlrule)
-          str_res << "];"
+        unless wlrule.dic_wlconst.empty?
+          str_res << str_self_join.sub(/&&/,'if')
         else
-          if body.length==1
-            str_res << body.first.fullrelname
-          else
-            #Generate rule collection names using pairs and combos keywords.
-            #          if @make_binary_rules
-            #            s , str_self_join = make_pairs(wlrule)
-            #          else
-            s , str_self_join = make_combos(wlrule)
-            #          end
-            str_res << s
-          end
-          str_res << " {|";
-          wlrule.dic_invert_relation_name.keys.sort.each {|v| str_res << "#{WLProgram.get_bud_var_by_pos(v)}, "}
-          str_res.slice!(-2..-1) #remove last and before last
-          str_res << "| "
-          str_res << def_projection(wlrule)
-          wlrule.dic_wlconst.each do |key,value|
-            value.each do |v|
-              relation_position , attribute_position = v.first.split('.')
-              if wlrule.dic_wlconst.keys.first==key
-                str_res << " if "
-              else
-                str_res << " && "
-              end
-              str_res << "#{wlrule.dic_relation_name[relation_position]}.#{attribute_position}==#{quotes(key)}"
-            end
-          end
-          unless wlrule.dic_wlconst.empty?
-            str_res << str_self_join.sub(/&&/,'if')
-          else
-            str_res << str_self_join
-          end
-          str_res << "};"
+          str_res << str_self_join
         end
+        str_res << "};"
       end
+    end
 
-      # Read the content and erase. It return the hash of the collection to create
-      # and clear it after.
-      #
-      # == return
-      #
-      # a hash with
-      # * +key+  peerIp:port
-      # * +value+ array with the relation as strings in wlpg format
-      #
-      def flush_new_relations_to_declare_on_remote_peer
-        unless @new_relations_to_declare_on_remote_peer.empty?
-          flush = @new_relations_to_declare_on_remote_peer.dup
-          flush.each_pair { |k,v| flush[k]=v.to_a }
-          @new_relations_to_declare_on_remote_peer.clear
+    # Read the content and erase. It return the hash of the collection to create
+    # and clear it after.
+    #
+    # == return
+    #
+    # a hash with
+    # * +key+  peerIp:port
+    # * +value+ array with the relation as strings in wlpg format
+    #
+    def flush_new_relations_to_declare_on_remote_peer
+      unless @new_relations_to_declare_on_remote_peer.empty?
+        flush = @new_relations_to_declare_on_remote_peer.dup
+        flush.each_pair { |k,v| flush[k]=v.to_a }
+        @new_relations_to_declare_on_remote_peer.clear
+      else
+        flush={}
+      end
+      return flush
+    end
+
+    # Read the content and erase. It return the hash of the delegation to send
+    # and clear it after.
+    #
+    #  == return
+    #
+    # a hash with
+    # * +key+  peerIp:port
+    # * +value+ array with the relation as strings in wlpg format
+    #
+    def flush_new_delegations_to_send
+      unless @new_delegations_to_send.empty?
+        flush = @new_delegations_to_send.dup
+        flush.each_pair { |k,v| flush[k]=v.to_a }
+        @new_delegations_to_send.clear
+      else
+        flush={}
+      end
+      return flush
+    end
+
+    # Read new_local_declaration content and clear it. It return
+    # the array of the collections to create and clear it after.
+    #
+    # == return
+    #
+    # an array of wlgrammar collections
+    #
+    def flush_new_local_declaration
+      unless @new_local_declaration.empty?
+        flush = @new_local_declaration.dup
+        @new_local_declaration.clear
+      else
+        flush=[]
+      end
+      return flush
+    end
+
+    # Read new_rewritten_local_rule_to_install content and clear it. It return
+    # the array of the rules to create and clear it after.
+    #
+    # == return
+    #
+    # an array of wlgrammar rules
+    #
+    def flush_new_rewritten_local_rule_to_install
+      unless @new_rewritten_local_rule_to_install.empty?
+        flush = @new_rewritten_local_rule_to_install.dup
+        @new_rewritten_local_rule_to_install.clear
+      else
+        flush=[]
+      end
+      return flush
+    end
+
+    # return true if the given wlword is local
+    #
+    # according to the type of wlword which should be a wlvocabulary object or
+    # a string of the peername, it test if the given argument is local ie.
+    # match one of the alias name specifed in @localpeername
+    #
+    # Note that a rule is local if the body is local whatever the state of the
+    # head
+    #
+    def local? (wlword)
+      if wlword.is_a? WLBud::WLCollection or wlword.is_a? WLBud::WLAtom
+        if @localpeername.include?(wlword.peername)
+          return true
         else
-          flush={}
+          return false
         end
-        return flush
-      end
-
-      # Read the content and erase. It return the hash of the delegation to send
-      # and clear it after.
-      #
-      #  == return
-      #
-      # a hash with
-      # * +key+  peerIp:port
-      # * +value+ array with the relation as strings in wlpg format
-      #
-      def flush_new_delegations_to_send
-        unless @new_delegations_to_send.empty?
-          flush = @new_delegations_to_send.dup
-          flush.each_pair { |k,v| flush[k]=v.to_a }
-          @new_delegations_to_send.clear
-        else
-          flush={}
-        end
-        return flush
-      end
-
-      # Read new_local_declaration content and clear it. It return
-      # the array of the collections to create and clear it after.
-      #
-      # == return
-      #
-      # an array of wlgrammar collections
-      #
-      def flush_new_local_declaration
-        unless @new_local_declaration.empty?
-          flush = @new_local_declaration.dup
-          @new_local_declaration.clear
-        else
-          flush=[]
-        end
-        return flush
-      end
-
-      # Read new_rewritten_local_rule_to_install content and clear it. It return
-      # the array of the rules to create and clear it after.
-      #
-      # == return
-      #
-      # an array of wlgrammar rules
-      #
-      def flush_new_rewritten_local_rule_to_install
-        unless @new_rewritten_local_rule_to_install.empty?
-          flush = @new_rewritten_local_rule_to_install.dup
-          @new_rewritten_local_rule_to_install.clear
-        else
-          flush=[]
-        end
-        return flush
-      end
-
-      # return true if the given wlword is local
-      #
-      # according to the type of wlword which should be a wlvocabulary object or
-      # a string of the peername, it test if the given argument is local ie.
-      # match one of the alias name specifed in @localpeername
-      #
-      # Note that a rule is local if the body is local whatever the state of the
-      # head
-      #
-      def local? (wlword)
-        if wlword.is_a? WLBud::WLCollection or wlword.is_a? WLBud::WLAtom
-          if @localpeername.include?(wlword.peername)
-            return true
-          else
+      elsif wlword.is_a? WLBud::WLRule
+        wlword.body.each { |atom|
+          unless local?(atom.peername)
             return false
           end
-        elsif wlword.is_a? WLBud::WLRule
-          wlword.body.each { |atom|
-            unless local?(atom.peername)
-              return false
-            end
-          }
-          return true
-        elsif wlword.is_a? String
-          if @localpeername.include?(wlword)
-            true
+        }
+        return true
+      elsif wlword.is_a? String
+        if @localpeername.include?(wlword)
+          true
+        else
+          false
+        end
+      else
+        raise WLErrorProgram,
+          "Try to determine if #{wlword} is local but it has wrong type #{wlword.class}"
+      end
+    end
+
+    # Disambiguate peername, it replace alias such as local or me by the local
+    # peername id. Hence subsequent call to peername will use the unique id of
+    # this peer.
+    # @param [WLBud::NamedSentence] a {WLBud::NamedSentence} object
+    # @return [String] the disambiguated namedSentence
+    def disamb_peername! namedSentence
+      if namedSentence.is_a? String
+        if @localpeername.include? namedSentence
+          namedSentence.replace @peername
+        end
+      elsif
+        namedSentence.map_peername! do |pname|
+          if @localpeername.include?(pname)
+            @peername
           else
-            false
+            pname
+          end
+        end
+      else
+        raise WLErrorTyping, "expect an object extending WLBud::NamedSentence or a string representing the name"
+      end
+      return namedSentence
+    end
+
+    # return true if wlcollection is sound compared to current program already
+    # running otherwise return false with error message
+    def valid_collection? wlcollection
+      return false, "" unless wlcollection.is_a? WLBud::WLCollection
+      return false, "In #{wlcollection.text_value} peername #{wlcollection.peername} should have been declared before" unless @wlpeers[wlcollection.peername]
+      return true, "collection valid"
+    end
+
+    private
+
+    # Define the format of the name of the variable for the name of the
+    # relation inside the block of the bud rules
+    def self.get_bud_var_by_pos(position)
+      "atom#{position}"
+    end
+
+    # According to the variable found in the head of the rule this method
+    # define the schema of tuples to produce from the variable appearing in the
+    # body.
+    #
+    # For a bud rule like the following it produce the part between stars
+    # marked with ** around
+    #
+    # !{descendant_at_emilien <= child_at_emilien {|atom0| *[atom0[0],
+    # atom0[2]]*}
+    def def_projection(wlrule)
+      str = '['
+
+      # add the remote peer and relation name which should receive the fact.
+      # conform to facts to be sent via sbuffer
+      unless local?(wlrule.head)
+        destination = "#{@wlpeers[wlrule.head.peername]}"
+        #add location specifier
+        raise WLErrorPeerId, "impossible to define the peer that should receive a message" if destination.nil? or destination.empty?
+        str << "\"#{destination}\", "
+        relation = "#{wlrule.head.fullrelname}"
+        raise WLErrorProgram, "impossible to define the relation that should receive a message" if destination.nil? or destination.empty?
+        str << "\"#{relation}\", "
+        str << "["
+      end
+
+      # add the list of variable and constant that should be projected
+      fields = wlrule.head.fields
+      fields.each_with_index do |f,i|
+        # treat as a constant or a variable
+        #unless f.include?('$')  #for constant
+        if f.variable?
+          var = f.text_value
+          if wlrule.dic_wlvar.has_key?(var)
+            relation , attribute = wlrule.dic_wlvar.fetch(var).first.split('.')
+            str << "#{WLBud::WLProgram.get_bud_var_by_pos(relation)}[#{attribute}], "
+          else
+            raise( WLErrorGrammarParsing,
+              "In rule "+wlrule.text_value+" #{f} is present in the head but not in the body. This is not WebdamLog syntax." )
           end
         else
-          raise WLErrorProgram,
-            "Try to determine if #{wlword} is local but it has wrong type #{wlword.class}"
+          str << "#{quotes(f)}, "
         end
       end
+      str.slice!(-2..-1) unless fields.empty?
 
-      # Disambiguate peername, it replace alias such as local or me by the local
-      # peername id. Hence subsequent call to peername will use the unique id of
-      # this peer.
-      # @param [WLBud::NamedSentence] a {WLBud::NamedSentence} object
-      # @return [String] the disambiguated namedSentence
-      def disamb_peername! namedSentence
-        if namedSentence.is_a? String
-          if @localpeername.include? namedSentence
-            namedSentence.replace @peername
-          end
-        elsif
-          namedSentence.map_peername! do |pname|
-            if @localpeername.include?(pname)
-              @peername
-            else
-              pname
-            end
-          end
-        else
-          raise WLErrorTyping, "expect an object extending WLBud::NamedSentence or a string representing the name"
-        end
-        return namedSentence
+      unless local?(wlrule.head)
+        str << "]"
       end
 
-      # return true if wlcollection is sound compared to current program already
-      # running otherwise return false with error message
-      def valid_collection? wlcollection
-        return false, "" unless wlcollection.is_a? WLBud::WLCollection
-        return false, "In #{wlcollection.text_value} peername #{wlcollection.peername} should have been declared before" unless @wlpeers[wlcollection.peername]
-        return true, "collection valid"
-      end
-
-      private
-
-      # Define the format of the name of the variable for the name of the
-      # relation inside the block of the bud rules
-      def self.get_bud_var_by_pos(position)
-        "atom#{position}"
-      end
-
-      # According to the variable found in the head of the rule this method
-      # define the schema of tuples to produce from the variable appearing in the
-      # body.
-      #
-      # For a bud rule like the following it produce the part between stars
-      # marked with ** around
-      #
-      # !{descendant_at_emilien <= child_at_emilien {|atom0| *[atom0[0],
-      # atom0[2]]*}
-      def def_projection(wlrule)
-        str = '['
-
-        # add the remote peer and relation name which should receive the fact.
-        # conform to facts to be sent via sbuffer
-        unless local?(wlrule.head)
-          destination = "#{@wlpeers[wlrule.head.peername]}"
-          #add location specifier
-          raise WLErrorPeerId, "impossible to define the peer that should receive a message" if destination.nil? or destination.empty?
-          str << "\"#{destination}\", "
-          relation = "#{wlrule.head.fullrelname}"
-          raise WLErrorProgram, "impossible to define the relation that should receive a message" if destination.nil? or destination.empty?
-          str << "\"#{relation}\", "
-          str << "["
-        end
-
-        # add the list of variable and constant that should be projected
-        fields = wlrule.head.fields
-        fields.each_with_index do |f,i|
-          # treat as a constant or a variable
-          #unless f.include?('$')  #for constant
-          if f.variable?
-            var = f.text_value
-            if wlrule.dic_wlvar.has_key?(var)
-              relation , attribute = wlrule.dic_wlvar.fetch(var).first.split('.')
-              str << "#{WLBud::WLProgram.get_bud_var_by_pos(relation)}[#{attribute}], "
-            else
-              raise( WLErrorGrammarParsing,
-                "In rule "+wlrule.text_value+" #{f} is present in the head but not in the body. This is not WebdamLog syntax." )
-            end
-          else
-            str << "#{quotes(f)}, "
-          end
-        end
-        str.slice!(-2..-1) unless fields.empty?
-
-        unless local?(wlrule.head)
-          str << "]"
-        end
-
-        str << ']'
-        return str
-      end
+      str << ']'
+      return str
+    end
 
 =begin
     # Generates a string corresponding to the appropriate delegation.
@@ -729,241 +726,240 @@ In the string: #{line}
     end
 =end
 
-      # DEPRECATED
-      #
-      #      def make_binary (wlrule)
-      #        # #r($a,$e,d):-r1($a,$b,coco),r2($b,$c,toto),r3($b,$c,titi)
-      #        # #tmp($a,$e,d,$b):-:-r1($a,$b,coco),r2($b,$c,toto)
-      #        # #r($a,$e,d):-tmp($a,$e,d,$b),r3($b,$c,titi)
-      #        #
-      #        # #create first temporary relation and transform the rule
-      #        # #make_dictionnaries(wlrule) unless wlrule.made_dictionnaries
-      #        rewritten_rules=[];head_str='';body_str=''
-      #        wlbody = wlrule.body
-      #        prev_atom_var=wlbody.first.variables[2]
-      #        join = wlbody.first.text_value
-      #        wlbody.each_with_index {|atom,i|
-      #          unless i==0 #do not do anything with the first atom
-      #
-      #            # head rewriting
-      #            if wlbody.last.eql?(atom)
-      #              head_str<<wlrule.head.text_value
-      #            else
-      #              head_str<<"#{generate_intermediary_relation_name}@me("
-      #              var_in_hd=[]
-      #              atom.variables[2].each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
-      #              prev_atom_var.each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
-      #              prev_atom_var=var_in_hd
-      #              head_str.slice!(-1)
-      #              head_str << ')'
-      #            end
-      #
-      #            # body rewriting
-      #            body_str << "#{join},#{atom.text_value}"
-      #            rewritten_rules << "{#{head_str}:-#{body_str}};"
-      #            join=head_str
-      #            head_str=''
-      #            body_str=''
-      #          end
-      #        }
-      #        puts rewritten_rules.inspect
-      #        return rewritten_rules
-      #      end
+    # DEPRECATED
+    #
+    #      def make_binary (wlrule)
+    #        # #r($a,$e,d):-r1($a,$b,coco),r2($b,$c,toto),r3($b,$c,titi)
+    #        # #tmp($a,$e,d,$b):-:-r1($a,$b,coco),r2($b,$c,toto)
+    #        # #r($a,$e,d):-tmp($a,$e,d,$b),r3($b,$c,titi)
+    #        #
+    #        # #create first temporary relation and transform the rule
+    #        # #make_dictionnaries(wlrule) unless wlrule.made_dictionnaries
+    #        rewritten_rules=[];head_str='';body_str=''
+    #        wlbody = wlrule.body
+    #        prev_atom_var=wlbody.first.variables[2]
+    #        join = wlbody.first.text_value
+    #        wlbody.each_with_index {|atom,i|
+    #          unless i==0 #do not do anything with the first atom
+    #
+    #            # head rewriting
+    #            if wlbody.last.eql?(atom)
+    #              head_str<<wlrule.head.text_value
+    #            else
+    #              head_str<<"#{generate_intermediary_relation_name}@me("
+    #              var_in_hd=[]
+    #              atom.variables[2].each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
+    #              prev_atom_var.each {|var| (head_str << "#{var}," ; var_in_hd << var) unless var_in_hd.include?(var)}
+    #              prev_atom_var=var_in_hd
+    #              head_str.slice!(-1)
+    #              head_str << ')'
+    #            end
+    #
+    #            # body rewriting
+    #            body_str << "#{join},#{atom.text_value}"
+    #            rewritten_rules << "{#{head_str}:-#{body_str}};"
+    #            join=head_str
+    #            head_str=''
+    #            body_str=''
+    #          end
+    #        }
+    #        puts rewritten_rules.inspect
+    #        return rewritten_rules
+    #      end
 
 
-      # Update nonlocal updates the head_nonlocal. Has to be called each time
-      # program collection changes (new rules or new peers added to the
-      # program).
-      #
-      #    def update_body_local
-      #      @localrules.each_with_index { |wlrule,n|
-      #        hd = wlrule.head
-      #        peer = hd.rpeer.text_value
-      #        relation = hd.rrelation.text_value
-      #        raise WLError, "\nUnknown peer name '#{peer}'for head atom of rule\##{n}." unless @wlpeers.include?(peer)
-      #        raise WLError, "\nHead non local not full" unless @facts_for_peer.include?(peer)
-      #        @facts_for_peer[peer] << relation unless @facts_for_peer[peer].include?(relation)
-      #      }
-      #      @delegations.each { |delegation|
-      #
-      #      }
-      #      #@facts_for_peer.each {|k,v| puts "#{k} => #{v.inspect}"}
-      #    end
+    # Update nonlocal updates the head_nonlocal. Has to be called each time
+    # program collection changes (new rules or new peers added to the program).
+    #
+    #    def update_body_local
+    #      @localrules.each_with_index { |wlrule,n|
+    #        hd = wlrule.head
+    #        peer = hd.rpeer.text_value
+    #        relation = hd.rrelation.text_value
+    #        raise WLError, "\nUnknown peer name '#{peer}'for head atom of rule\##{n}." unless @wlpeers.include?(peer)
+    #        raise WLError, "\nHead non local not full" unless @facts_for_peer.include?(peer)
+    #        @facts_for_peer[peer] << relation unless @facts_for_peer[peer].include?(relation)
+    #      }
+    #      @delegations.each { |delegation|
+    #
+    #      }
+    #      #@facts_for_peer.each {|k,v| puts "#{k} => #{v.inspect}"}
+    #    end
 
-      def make_pairs (wlrule)
-        str = "(#{wlrule.body.first.fullrelname} * #{wlrule.body.last.fullrelname}).pairs(" ;
-        pairs=false
-        wlrule.dic_wlvar.each { |key,value| next unless value.length > 1
-          rel_first , attr_first =value.first.split('.')
-          rel_other , attr_other =value.last.split('.')
-          if wlrule.has_self_join
-            str << ":#{attr_first}" << ' => ' << ":#{attr_other}" << ',' ;
-          else
-            str << "#{rel_first}.#{attr_first}" << ' => ' << "#{rel_other}.#{attr_other}" << ',' ;
-          end
-          pairs=true
-        }
-        str.slice!(-1) if pairs
-        str << ')'
-        return str , ''
-      end
-
-      # This code manages renaming in case of self joins
-      #
-      # === DEPRECATED ====
-      # Renaming for self join must be rewrote from scratch
-      #
-      #      def rename_atoms (input)
-      #        tmp_rels=[];rels=[]
-      #        if input.is_a?(WLBud::WLRule)
-      #          wlrule = input
-      #          wlrule.body.each_with_index {|atom,n|
-      #            # #Creates temp collections when self-joins are present
-      #            if !rels.include?(atom.relname) then rels << atom.relname
-      #            else #we have a self join situation. Create a temporary relation and rename the relation
-      #              atom.relname(generate_intermediary_relation_name)
-      #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
-      #              tmp_rels << tmp_r
-      #              wlrule.has_self_join=true
-      #            end
-      #          }
-      #        else
-      #          body = input
-      #          body.each_with_index {|atom,n|
-      #            # #Creates temp collections when selfjoins are present
-      #            if !rels.include?(atom.relname) then rels << atom.relname
-      #            else #we have a self join situation. Create a temporary relation and rename the relation
-      #              atom.relname(generate_intermediary_relation_name)
-      #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
-      #              tmp_rels << tmp_r
-      #            end
-      #          }
-      #        end
-      #        return tmp_rels
-      #      end
-
-      # If the name of the atom start with tmp_ or temp_ it is a temporary
-      # relation so return true.
-      def is_tmp? (result)
-        if result.is_a?(WLBud::WLAtom)
-          if result.fullrelname=~/temp_/ or result.fullrelname=~/tmp_/ then return true else return false end
+    def make_pairs (wlrule)
+      str = "(#{wlrule.body.first.fullrelname} * #{wlrule.body.last.fullrelname}).pairs(" ;
+      pairs=false
+      wlrule.dic_wlvar.each { |key,value| next unless value.length > 1
+        rel_first , attr_first =value.first.split('.')
+        rel_other , attr_other =value.last.split('.')
+        if wlrule.has_self_join
+          str << ":#{attr_first}" << ' => ' << ":#{attr_other}" << ',' ;
         else
-          raise WLErrorGrammarParsing, "is_tmp? is called on non-WLAtom object, of class #{result.class}"
+          str << "#{rel_first}.#{attr_first}" << ' => ' << "#{rel_other}.#{attr_other}" << ',' ;
         end
-      end
+        pairs=true
+      }
+      str.slice!(-1) if pairs
+      str << ')'
+      return str , ''
+    end
 
-      # FIXME error in the head of the rules aren't detcted during parsing but
-      # here it is too late.
-      #
-      # Make joins when there is more than two atoms in the body. Need to call
-      # make_dic before calling this function. it return the beginning of the
-      # body of the bud rule containing the join of relations along with their
-      # join tuple criterion for example (rel1 * rel2).combos(rel1.1 => rel2.2)
-      # TODO move to wlvocabulary
-      #
-      # For a bud rule like the following it produce the part between stars
-      # marked with ** around
-      #
-      # sibling <= *(childOf*childOf).pairs(:father => :father,:mother =>
-      # :mother)* {|s1,s2| [s1[0],s2[0]] unless s1==s2}
-      def make_combos (wlrule)
+    # This code manages renaming in case of self joins
+    #
+    # === DEPRECATED ====
+    # Renaming for self join must be rewrote from scratch
+    #
+    #      def rename_atoms (input)
+    #        tmp_rels=[];rels=[]
+    #        if input.is_a?(WLBud::WLRule)
+    #          wlrule = input
+    #          wlrule.body.each_with_index {|atom,n|
+    #            # #Creates temp collections when self-joins are present
+    #            if !rels.include?(atom.relname) then rels << atom.relname
+    #            else #we have a self join situation. Create a temporary relation and rename the relation
+    #              atom.relname(generate_intermediary_relation_name)
+    #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
+    #              tmp_rels << tmp_r
+    #              wlrule.has_self_join=true
+    #            end
+    #          }
+    #        else
+    #          body = input
+    #          body.each_with_index {|atom,n|
+    #            # #Creates temp collections when selfjoins are present
+    #            if !rels.include?(atom.relname) then rels << atom.relname
+    #            else #we have a self join situation. Create a temporary relation and rename the relation
+    #              atom.relname(generate_intermediary_relation_name)
+    #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
+    #              tmp_rels << tmp_r
+    #            end
+    #          }
+    #        end
+    #        return tmp_rels
+    #      end
 
-        # list all the useful relation in combo
-        raise WLError, "The dictionary should have been created before calling this method" unless wlrule.dic_made
-        str = '('; if_str = '' ;
-        wlrule.body.each do |atom|
-          str <<  "#{atom.fullrelname} * "
-        end
-        str.slice!(-2..-1) unless wlrule.body.empty?
-        str << ').combos('
-
-        # create join conditions
-        combos=false
-        wlrule.dic_wlvar.each do |key,value|
-          next unless value.length > 1 # skip free variable (that is occurring only once in the body)
-          next if key == '$_' # skip anonymous variable PENDING parsing string directly here is subject to bugs in general create good data structure
-
-          v1 = value.first
-          rel_first , attr_first = v1.split('.')
-          # join every first occurrence of a variable with its subsequent
-          value[1..-1].each do |v|
-            rel_other , attr_other = v.split('.')
-            rel_first_name = wlrule.dic_invert_relation_name[Integer(rel_first)]
-            rel_other_name = wlrule.dic_invert_relation_name[Integer(rel_other)]
-            first_atom = wlrule.body[Integer(rel_first)]
-            other_atom = wlrule.body[Integer(rel_other)]
-            col_name_first = get_column_name_of_relation(first_atom, Integer(attr_first))
-            col_name_other = get_column_name_of_relation(other_atom, Integer(attr_other))
-            # If it is a self-join symbolic name should be used
-            if rel_first_name.eql?(rel_other_name)
-              # if_str << " && #{wlrule.dic_relation_name[rel_first]}.#{attr_first}==#{wlrule.dic_budvar[rel_other]}.#{attr_other}"
-              str << ":#{col_name_first}" << ' => ' << ":#{col_name_other}"
-              combos=true
-            else
-              # str << WLProgram.get_bud_var_by_pos(rel_first) << attr_first <<
-              # '
-              # => ' << WLProgram.get_bud_var_by_pos(rel_other) << attr_other <<
-              # ',' ;
-              str << rel_first_name << '.' << col_name_first << ' => ' << rel_other_name << '.' << col_name_other
-              combos=true
-            end
-            str << ','
-          end
-        end
-        str.slice!(-1) if combos
-        str << ')'
-
-        return str, if_str
-      end
-
-      # Get the the name specified for the column of the relation in given atom
-      # as it is declared in the collection
-      def get_column_name_of_relation (atom, column_number)
-        wlcoll = @wlcollections["#{atom.relname}_at_#{atom.peername}"]
-        unless wlcoll.nil?
-          wlcoll.fields.fetch(column_number)
-        else
-          raise WLErrorProgram, "in get_column_name_of_relation #{atom.relname}_at_#{atom.peername} not found in wlcollections"
-        end
-      end
-
-      # Add quotes around s if it is a string
-      #
-      def quotes(s)
-        if s.is_a?(String)
-          return "\'#{s}\'"
-        else
-          return s.to_s
-        end
-      end
-
-      # Tools for WLprogram This tool function checks if a table includes an
-      # object. If so, it will return its index. Otherwise it will raise a
-      # WLParsing Error.
-      def include_with_index (table,obj)
-        raise WLBud::WLErrorGrammarParsing, "#{obj} is a lone variable" unless table.include?(obj)
-        table.each_with_index {|a,i| if obj.eql?(a) then return i else next end}
-      end
-
-      # Generate a new unique relation name for intermediary relation due to
-      # delegation rewritings.
-      #
-      # @param [Fixnum] the rule id used in @rule_mapping usually given by
-      # WLRule.rule_id
-      #
-      def generate_intermediary_relation_name(orig_rule_id)
-        return "deleg_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
-      end
-
-      # Simple successor function useful to create id for rules in this
-      # WLprogram.
-      #
-      def rule_id_generator
-        while @rule_mapping.has_key? @next
-          @next+=1
-        end
-        return @next
+    # If the name of the atom start with tmp_ or temp_ it is a temporary
+    # relation so return true.
+    def is_tmp? (result)
+      if result.is_a?(WLBud::WLAtom)
+        if result.fullrelname=~/temp_/ or result.fullrelname=~/tmp_/ then return true else return false end
+      else
+        raise WLErrorGrammarParsing, "is_tmp? is called on non-WLAtom object, of class #{result.class}"
       end
     end
-  end
+
+    # FIXME error in the head of the rules aren't detcted during parsing but
+    # here it is too late.
+    #
+    # Make joins when there is more than two atoms in the body. Need to call
+    # make_dic before calling this function. it return the beginning of the body
+    # of the bud rule containing the join of relations along with their join
+    # tuple criterion for example (rel1 * rel2).combos(rel1.1 => rel2.2) TODO
+    # move to wlvocabulary
+    #
+    # For a bud rule like the following it produce the part between stars marked
+    # with ** around
+    #
+    # sibling <= *(childOf*childOf).pairs(:father => :father,:mother =>
+    # :mother)* {|s1,s2| [s1[0],s2[0]] unless s1==s2}
+    def make_combos (wlrule)
+
+      # list all the useful relation in combo
+      raise WLError, "The dictionary should have been created before calling this method" unless wlrule.dic_made
+      str = '('; if_str = '' ;
+      wlrule.body.each do |atom|
+        str <<  "#{atom.fullrelname} * "
+      end
+      str.slice!(-2..-1) unless wlrule.body.empty?
+      str << ').combos('
+
+      # create join conditions
+      combos=false
+      wlrule.dic_wlvar.each do |key,value|
+        next unless value.length > 1 # skip free variable (that is occurring only once in the body)
+        next if key == '$_' # skip anonymous variable PENDING parsing string directly here is subject to bugs in general create good data structure
+
+        v1 = value.first
+        rel_first , attr_first = v1.split('.')
+        # join every first occurrence of a variable with its subsequent
+        value[1..-1].each do |v|
+          rel_other , attr_other = v.split('.')
+          rel_first_name = wlrule.dic_invert_relation_name[Integer(rel_first)]
+          rel_other_name = wlrule.dic_invert_relation_name[Integer(rel_other)]
+          first_atom = wlrule.body[Integer(rel_first)]
+          other_atom = wlrule.body[Integer(rel_other)]
+          col_name_first = get_column_name_of_relation(first_atom, Integer(attr_first))
+          col_name_other = get_column_name_of_relation(other_atom, Integer(attr_other))
+          # If it is a self-join symbolic name should be used
+          if rel_first_name.eql?(rel_other_name)
+            # if_str << " && #{wlrule.dic_relation_name[rel_first]}.#{attr_first}==#{wlrule.dic_budvar[rel_other]}.#{attr_other}"
+            str << ":#{col_name_first}" << ' => ' << ":#{col_name_other}"
+            combos=true
+          else
+            # str << WLProgram.get_bud_var_by_pos(rel_first) << attr_first << '
+            # => ' << WLProgram.get_bud_var_by_pos(rel_other) << attr_other <<
+            # ',' ;
+            str << rel_first_name << '.' << col_name_first << ' => ' << rel_other_name << '.' << col_name_other
+            combos=true
+          end
+          str << ','
+        end
+      end
+      str.slice!(-1) if combos
+      str << ')'
+
+      return str, if_str
+    end
+
+    # Get the the name specified for the column of the relation in given atom as
+    # it is declared in the collection
+    def get_column_name_of_relation (atom, column_number)
+      wlcoll = @wlcollections["#{atom.relname}_at_#{atom.peername}"]
+      unless wlcoll.nil?
+        wlcoll.fields.fetch(column_number)
+      else
+        raise WLErrorProgram, "in get_column_name_of_relation #{atom.relname}_at_#{atom.peername} not found in wlcollections"
+      end
+    end
+
+    # Add quotes around s if it is a string
+    #
+    def quotes(s)
+      if s.is_a?(String)
+        return "\'#{s}\'"
+      else
+        return s.to_s
+      end
+    end
+
+    # Tools for WLprogram This tool function checks if a table includes an
+    # object. If so, it will return its index. Otherwise it will raise a
+    # WLParsing Error.
+    def include_with_index (table,obj)
+      raise WLBud::WLErrorGrammarParsing, "#{obj} is a lone variable" unless table.include?(obj)
+      table.each_with_index {|a,i| if obj.eql?(a) then return i else next end}
+    end
+
+    # Generate a new unique relation name for intermediary relation due to
+    # delegation rewritings.
+    #
+    # @param [Fixnum] the rule id used in @rule_mapping usually given by
+    # WLRule.rule_id
+    #
+    def generate_intermediary_relation_name(orig_rule_id)
+      return "deleg_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
+    end
+
+    # Simple successor function useful to create id for rules in this WLprogram.
+    #
+    def rule_id_generator
+      while @rule_mapping.has_key? @next
+        @next+=1
+      end
+      return @next
+    end
+
+  end # class WLProgram
+
+end # module WLBud
 

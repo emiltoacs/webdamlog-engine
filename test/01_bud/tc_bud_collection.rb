@@ -1,12 +1,12 @@
 # ####License####
 #  File name tc_bud_collection.rb
 #  Copyright © by INRIA
-# 
+#
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
+#
 #   WebdamLog - Aug 14, 2012
-# 
+#
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
@@ -17,6 +17,28 @@ require 'header_test'
 #
 class TcBudCollection < Test::Unit::TestCase
   include MixinTcWlTest
+
+  # test collection of arity zero
+  class Arity0Collection
+    include Bud
+    state do
+      scratch :scrtch, []
+      table :tbl, []
+    end
+    bootstrap do
+      tbl <= []
+      scrtch <= []
+    end
+    # you cannot write rule with arity 0 collection in the head
+    bloom do
+    end
+  end
+  def test_arity_0_collection
+    program = Arity0Collection.new
+    program.tick
+    assert_equal(0, program.scrtch.length)
+    assert_equal(0, program.tbl.length)
+  end
 
   # Check that scratch with deferred operators works well for facts
   #
@@ -41,7 +63,7 @@ class TcBudCollection < Test::Unit::TestCase
       tbl <- [['a', 'b', 1, 2]]
     end
   end
-    def test_scratch_deferred_op_add_fact
+  def test_scratch_deferred_op_add_fact
     program = ScratchDeferredOpAddFact.new
     program.tick
     assert_equal(2, program.scrtch.length)
@@ -90,14 +112,16 @@ class TcBudCollection < Test::Unit::TestCase
     assert_equal( [['t1', 1, 2],['t2', -1, -2]], pg.tbl.to_a.sort)
     assert_equal( [['t1', 1, 2],['t2', -1, -2]], pg.tbl.delta.values.to_a.sort)
     assert_equal( [], pg.tbl.storage.values.to_a.sort)
-    # pg.tbl <= [['t3',-3, -4]] # this now longer work on purpose since bud 0.9.7
+    # pg.tbl <= [['t3',-3, -4]] # this now longer work on purpose since bud
+    # 0.9.7
     pg.tbl <+ [['t4',-5, -6]]
     pg.tick
     assert_equal( [], pg.scrtch.to_a.sort)
     assert_equal( [['t1', 1, 2],['t2', -1, -2],['t4',-5, -6]], pg.tbl.delta.values.to_a.sort )
     assert_equal( [], pg.tbl.storage.values.to_a.sort)
     assert_equal( [['t1', 1, 2],['t2', -1, -2],['t4',-5, -6]], pg.tbl.to_a.sort )
-    # pg.scrtch <= [['s3',-3, -4]] # this now longer work on purpose since bud 0.9.7
+    # pg.scrtch <= [['s3',-3, -4]] # this now longer work on purpose since bud
+    # 0.9.7
     pg.scrtch <+ [['s4',-5, -6]]
     pg.tick
     assert_equal( [['t1', 1, 2],['t2', -1, -2],['t4',-5, -6]], pg.tbl.to_a.sort )

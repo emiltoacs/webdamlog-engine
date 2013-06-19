@@ -136,7 +136,7 @@ module WLBud
         
         #### fields for collection declaration ####
         rule col_fields
-          keys values / '' <WLFields>
+          ( keys values / '' ) <WLFields>
         end
             # value+ for key fields in relations
             rule keys
@@ -178,19 +178,11 @@ module WLBud
         end
           ###### relation name in atom #####
           rule rrelation
-            (relation_name / variable) {
-            def variable
-              if self.is_a?(WLBud::WLVar) then return self else return nil end
-            end
-            }
+            ( relation_name / variable ) <WLRRelation>
           end
           ###### peer name in atom #####
           rule rpeer
-            peer_name / variable {
-            def variable
-              if self.is_a?(WLBud::WLVar) then return self else return nil end
-            end
-            }
+            ( peer_name / variable ) <WLRPeer>
           end
           ###### attributes name in atom #####
           rule rfields
@@ -200,12 +192,10 @@ module WLBud
             rule rtoken
               (variable / item) <WLRToken>
             end
-            # useless to parse $_ since words now accepts _ but think to improve to parse as anonymous variable
-            rule variable
-              '$' word <WLVar>
-              /
-              '$_' <WLVar>
-            end
+            
+    rule variable
+        ( '$' word / '$_' ) <WLVar>
+    end
 
    end # grammar WebdamLogGrammar
 end # module WLBud
