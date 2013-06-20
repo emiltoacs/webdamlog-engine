@@ -133,3 +133,10 @@ def pro(the_name=tabname, the_schema=schema, &blk)
 		 columns. Previously we returned a single *column* (scalar) value in
 		 this case; now we always return a tuple with k-1 columns
 #+end_quote
+
+
+
+* exemple
+
+fact delegation@ungars("unautre", 0, false, "rule contact@local($username, $ip, $port, $online, $email):-contact@sigmod_peer($username, $ip, $port, $online, $email);")
+
