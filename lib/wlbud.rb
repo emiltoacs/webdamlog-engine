@@ -1034,12 +1034,7 @@ module WLBud
     def self.get_path_to_rule_dir
       base_dir = File.expand_path(File.dirname(__FILE__))
       return File.join(base_dir, RULE_DIR_NAME)
-    end
-
-    # @return [Hash] the hash of all the pending delegations and clear it
-    def flush_delegations
-      pending_delegations.clear
-    end
+    end    
   end # class WL
 
   # Build a packet to write on the channel with all the standard meta-data. It

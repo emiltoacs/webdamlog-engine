@@ -57,7 +57,7 @@ end
               "declarations"=>[]
             }]]]
     }
-    # force another tick to flush chan 
+    # force another tick to flush chan
     runner.sync_do { }
     # two pending delegations
     assert_equal({:p0=>
@@ -68,6 +68,13 @@ end
 
     assert_equal(["rule local2_at_test_pending_delegation_content($x) :- local_at_test_pending_delegation_content($x);"],
       runner.wl_program.rule_mapping.values.map{ |ar| ar.first.show_wdl_format} )
+
+    assert_equal({:p0=>
+          {0=>
+            [["rule local2@test_pending_delegation_content('14') :- local@test_pending_delegation_content('4');"],
+            ["rule local2@test_pending_delegation_content('15') :- local@test_pending_delegation_content('4');"]]}},
+      runner.flush_delegations)
+    assert_equal({}, runner.pending_delegations)
 
   ensure
     runner.stop
