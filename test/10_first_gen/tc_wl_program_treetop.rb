@@ -118,7 +118,7 @@ end
   end
 
   # test disambiguation mechanism
-  def test_050_peername_namedsentence
+  def test_050_peername_namedsentence_disamb
     program = nil
     begin      
       # test disambiguation with real name
@@ -184,7 +184,55 @@ end
     ensure
       File.delete('test_050_peername_NamedSentence') if File.exists?('test_050_peername_NamedSentence')
     end    
-  end 
+  end
+
+  # test disambiguation mechanism
+  def test_060_fact_disamb
+    program = nil
+    begin
+      # test disambiguation with alias in rules
+      pg = <<-EOF
+    peer sigmod_peer = localhost:4100;
+    peer myself = localhost:4150;
+    collection ext persistent picture@local(title*, owner*, _id*, image_url*);
+    fact picture@local(sigmod,local,12347,"http://www.seeklogo.com/images/A/Acm_Sigmod-logo-F12330F5BD-seeklogo.com.gif");
+    fact picture@local(webdam,local,12348,"http://www.cs.tau.ac.il/workshop/modas/webdam3.png");
+    end
+      EOF
+      File.open('test_060_fact_disamb',"w"){ |file| file.write pg}
+      program = nil
+      # #assert_nothing_raised do
+      program = WLBud::WLProgram.new(
+        'myself',
+        'test_060_fact_disamb',
+        'localhost',
+        '4150',
+        {:debug => true} )
+      # #end test collection with alias me
+      rel = program.wlcollections["picture_at_myself"]
+      assert_not_nil rel
+      assert_kind_of WLBud::WLCollection, rel
+      assert_equal "myself", rel.peername
+      fact = program.wlfacts
+      assert_not_nil fact
+      # #assert_kind_of WLBud::WLFacts, fact
+      assert_equal ["picture_at_myself( sigmod, myself, 12347, http://www.seeklogo.com/images/A/Acm_Sigmod-logo-F12330F5BD-seeklogo.com.gif ) ;",
+        "picture_at_myself( webdam, myself, 12348, http://www.cs.tau.ac.il/workshop/modas/webdam3.png ) ;"],
+        fact.map { |fact| fact.show_wdl_format }
+      assert_equal [["sigmod",
+          "myself",
+          "12347",
+          "http://www.seeklogo.com/images/A/Acm_Sigmod-logo-F12330F5BD-seeklogo.com.gif"],
+        ["webdam",
+          "myself",
+          "12348",
+          "http://www.cs.tau.ac.il/workshop/modas/webdam3.png"]], fact.map { |fact| fact.content }
+
+    ensure
+      File.delete('test_050_peername_NamedSentence') if File.exists?('test_050_peername_NamedSentence')
+    end
+  end
+
 
   # This is just a test file, in regular use it is forbidden to declare
   # intermediary relation

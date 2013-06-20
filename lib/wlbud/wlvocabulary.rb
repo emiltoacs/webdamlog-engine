@@ -273,7 +273,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     # @return [Array] list of strings containing each attribute value of the
-    # fact.
+    # fact. maybe be changed if disamb_fields has been called
     def content
       if @contents.nil?
         array = []
@@ -283,10 +283,13 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @contents
     end
 
+    def map_content! &block
+      self.items.get_items.each { |item| item.item_text_value = yield item.item_text_value } if block_given?
+    end
+
     # Return the name of the peer, it could be different from
     # self.peer_name.text_value when called by {WLProgram} since disambiguation
     # could have modified this field
-    #
     def peername
       unless @peername
         @peername = self.peer_name.text_value
@@ -321,15 +324,21 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   end
 
   module WLItem
+
+    attr_accessor :item_text_value
+
     def item_text_value
-      self.elements.each do |e|
-        if self.is_a? WLWord
-          return self.text_value
-        elsif self.is_a? WLItem and self.complex_string.is_a? WLComplexString
-          return self.complex_string.text_value
+      unless @item_text_value
+        @item_text_value = ""
+        self.elements.each do |e|
+          if self.is_a? WLWord
+            @item_text_value = self.text_value
+          elsif self.is_a? WLItem and self.complex_string.is_a? WLComplexString
+            @item_text_value = self.complex_string.text_value
+          end
         end
       end
-      return ''
+      return @item_text_value
     end
     def variable?
       false

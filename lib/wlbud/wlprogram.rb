@@ -39,7 +39,7 @@ module WLBud
     #
     def initialize (peername, filename, ip, port, make_binary_rules=false, options={})
       raise WLBud::WLError, 'Program file cannot be found' unless File.exist?(filename)
-      #absolute path file to the program *.wl
+      # #absolute path file to the program *.wl
       @programfile = filename
       @parser = WLBud::WebdamLogGrammarParser.new
       @peername=WLTools.sanitize(peername)
@@ -53,7 +53,8 @@ module WLBud
       @next=1
       @make_binary_rules=make_binary_rules #Use binary rule format (use Bloom pairs keyword instead of combos).
       my_address = "#{ip}:#{port}"
-      # @!attribute [Hash] !{name => WLCollection} List of the webdamlog relation inserted in that peer
+      # @!attribute [Hash] !{name => WLCollection} List of the webdamlog
+      # relation inserted in that peer
       @wlcollections={}
       # Define here some std alias for local peer
       # * @peername
@@ -86,9 +87,9 @@ module WLBud
       # Nonlocal rules in WL are never converted into Bloom rules directly (as
       # opposed to previous types of rules). They are split in two part one
       # stored in delegation that must be send to a remote peer and another part
-      # stored in rewrittenlocal that correspond to the longest sequence possible
-      # to evaluate locally, that may be the whole original rule if only the head
-      # was not local.
+      # stored in rewrittenlocal that correspond to the longest sequence
+      # possible to evaluate locally, that may be the whole original rule if
+      # only the head was not local.
       # === data struct
       # Array:(WLBud:WLRule)
       #
@@ -103,8 +104,7 @@ module WLBud
       # This is the list of rules which contains the local rules after a
       # non-local rule of the wlprogram at initialization has been rewritten.
       # This kind of rule have a intermediary relation in their head that
-      # control the corresponding delegated part of the rule on the remote
-      # peer.
+      # control the corresponding delegated part of the rule on the remote peer.
       # === data struct
       # Array:(WLBud:WLRule)
       #
@@ -137,7 +137,7 @@ module WLBud
       # Array:(WLBud::WLRule)
       #
       @new_rewritten_local_rule_to_install = []
-      #@name=@programfile.split('/').last.split('.').first
+      # #@name=@programfile.split('/').last.split('.').first
       options[:debug] ||= false
       @options=options.clone
 
@@ -151,8 +151,8 @@ module WLBud
 
     public
 
-    # The print_content method prints the content of the relations
-    # declarations, extensional facts and rules of the program to the screen.
+    # The print_content method prints the content of the relations declarations,
+    # extensional facts and rules of the program to the screen.
     #
     def print_content
       puts "-----------------------RELATIONS------------------------"
@@ -210,6 +210,9 @@ module WLBud
     # Parses one line of WLcode and adds it to the proper WL collection if the
     # add_to_program boolean is true.
     #
+    # Rule and facts and collections are disambiguate that is local and me
+    # keywords are changed into username
+    #
     # TODO: should check before adding rule that the all the local atoms have
     # been declared. The atoms in the head that are not local should also be
     # declared but I can also make my parser declare them automatically since
@@ -241,6 +244,7 @@ In the string: #{line}
           when WLBud::WLCollection
             @wlcollections[(WLTools.sanitize!(result.atom_name))] = result
           when WLBud::WLFact
+            disamb_fields!(result)
             @wlfacts << result
           when WLBud::WLRule
             result.rule_id = rule_id_generator
@@ -297,7 +301,7 @@ In the string: #{line}
       if wlrule.unbound.empty?
         raise WLErrorProgram, "rewrite_non_local : You are trying to rewrite a local rule. There may be an error in your rule filter"
       else
-        #The destination peer is the peer of the first nonlocal atom.
+        # #The destination peer is the peer of the first nonlocal atom.
         destination_peer = wlrule.unbound.first.peername
         unless wlrule.head.variable?
           if @wlpeers[destination_peer].nil?
@@ -310,11 +314,12 @@ In the string: #{line}
           delegation = wlrule.show_wdl_format
         else # if the rule must be cut in two part
           
-          # RULE REWRITING If local atoms are present at the beginning of the non
-          # local rule, then we have to add a local rule to the program.
+          # RULE REWRITING If local atoms are present at the beginning of the
+          # non local rule, then we have to add a local rule to the program.
           # Otherwise, the nonlocal rule can be sent as is to its destination.
-          # Create a relation for this declaration that has an arity corresponding
-          # to the number of distinct variables present in the local stack.
+          # Create a relation for this declaration that has an arity
+          # corresponding to the number of distinct variables present in the
+          # local stack.
           localbody = ""
           local_vars=[]
           wlrule.bound.each do |atom|
@@ -339,14 +344,15 @@ In the string: #{line}
           intermediary_relation_declaration_for_remote_peer = "collection inter persistent #{relation_name}@#{destination_peer}(#{dec_fields});"
           intermediary_relation_declaration_for_local_peer = intermediary_relation_declaration_for_remote_peer.gsub("persistent ", "")
           local_rule_which_delegate_facts = "rule #{intermediary_relation_atom_in_rule}:-#{localbody};"
-          #Declare the new remote relation as a scratch for the local peer and add it to the program
+          # #Declare the new remote relation as a scratch for the local peer and
+          # add it to the program
           @new_local_declaration << parse(intermediary_relation_declaration_for_local_peer,true,true)
           @new_relations_to_declare_on_remote_peer[addr_destination_peer] << intermediary_relation_declaration_for_remote_peer
-          #Add local rule to the set of rewritten local rules
+          # #Add local rule to the set of rewritten local rules
           @new_rewritten_local_rule_to_install << ru = parse(local_rule_which_delegate_facts, true, true)
           @rule_mapping[wlrule.rule_id] << ru.rule_id
           @rule_mapping[ru.rule_id] << ru
-          #Create the delegation rule string
+          # #Create the delegation rule string
           nonlocalbody="" ;
           wlrule.unbound.each { |atom| nonlocalbody << "#{atom}," } ; nonlocalbody.slice!(-1)
           delegation="rule #{wlrule.head}:-#{intermediary_relation_atom_in_rule},#{nonlocalbody};"
@@ -360,8 +366,8 @@ In the string: #{line}
       return intermediary_relation_declaration_for_local_peer
     end # def rewrite_non_local(wlrule)
 
-    # Split the rule by reading atoms from left to right until non local atom
-    # or variable in relation name or peer name has been found
+    # Split the rule by reading atoms from left to right until non local atom or
+    # variable in relation name or peer name has been found
     def split_rule wlrule
       unless wlrule.split
         to_delegate = false
@@ -397,8 +403,7 @@ In the string: #{line}
       str_self_join = ""
       body = wlrule.body
 
-      #Generate rule head
-      #Send fact buffer if non-local head
+      # #Generate rule head #Send fact buffer if non-local head
       unless local?(wlrule.head)
         str_res << "sbuffer <= "
       else if is_tmp?(wlrule.head)
@@ -408,12 +413,12 @@ In the string: #{line}
         end
       end
 
-      #Obsolete code when self-joins where badly implemented
-      #rename_atoms adds temp relations in case of self joins.
-      #renamed = rename_atoms(body)
-      #renamed.each {|relation| strRes <<  "#{relation};\n"} unless @make_binary_rules
+      # #Obsolete code when self-joins where badly implemented #rename_atoms
+      # adds temp relations in case of self joins. #renamed = rename_atoms(body)
+      # #renamed.each {|relation| strRes <<  "#{relation};\n"} unless
+      # @make_binary_rules
 
-      #Make the locations dictionaries for this rule
+      # #Make the locations dictionaries for this rule
       wlrule.make_dictionaries unless wlrule.dic_made
 
       #      if @options[:debug] then
@@ -434,7 +439,7 @@ In the string: #{line}
         if body.length==1
           str_res << body.first.fullrelname
         else
-          #Generate rule collection names using pairs and combos keywords.
+          # #Generate rule collection names using pairs and combos keywords.
           #          if @make_binary_rules
           #            s , str_self_join = make_pairs(wlrule)
           #          else
@@ -450,11 +455,11 @@ In the string: #{line}
         str_res << projection_bud_string(wlrule)
         str_res << condition_bud_string(wlrule)
         
-#        unless wlrule.dic_wlconst.empty?
-#          str_res << str_self_join.sub(/&&/,'if')
-#        else
-#          str_res << str_self_join
-#        end
+        #        unless wlrule.dic_wlconst.empty?
+        #          str_res << str_self_join.sub(/&&/,'if')
+        #        else
+        #          str_res << str_self_join
+        #        end
 
         str_res << "};"
       end
@@ -500,8 +505,8 @@ In the string: #{line}
       return flush
     end
 
-    # Read new_local_declaration content and clear it. It return
-    # the array of the collections to create and clear it after.
+    # Read new_local_declaration content and clear it. It return the array of
+    # the collections to create and clear it after.
     #
     # == return
     #
@@ -536,9 +541,9 @@ In the string: #{line}
 
     # return true if the given wlword is local
     #
-    # according to the type of wlword which should be a wlvocabulary object or
-    # a string of the peername, it test if the given argument is local ie.
-    # match one of the alias name specifed in @localpeername
+    # according to the type of wlword which should be a wlvocabulary object or a
+    # string of the peername, it test if the given argument is local ie. match
+    # one of the alias name specifed in @localpeername
     #
     # Note that a rule is local if the body is local whatever the state of the
     # head
@@ -571,8 +576,7 @@ In the string: #{line}
 
     # Disambiguate peername, it replace alias such as local or me by the local
     # peername id. Hence subsequent call to peername will use the unique id of
-    # this peer.
-    # @param [WLBud::NamedSentence] a {WLBud::NamedSentence} object
+    # this peer. @param [WLBud::NamedSentence] a {WLBud::NamedSentence} object
     # @return [String] the disambiguated namedSentence
     def disamb_peername! namedSentence
       if namedSentence.is_a? String
@@ -593,6 +597,23 @@ In the string: #{line}
       return namedSentence
     end
 
+    # Disambiguate fields, it replace alias such as local or me by the local
+    # peername id. Hence subsequent call to peername will use the unique id of
+    # this peer.
+    def disamb_fields! wlfact
+      if wlfact.is_a? WLBud::WLFact
+        wlfact.map_content! do |pname|
+          if @localpeername.include?(pname)
+            @peername
+          else
+            pname
+          end
+        end
+      else
+        raise WLErrorTyping, "expect an object WLFact in disamb_fields!"
+      end
+    end
+
     # return true if wlcollection is sound compared to current program already
     # running otherwise return false with error message
     def valid_collection? wlcollection
@@ -603,18 +624,17 @@ In the string: #{line}
 
     private
 
-    # Define the format of the name of the variable for the name of the
-    # relation inside the block of the bud rules
+    # Define the format of the name of the variable for the name of the relation
+    # inside the block of the bud rules
     def self.atom_iterator_by_pos(position)
       "atom#{position}"
     end
 
-    # According to the variable found in the head of the rule this method
-    # define the schema of tuples to produce from the variable appearing in the
-    # body.
+    # According to the variable found in the head of the rule this method define
+    #   the schema of tuples to produce from the variable appearing in the body.
     #
-    # For a bud rule like the following it produce the part between stars
-    # marked with ** around
+    # For a bud rule like the following it produce the part between stars marked
+    # with ** around
     #
     # !{descendant_at_emilien <= child_at_emilien {|atom0| *[atom0[0],
     # atom0[2]]*}
@@ -622,10 +642,10 @@ In the string: #{line}
       str = '['
 
       # add the remote peer and relation name which should receive the fact.
-      # conform to facts to be sent via sbuffer
+      #   conform to facts to be sent via sbuffer
       unless local?(wlrule.head)
         destination = "#{@wlpeers[wlrule.head.peername]}"
-        #add location specifier
+        # #add location specifier
         raise WLErrorPeerId, "impossible to define the peer that should receive a message" if destination.nil? or destination.empty?
         str << "\"#{destination}\", "
         relation = "#{wlrule.head.fullrelname}"
@@ -665,8 +685,8 @@ In the string: #{line}
       return str
     end
 
-    # define the if condition for each constant it assign its value
-    # return [String] the string to append to make the wdl rule
+    # define the if condition for each constant it assign its value return
+    # [String] the string to append to make the wdl rule
     def condition_bud_string wlrule
       str = ""
       wlrule.dic_wlconst.each do |key,value|
@@ -793,7 +813,8 @@ In the string: #{line}
             str << ":#{col_name_first}" << ' => ' << ":#{col_name_other}"
             combos=true
           else
-            # str << WLProgram.atom_iterator_by_pos(rel_first) << attr_first << '
+            # str << WLProgram.atom_iterator_by_pos(rel_first) << attr_first <<
+            # '
             # => ' << WLProgram.atom_iterator_by_pos(rel_other) << attr_other <<
             # ',' ;
             str << rel_first_name << '.' << col_name_first << ' => ' << rel_other_name << '.' << col_name_other
