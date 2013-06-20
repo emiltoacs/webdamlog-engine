@@ -220,7 +220,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
         "facts"=>{"join_delegated_at_p0"=>[["3"], ["4"]]},
         "peer_name"=>"p1",
         "rules"=>[],
-        "srcTimeStamp"=>1},
+        "src_time_stamp"=>1},
       WLTools::SerializeObjState.obj_to_hash(wl_peer[0].test_received_on_chan.first))
 
     assert_equal 2, wl_peer[0].join_delegated_at_p0.length, "there is facts in the join although it is a scratch, all facts written by a chan are present at this tick"

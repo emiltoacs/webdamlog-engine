@@ -64,9 +64,37 @@ produce the wanted output.
 
 *** attribute
 
-+ @tables :: hash of all the bud collections with
+**** @tables :: hash of all the bud collections with
   - key :: the name of the collection as a symbol
   - value :: the reference to the object of type collection
+
+**** @stratified_rules :: Array of Struct containing the rules
+
+For exemple for a simple program with only this rule:
+rule local2@test_pending_delegation_content($x) :- local@test_pending_delegation_content($x);
+rewritten:
+#+begin_src
+class ClasswlengineoftestPendingDelegationContenton11110
+	bloom :webdamlog_test_pending_delegation_content_1 do
+		local2_at_test_pending_delegation_content <= local_at_test_pending_delegation_content {|atom0| [atom0[0]]};
+	end
+end
+#+end_src
+The struct is
+#+begin_src
+[[#<struct
+   bud_obj=ClasswlengineoftestPendingDelegationContenton11110:4e5c000,
+   rule_id=0,
+   lhs="local2_at_test_pending_delegation_content",
+   op="<=",
+   src=
+    "local2_at_test_pending_delegation_content <= (local_at_test_pending_delegation_content { |atom0| [atom0[0]] })",
+   orig_src=
+    "local2_at_test_pending_delegation_content <= (local_at_test_pending_delegation_content { |atom0| [atom0[0]] })",
+   unsafe_funcs_called=false>]]
+#+end_src
+
+
 
 
 ** Collection class and inheritance

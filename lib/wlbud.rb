@@ -73,6 +73,7 @@ module WLBud
     attr_reader :options, :wl_program, :rules_to_delegate, :relation_to_declare, :program_loaded
     # the directory where the peer write its rules
     attr_reader :rule_dir
+    attr_reader :filter_delegations, :pending_delegations
 
     # TODO: define the following attributes only if options[:wl_test]
 
@@ -104,6 +105,9 @@ module WLBud
     #   can run the peer you shall call the load_program method. Used with
     #   wrapper that required to be bind before we have started to add facts
     #   into them
+    # * +:filter_delegations+ if true all the delegation will be put in a waiting
+    #   queue  instead of being added to the program. Some external intervention
+    #   will be required to validate them.
     def initialize (peername, pgfilename, options={})
       # ### WLBud:Begin adding to Bud special bud parameter initialization
       if options[:mesure]
@@ -142,13 +146,9 @@ module WLBud
       # New relations to declare on remote peers, these are the intermediary
       # ones appearing in one of the delegations in rules_to_delegate.
       @relation_to_declare = Hash.new{ |h,k| h[k]=Array.new }
-      #      unless options[:modulename].nil?
-      #        # Optional module import
-      #        # raise WLErrorGrammarParsing if options[:modulename]==nil
-      #        require @filename
-      #        Module.import eval(options[:modulename]) => (options[:modulename]).to_sym
-      #        puts "Extra module imported: "+(options[:modulename]).to_sym.to_s
-      #      end
+      # if true rule received will be placed into pending_delegations instead of being added
+      @filter_delegations = options[:filter_delegations] ||= false
+      
       if options[:wl_test]
         @test_received_on_chan = []
         @test_send_on_chan = []
@@ -209,24 +209,17 @@ module WLBud
       # #Loads .wl file containing the setup(facts and rules) for the
       #   Webdamlog instance.
       @wl_program = WLBud::WLProgram.new( @peername, @filename, @ip, @options[:port], false, {:debug => @options[:debug]} )
-      # if @options[:debug]
-      #   WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment
-      #   debug_comment="Peer #{@peername} classify rules of input files")
-      #   prefix="(#{self.class.name} : initialize) :\t"
-      #   WLTools::Print_Tables.print_arg_tab(@wl_program.localrules,
-      #   prefix+'localrules')
-      #   WLTools::Print_Tables.print_arg_tab(@wl_program.rewrittenlocal,
-      #   prefix+'rewrittenrules')
-      #   WLTools::Print_Tables.print_arg_tab(@wl_program.delegations,
-      #   prefix+'delegations')
-      #   WLTools::Debug_messages.h2(WLTools::Debug_messages.end_comment
-      #   debug_comment) if @options[:debug] end All the relation of the program
-      #   are stored in wlcollection and will be declared in make_program
       @wl_program.flush_new_local_declaration
       @wlb_tmp_inc=0
       @need_rewrite_strata=false
       @done_rewrite={}
       @collection_added=false
+      # @!attributes [Hash] if filter_delegations is true, delegations received from other peers are put in this hash
+      # peername:
+      #   timestamp:
+      #     rule1
+      #     rule2
+      @pending_delegations = Hash.new{ |h,k| h[k]=Hash.new{ |h2,k2| h2[k2]=Array.new } }
 
       # XXX : added comments on budlib (unofficial):
       # - wlbud => initialize
@@ -247,25 +240,6 @@ module WLBud
 
       resolve_imports
       call_state_methods
-
-      #      if @options[:debug]
-      #        puts "instances_methods"
-      #        puts "#{self.class.instance_methods.inspect}"
-      #      end
-
-      # #### WLBud:Begin remove from Bud This list os now done in rewrite_strata
-      # method called just after #@declarations =
-      # self.class.instance_methods.select {|m| m =~ /^__bloom__.+$/}.map {|m|
-      # m.to_s} #### WLBud:End remove from Bud
-
-
-      # ### WLBud:Begin alternative to Bud #Rewrites local methods and adds
-      # references for modules and temp collections for class modules.
-      #      relatives = self.class.modules + [self.class]
-      #      relatives.each do |r|
-      #        Bud.rewrite_local_methods(r)
-      #      end
-      # ### WLBud:End alternative to Bud
 
       @viz = VizOnline.new(self) if @options[:trace]
       @rtracer = RTrace.new(self) if @options[:rtrace]
@@ -362,10 +336,14 @@ module WLBud
             puts "Process packets received from #{packet_value.print_meta_data}"
             puts "---------"
           end
-          # Declare all the new relations and insert the rules
-          packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
-          packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?
-          add_facts(packet_value.facts) unless packet_value.facts.nil?
+          if @options[:filter_delegations]
+            @pending_delegations[packet_value.peer_name.to_sym][packet_value.src_time_stamp] << packet_value.rules
+          else
+            # Declare all the new relations and insert the rules
+            packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
+            packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?
+            add_facts(packet_value.facts) unless packet_value.facts.nil?
+          end
         end
         
         if @need_rewrite_strata
@@ -787,8 +765,8 @@ module WLBud
     # Takes in a string representing a WLRule, parses it and adds it directly
     # into the WLBud instance.
     #
-    # @raise [WLError] if something goes wrong
-    # @return [Array] rule_id, rule string to display
+    # @raise [WLError] if something goes wrong @return [Array] rule_id, rule
+    # string to display
     def add_rule(wlpg_rule)
       rule = @wl_program.parse(wlpg_rule, true)
       raise WLErrorProgram, "parse rule and get #{rule.class}" unless rule.is_a?(WLBud::WLRule)
@@ -944,7 +922,7 @@ module WLBud
     # @return [Array] array of WLPacketData
     #
     def read_packet_channel
-      return chan.read(@options[:debug])
+      return chan.read_channel(@options[:debug])
     end
 
     # This method aggregates all the fact, rules and declarations of each peer
