@@ -134,6 +134,16 @@ module WLRunner
     return res
   end
 
+  # @return [Hash] the hash of all the pending delegations and clear it
+    def flush_delegations
+      flush = {}
+      sync_do {
+        flush = @pending_delegations.dup
+        @pending_delegations.clear
+      }
+      flush
+    end
+
   private
 
   class WLEnginePool
