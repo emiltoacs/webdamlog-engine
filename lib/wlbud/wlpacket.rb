@@ -21,8 +21,8 @@ module WLBud
 
     attr_accessor :dest, :data
 
-    # #the default constructor #parameter dest : should be the URL ipv4:port of
-    # the peer to reach #TODO remove identifier if useless (not sure for now)
+    # The default constructor parameter dest : should be the URL ipv4:port of
+    # the peer to reach TODO remove identifier if useless (not sure for now)
     def initialize(dest, peerName, srcTimeStamp, data={'facts'=>{},'rules'=>[],'declarations'=>[]})
       # #URL with [ipv4:port]
       valid_ip_address_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]):[0-9]+$/
@@ -72,33 +72,32 @@ module WLBud
   # communication channel used in WLPacket
   class WLPacketData
 
-    # Should follow the given structure !{name of relation => [[tuple], [tuple],
-    # [tuple]]} TODO add flag for add or remove
-    attr_accessor :facts    
-    # Array of rules
-    attr_accessor :rules
-    # Array of collection declarations
-    attr_accessor :declarations
+    attr_reader :peer_name, :src_time_stamp
+    attr_accessor :facts, :rules, :declarations
 
     # the default constructor
     def initialize(peername, srcTimeStamp, payload={'facts'=>{},'rules'=>[],'declarations'=>[]})
             
-      # #the peer which send the message: String
+      # the peer which send the message: String
       raise WLErrorTyping, "peer name should be a string" unless peername.is_a?(String)
       @peer_name = peername
       # #the timeStamp when the source peer send the message: Integer
-      @srcTimeStamp = srcTimeStamp.to_i
+      @src_time_stamp = srcTimeStamp.to_i
 
       # TODO type check could be more elaborated here it is just hash or array
       # or nil
       raise WLErrorTyping, "Lacking facts entry in packet " unless payload.key?('facts')
       raise WLErrorTyping, "Incorret data type for facts : #{payload['facts'].class}" unless (payload['facts'].is_a?(Hash) or payload['facts'].nil?)
+      # Should follow the given structure !{name of relation => [[tuple],
+      # [tuple], [tuple]]} TODO add flag for add or remove
       @facts = payload['facts']
       raise WLErrorTyping, "Lacking rules entry in packet " unless payload.key?('rules')
       raise WLErrorTyping, "Incorret data type for rules : #{payload['rules'].class}" unless (payload['rules'].is_a?(Array) or payload['rules'].nil?)
+      # !@attribute [Array] of rules
       @rules = payload['rules']
       raise WLErrorTyping, "Lacking declarations entry in packet " unless payload.key?('declarations')
-      raise WLErrorTyping, "Incorret data type for declaration of new collection : #{payload['declarations'].class}" unless (payload['declarations'].is_a?(Array) or payload['declarations'].nil?)
+      raise WLErrorTyping, "Incorret data type for declaration of new collection : #{payload['declarations'].class}" unless (payload['declarations'].is_a?(Array) or payload['declarations'].nil?)      
+      # !@attributes [Array] of collection declarations
       @declarations = payload['declarations']
     end
 
@@ -143,7 +142,7 @@ module WLBud
     end # end self
 
     def serialize_for_channel
-      return [@peer_name.to_s,@srcTimeStamp.to_s,get_data]
+      return [@peer_name.to_s,@src_time_stamp.to_s,get_data]
     end
 
     # Return the hash with facts, rules and declaration
@@ -170,17 +169,17 @@ module WLBud
       return get_data
     end
 
-    # Return the metadata in the packet @peer_name, @srcTimeStamp
+    # Return the metadata in the packet @peer_name, @src_time_stamp
     #
     def print_meta_data
-      return @peer_name.to_s + ' : ' + @srcTimeStamp.to_s
+      return @peer_name.to_s + ' : ' + @src_time_stamp.to_s
     end
 
     # #return the string representation of the content of the fields of this
     # object
     #
     def to_s
-      return @peer_name.to_s + ' : ' + @srcTimeStamp.to_s + ' : ' + get_data.inspect
+      return @peer_name.to_s + ' : ' + @src_time_stamp.to_s + ' : ' + get_data.inspect
     end
     # === return
     # an integer between 0 and 3 which is the number of non nil or empty data

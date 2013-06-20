@@ -40,8 +40,7 @@ end
     assert_equal "intensional query1_at_test_create_user( title* ) ;",
       wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[0].show_wdl_format
     assert_equal "rule query1_at_test_create_user($title) :- pictures_at_test_create_user($title, $_, $_, $_);",
-      wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[1].show_wdl_format
-    
+      wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[1].show_wdl_format    
   end # test_parse
 end # class TcWl1Runner
 
@@ -74,7 +73,7 @@ end
 
   def teardown    
     ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
-    # #ObjectSpace.garbage_collect
+    ObjectSpace.garbage_collect
   end
 
   def test_create

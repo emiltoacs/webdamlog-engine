@@ -24,10 +24,9 @@ module WLBud
 
     public
     
-    # Read input on the channel and build list of WLPacketData
-    # @return [Array] array of WLPacketData
-    #
-    def read(debug=false)
+    # Read input on the channel and build list of {WLPacketData}
+    # @return [Array] array of {WLPacketData}
+    def read_channel(debug=false)
       return [] if self.empty?
       list_of_packet_value = []
       self.each do |raw_string|
@@ -35,7 +34,7 @@ module WLBud
         # hash since it expect ':' instead of '=>') or tt could be done here
         chan_packet = []
         eval "chan_packet = #{raw_string}"
-        # For some strange reason, the payloads method did not work, so I used
+        # PENDING For some strange reason, the payloads method did not work, so I used
         # this instead.
         payload = chan_packet[1..(chan_packet.size-1)]
         list_of_packet_value << WLPacketData.read_from_channel(payload, debug)
