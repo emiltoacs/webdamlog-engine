@@ -143,6 +143,7 @@ end
       pg = <<-EOF
     peer sigmod_peer = localhost:4100;
     peer myself = localhost:4150;
+    peer sigmod_peer = ec2-54-224-165-123.compute-1.amazonaws.com:4100;
     collection ext persistent picture@myself(title*, owner*, _id*, image_url*); #image data fields not added
     collection ext persistent picturelocation@me(_id*, location*);
     collection ext persistent rating@local(_id*, rating*);

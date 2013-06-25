@@ -335,7 +335,9 @@ module WLBud
             puts "---------"
           end
           if @options[:filter_delegations]
+            packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
             @pending_delegations[packet_value.peer_name.to_sym][packet_value.src_time_stamp] << packet_value.rules
+            add_facts(packet_value.facts) unless packet_value.facts.nil?
           else
             # Declare all the new relations and insert the rules
             packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
@@ -429,6 +431,7 @@ module WLBud
               fixpoint = false if t.tick_deltas
             end
           end
+
           # push end-of-fixpoint
           @push_sorted_elems[stratum].each do |p|
             p.stratum_end
@@ -438,7 +441,6 @@ module WLBud
           end
         end
         @viz.do_cards(true) if @options[:trace]
-
 
         # part 3: transition
         #
@@ -756,11 +758,12 @@ module WLBud
       unless @wl_program.local?(rule)
         @wl_program.rewrite_non_local(rule)
         localcolls = @wl_program.flush_new_local_declaration
-        raise WLError, "exactly one intermediary collection should have been generated while splitting a non-local rule an nt #{localcolls.length}" unless localcolls.length == 1
+        # FIXME in case of full delegation zero is allowed
+        raise WLError, "one intermediary collection should have been generated while splitting a non-local rule an nt #{localcolls.length}" unless localcolls.length > 1
         intercoll = localcolls.first
         add_collection(intercoll)
         localrules = @wl_program.flush_new_rewritten_local_rule_to_install
-        raise WLError, "exactly one local rule should have been generated while splitting a non-local rule an nt #{localrules.length}" unless localrules.length == 1
+        raise WLError, "one local rule should have been generated while splitting a non-local rule an nt #{localrules.length}" unless localrules.length > 1
         rule = localrules.first
         @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){|key,oldv,newv| oldv<<newv}
         @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv<<newv}
@@ -951,7 +954,7 @@ module WLBud
           end
         end
       end
-      packets_to_send.each do |packet|
+      packets_to_send.each do |packet|        
         chan <~ [packet]
       end
       if @options[:debug]

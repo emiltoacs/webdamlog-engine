@@ -403,7 +403,7 @@ In the string: #{line}
       str_self_join = ""
       body = wlrule.body
 
-      # #Generate rule head #Send fact buffer if non-local head
+      # Generate rule head Send fact buffer if non-local head
       unless local?(wlrule.head)
         str_res << "sbuffer <= "
       else if is_tmp?(wlrule.head)
