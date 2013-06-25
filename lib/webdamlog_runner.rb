@@ -121,7 +121,15 @@ module WLRunner
       coll = self.wl_program.wlcollections
     end
     return coll.map { |name,wlrule| wlrule.show_wdl_format }
-  end  
+  end
+
+  def snapshot_facts relname
+    coll = []
+    sync_do do
+      coll self.tables[relname].map{ |t| Hash[t.each_pair.to_a] }
+    end
+    return coll
+  end
 
   # return [Hash] !{id=>rule} id is the wdl internal id for rules and rule is the string parsed and exectued by the wdl engine
   def snapshot_rules
