@@ -66,13 +66,13 @@ module WLBud
         
         #### fact extended with WLFact module
         rule fact
-          'fact ' sep relation_name '@' peer_name '(' sep items sep ')' <WLFact>
+          'fact ' sep relation_name ('@'/'_at_') peer_name '(' sep items sep ')' <WLFact>
         end
         
         #### collection extended with WLCollection module
         rule collection
           'collection ' sep rel_type:relation_type
-          sep relation_name '@' peer_name  sep '(' sep col_fields sep ')' <WLCollection>
+          sep relation_name ('@'/'_at_') peer_name  sep '(' sep col_fields sep ')' <WLCollection>
         end
         rule relation_type
           extensional / intermediary / intensional 
@@ -175,7 +175,7 @@ module WLBud
       ### for rules ###
         #### atom in rules ####
         rule atom
-          rrelation '@' rpeer sep '(' sep rfields sep ')' <WLAtom>
+          rrelation ('@'/'_at_') rpeer sep '(' sep rfields sep ')' <WLAtom>
         end
           ###### relation name in atom #####
           rule rrelation

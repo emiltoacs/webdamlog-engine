@@ -53,7 +53,7 @@ module WLBud
 
   # :title:WLBud WLBud is a Ruby Module that simulates WebdamLog behavior using
   # Bud. :main:WLBud
-  
+
 
   # TODO: remove class to force user to create a new class that include WLBud.
   #   It is very unlikely that any user wants to instantiate this class directly
@@ -105,13 +105,13 @@ module WLBud
     #   can run the peer you shall call the load_program method. Used with
     #   wrapper that required to be bind before we have started to add facts
     #   into them
-    # * +:filter_delegations+ if true all the delegation will be put in a waiting
-    #   queue  instead of being added to the program. Some external intervention
-    #   will be required to validate them.
+    # * +:filter_delegations+ if true all the delegation will be put in a
+    #   waiting queue  instead of being added to the program. Some external
+    #   intervention will be required to validate them.
     def initialize (peername, pgfilename, options={})
       # ### WLBud:Begin adding to Bud special bud parameter initialization
       if options[:mesure]
-        @start_time = Time.now        
+        @start_time = Time.now
       end
       # Name of that peer
       @peername = peername
@@ -138,7 +138,7 @@ module WLBud
       # be sent to the peer in key in the wlprogam input format. Basically rules
       # can come into this Hash only from rule rewriting or come from a seed
       # rule that have new values at this tick.
-      @rules_to_delegate = Hash.new{ |h,k| h[k]=Array.new }      
+      @rules_to_delegate = Hash.new{ |h,k| h[k]=Array.new }
       # It represents the list of new relation declarations to send at this
       # tick.
       #
@@ -146,17 +146,18 @@ module WLBud
       # New relations to declare on remote peers, these are the intermediary
       # ones appearing in one of the delegations in rules_to_delegate.
       @relation_to_declare = Hash.new{ |h,k| h[k]=Array.new }
-      # if true rule received will be placed into pending_delegations instead of being added
+      # if true rule received will be placed into pending_delegations instead of
+      # being added
       @filter_delegations = options[:filter_delegations] ||= false
-      
+
       if options[:wl_test]
         @test_received_on_chan = []
         @test_send_on_chan = []
         @wl_callback = {}
         @wl_callback_id = 0
-        @wl_callback_step = Set[ :callback_step_received_on_chan, 
-          :callback_step_write_on_chan, 
-          :callback_step_write_on_chan_2, 
+        @wl_callback_step = Set[ :callback_step_received_on_chan,
+          :callback_step_write_on_chan,
+          :callback_step_write_on_chan_2,
           :callback_step_end_tick ]
       end
       # ### WLBud:End adding to Bud
@@ -200,10 +201,10 @@ module WLBud
       @options[:port] = @options[:port].to_i
       # NB: If using an ephemeral port (specified by port = 0), the actual port
       # number won't be known until we start EM
-      
+
       load_lattice_defs
       builtin_state
-      
+
       # #### WLBud:Begin adding to Bud
       #
       # #Loads .wl file containing the setup(facts and rules) for the
@@ -214,11 +215,8 @@ module WLBud
       @need_rewrite_strata=false
       @done_rewrite={}
       @collection_added=false
-      # @!attributes [Hash] if filter_delegations is true, delegations received from other peers are put in this hash
-      # peername:
-      #   timestamp:
-      #     rule1
-      #     rule2
+      # @!attributes [Hash] if filter_delegations is true, delegations received
+      #   from other peers are put in this hash peername: timestamp: rule1 rule2
       @pending_delegations = Hash.new{ |h,k| h[k]=Hash.new{ |h2,k2| h2[k2]=Array.new } }
 
       # XXX : added comments on budlib (unofficial):
@@ -248,7 +246,7 @@ module WLBud
       # dependency graph and organize it in strata for bud semi-naive
       # evaluation. Some bud legacy code plus incremental adding rule methods
       rewrite_strata
-      WLTools::Debug_messages.h1 "Peer #{@peername} end of initialization" if @options[:debug]      
+      WLTools::Debug_messages.h1 "Peer #{@peername} end of initialization" if @options[:debug]
       # ### WLBud:End alternative to Bud
     end
 
@@ -261,7 +259,7 @@ module WLBud
         @program_loaded = true
       end
     end
-       
+
     # It is not intended to be called directly by client code. From client code,
     # call tick which will call start(true) allowing the EventMachine to call
     # the tick_internal.
@@ -306,7 +304,7 @@ module WLBud
           @metrics[:betweentickstats] = running_stats(@metrics[:betweentickstats],
             starttime - @endtime)
         end
-        
+
         @inside_tick = true
 
         # ### WLBud:Begin adding to Bud
@@ -345,7 +343,7 @@ module WLBud
             add_facts(packet_value.facts) unless packet_value.facts.nil?
           end
         end
-        
+
         if @need_rewrite_strata
           rewrite_strata
           @done_wiring=false
@@ -398,7 +396,7 @@ module WLBud
             @push_sorted_elems[stratum].each {|e| e.invalidate_cache if e.invalidated}
           end
         end
-        
+
         # ### WLBud:Begin adding to Bud
         #
         # #part 2: logic
@@ -475,9 +473,9 @@ module WLBud
         end
         #
         # ### WLBud:End adding to Bud
-        
+
         do_flush
-          
+
         invoke_callbacks
         @budtime += 1
         @inbound.clear
@@ -487,7 +485,7 @@ module WLBud
         @inside_tick = false
         @tick_clock_time = nil
       end
-      
+
       if @options[:wl_test]
         @wl_callback.each_value do |callback|
           if callback[0] == :callback_step_end_tick
@@ -604,6 +602,17 @@ module WLBud
       @app_tables = @app_tables.to_a
     end
 
+    # override do_wiring to force all merge target to accumulate tick delta for
+    # callbacks in applications
+    def do_wiring
+      super
+      @merge_targets.each_with_index do |stratum_targets, stratum|
+        stratum_targets.each {|tab|
+          tab.accumulate_tick_deltas = true # if stratum_accessed[tab] and stratum_accessed[tab] > stratum # no condition
+        }
+      end
+    end
+
     # This method will translate one wlrule in parameter into Bud rule format
     # and make bud evaluate it as method of its class. It return the name of the
     # block created that is the name of the rule in bud.
@@ -643,8 +652,8 @@ module WLBud
       str << "\tend\n"
       str << "end"
       return str
-    end    
-    
+    end
+
     # Used to add a new relation into bud from a wlcollection to declare. Should
     # be used to declare all collection that should be declared in a state block
     # in bloom.
@@ -685,7 +694,7 @@ module WLBud
       end # if colltype.nil?
       return @tables[name].tabname, @tables[name].schema
     end # schema_init
-    
+
     # Adds dynamically facts
     #
     def add_facts(wl_facts)
@@ -714,7 +723,7 @@ module WLBud
       end
       return facts, err
     end
-    
+
     # It will dynamically add a collection to the program
     #
     # * +wlpg_relation+ is a string representing the rule in the wl_program file
@@ -884,7 +893,7 @@ module WLBud
             end
           end # tuples.each do |tuple|
         else
-          err[[k,tuples]] = "relation name #{k} translated to #{relation_name} has not been declared previously"          
+          err[[k,tuples]] = "relation name #{k} translated to #{relation_name} has not been declared previously"
         end
       end # end facts.each_pair
       return valid, err
@@ -1032,7 +1041,7 @@ module WLBud
     def self.get_path_to_rule_dir
       base_dir = File.expand_path(File.dirname(__FILE__))
       return File.join(base_dir, RULE_DIR_NAME)
-    end    
+    end
   end # class WL
 
   # Build a packet to write on the channel with all the standard meta-data. It
@@ -1084,7 +1093,7 @@ module WLBud
     s3 = print_table[2].to_s
     return s1 + s2 + s3
   end
-  
+
   # #This method formats a fact table to be #processed by WebdamExchange manager
   # module.
   #
