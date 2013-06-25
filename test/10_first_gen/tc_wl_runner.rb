@@ -229,4 +229,29 @@ end
             "rule deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x);"}],
       wl_obj.snapshot_full_state)
   end
+
+  def test_snapshot_relname
+    wl_obj = nil
+    assert_nothing_raised do
+      wl_obj = WLRunner.create(@username, @pg_file, @port)
+    end
+    wl_obj.run_engine
+    assert_equal [:chan,
+      :deleg_from_test_snapshot_collection_1_1_at_p1,
+      :join_delegated_at_test_snapshot_collection,
+      :local2_at_test_snapshot_collection,
+      :local_at_test_snapshot_collection,
+      :sbuffer], wl_obj.snapshot_relname
+  end
+
+  def test_snapshot_facts
+    wl_obj = nil
+    assert_nothing_raised do
+      wl_obj = WLRunner.create(@username, @pg_file, @port)
+    end
+    wl_obj.run_engine
+    assert_equal [{:atom1=>"1"}, {:atom1=>"2"}, {:atom1=>"3"}, {:atom1=>"4"}],
+      wl_obj.snapshot_facts(:local_at_test_snapshot_collection)
+  end
+  
 end
