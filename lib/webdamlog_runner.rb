@@ -127,16 +127,18 @@ module WLRunner
   def snapshot_facts relname
     coll = []
     sync_do do
-      coll self.tables[relname].map{ |t| Hash[t.each_pair.to_a] }
+      coll = self.tables[relname].map{ |t| Hash[t.each_pair.to_a] }
     end
     return coll
   end
 
+  # @return [Array] list of relation name of this application as declared in
+  # webdamlog
   # @return [Array] list of relation name as declared in webdamlog
   def snapshot_relname
     list_rel = []
     sync_do do
-      self.app_tables.map { |item| item.tabname }.sort
+      list_rel = self.app_tables.map{ |item| item.tabname }.sort
     end
     return list_rel
   end
