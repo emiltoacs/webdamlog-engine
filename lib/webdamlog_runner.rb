@@ -123,12 +123,22 @@ module WLRunner
     return coll.map { |name,wlrule| wlrule.show_wdl_format }
   end
 
+  # @return [Array] list of facts in that relation relname is supposed to be the name in webdamlog
   def snapshot_facts relname
     coll = []
     sync_do do
       coll self.tables[relname].map{ |t| Hash[t.each_pair.to_a] }
     end
     return coll
+  end
+
+  # @return [Array] list of relation name as declared in webdamlog
+  def snapshot_relname
+    list_rel = []
+    sync_do do
+      self.app_tables.map { |item| item.tabname }.sort
+    end
+    return list_rel
   end
 
   # return [Hash] !{id=>rule} id is the wdl internal id for rules and rule is the string parsed and exectued by the wdl engine
