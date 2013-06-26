@@ -73,8 +73,9 @@ module WLRunner
     return fct, err
   end
 
-  # XXX customize return value if needed
+  # Async update of rules
   # @raise [WLError] if something goes wrong
+  # @return [Array] rule_id, rule string of the local rule installed or nil if the rule is fully delegated.
   def update_add_rule rule
     rule_id, rule_string = nil
     sync_do do
