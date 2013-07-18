@@ -758,7 +758,9 @@ module WLBud
       unless @wl_program.local?(rule)
         @wl_program.rewrite_non_local(rule)
         localcolls = @wl_program.flush_new_local_declaration
-        # FIXME in case of full delegation zero is allowed
+        unless localcolls.empty?
+          return nil, nil # fully non-local rules
+        end
         raise WLError, "one intermediary collection should have been generated while splitting a non-local rule instead of #{localcolls.length}" if localcolls.length > 1
         intercoll = localcolls.first
         add_collection(intercoll)
