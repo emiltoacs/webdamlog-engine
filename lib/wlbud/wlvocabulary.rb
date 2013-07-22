@@ -62,7 +62,7 @@ module WLBud
     #
     def initialize (a1,a2,a3)
       @dic_made = false
-      # TODO add self-join detection and think of the structure to use to create
+      # PENDING add self-join detection and think of the structure to use to create
       # the symbolic predicates of linkage during joins instead of named
       # perspective. See function make_combos in wlprogram @has_self_join=false
       @rule_id = nil

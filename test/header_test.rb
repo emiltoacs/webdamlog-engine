@@ -108,8 +108,7 @@ module MixinTcWlTest
       self.class.class_eval "#{class_peer_name}#{i} = subklass"
       # Store it in a class variable of the caller (such that the test method
       # that call this can access newly created class easily)
-      # rubyconvert in 1.9 class_variable_set is no longer private
-      self.class.send(:class_variable_set, "@@#{class_peer_name}#{i}", subklass )
+      self.class.class_variable_set "@@#{class_peer_name}#{i}", subklass
     end
   end
 
