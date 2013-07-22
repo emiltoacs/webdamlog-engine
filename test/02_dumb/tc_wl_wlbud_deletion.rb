@@ -10,9 +10,8 @@
 $:.unshift File.dirname(__FILE__)
 require 'header_test'
 
-# TODO Test the deletion of facts according ot the type of relations in which it
+# TODO Test the deletion of facts according to the type of relations in which it
 # spreads
-#
 class TcWlWlBudDeletion < Test::Unit::TestCase
   include MixinTcWlTest
 

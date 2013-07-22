@@ -83,8 +83,7 @@ EOF
     @wloptions = Struct.new :ip, :port, :wl_test
     (0..NUMBER_OF_TEST_PG-1).each do |i|
       eval("@#{TEST_FILENAME_VAR}#{i} = \"prog_#{create_name}_peer#{i}\"")
-      eval("@tcoption#{i} = @wloptions.new \"localhost\",
- \"#{PREFIX_PORT_NUMBER}#{i}\",\"true\"")
+      eval("@tcoption#{i} = @wloptions.new \"localhost\",\"#{PREFIX_PORT_NUMBER}#{i}\",\"true\"")
     end
   end
 
@@ -127,7 +126,7 @@ EOF
     new_rel_at_p1 = Regexp.last_match(1).gsub('@', '_at_')
     assert_kind_of Bud::BudScratch, wl_peer[0].tables[new_rel_at_p1.to_sym], "check the type of the newly created relation Table or Scratch"
     assert_equal 1, wl_peer[0].test_send_on_chan.length, "should have sent 1 packet"
-    assert_equal [["localhost:11111", 
+    assert_equal [["localhost:11111",
         ["p0", "0",
           {"rules"=>
               ["rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"],

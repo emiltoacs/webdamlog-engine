@@ -74,9 +74,8 @@ module WLBud
       # The original rules before the rewriting used for evaluation. It gives
       # the original semantic of the program.
       #
-      # Original rules are stored as key and rewriting of these ones as value in
-      # an array
-      #
+      # Original rules id are stored as key and rewriting of these ones as value
+      # in an array
       @rule_mapping = Hash.new{ |h,k| h[k]=Array.new }
       # The local rules straightforward to convert into bud (simple syntax
       # translation)
@@ -142,7 +141,7 @@ module WLBud
       @options=options.clone
 
       # Parse lines to be read
-      parse_lines(IO.readlines(@programfile), true)
+      parse_lines(IO.readlines(@programfile, ';'), true)
       # process non-local rules
       @nonlocalrules.each do |rule|
         rewrite_non_local rule
@@ -185,9 +184,7 @@ module WLBud
     # Parse a program. Notice that ';' is a reserved keyword for end sentence. A
     # sentence could define a peer, a collection, a fact or a rule.
     #
-    # Thanks to this function everything until the parser meet a semi-colon will
-    # be interpreted as if it was written on one line. This should allow to
-    # write long rule on multiple-lines.
+    # This will parse one by one the whole file until it meets a semi-colon
     #
     # ===parameter
     # * +lines+ is an array of string, each cell containing a line of the file.
@@ -197,18 +194,26 @@ module WLBud
       ans=[]
       current=""
       lines.each_index do |i|
-        l=lines[i]
-        current << l
-        next unless l =~ /;/
-        current << "\n"
-        ans << parse(current, add_to_program, false, {:line_nb=>i+1})
-        current = "" #reset current line after parsing
+        line = lines[i]
+        if line =~ /;/
+          splitted = line.split ';'
+          current << splitted[0] << ';'
+          rest = ""
+          splitted[(1..-1)].each{ |r| rest << r }
+          ans << parse(current, add_to_program, false, {:line_nb=>i+1})
+          current = rest || "" #reset current line after parsing
+        else
+          current << line
+        end
       end
       return ans
     end
 
     # Parses one line of WLcode and adds it to the proper WL collection if the
     # add_to_program boolean is true.
+    #
+    # @return a WLVocabulary object corresponding to the object representation
+    # of the instruction
     #
     # Rule and facts and collections are disambiguate that is local and me
     # keywords are changed into username
@@ -271,7 +276,7 @@ In the string: #{line}
     # this will never override the original declaration of the current peer this
     # is to prevent changing address while running
     def add_peer(peername,ip,port)
-      # TODO add filter to sanitize IP and port
+      # PENDING add filter to sanitize IP and port
       address = "#{ip}:#{port}"
       unless @localpeername.include? peername
         @wlpeers[peername]=address
@@ -292,7 +297,7 @@ In the string: #{line}
     # declaration that should be created into bud to store intermediary local
     # results of non-local rules rewritten
     #
-    def rewrite_non_local(wlrule)      
+    def rewrite_non_local(wlrule)  
       raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed?
 
@@ -301,7 +306,7 @@ In the string: #{line}
       if wlrule.unbound.empty?
         raise WLErrorProgram, "rewrite_non_local : You are trying to rewrite a local rule. There may be an error in your rule filter"
       else
-        # #The destination peer is the peer of the first nonlocal atom.
+        # The destination peer is the peer of the first nonlocal atom.
         destination_peer = wlrule.unbound.first.peername
         unless wlrule.head.variable?
           if @wlpeers[destination_peer].nil?
@@ -721,40 +726,6 @@ In the string: #{line}
       return str , ''
     end
 
-    # This code manages renaming in case of self joins
-    #
-    # === DEPRECATED ====
-    # Renaming for self join must be rewrote from scratch
-    #
-    #      def rename_atoms (input)
-    #        tmp_rels=[];rels=[]
-    #        if input.is_a?(WLBud::WLRule)
-    #          wlrule = input
-    #          wlrule.body.each_with_index {|atom,n|
-    #            # #Creates temp collections when self-joins are present
-    #            if !rels.include?(atom.relname) then rels << atom.relname
-    #            else #we have a self join situation. Create a temporary relation and rename the relation
-    #              atom.relname(generate_intermediary_relation_name)
-    #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
-    #              tmp_rels << tmp_r
-    #              wlrule.has_self_join=true
-    #            end
-    #          }
-    #        else
-    #          body = input
-    #          body.each_with_index {|atom,n|
-    #            # #Creates temp collections when selfjoins are present
-    #            if !rels.include?(atom.relname) then rels << atom.relname
-    #            else #we have a self join situation. Create a temporary relation and rename the relation
-    #              atom.relname(generate_intermediary_relation_name)
-    #              tmp_r = "temp :#{atom.relname} <= #{"#{atom.rrelation.text_value}_at_#{atom.rpeer.text_value}"}"
-    #              tmp_rels << tmp_r
-    #            end
-    #          }
-    #        end
-    #        return tmp_rels
-    #      end
-
     # If the name of the atom start with tmp_ or temp_ it is a temporary
     # relation so return true.
     def is_tmp? (result)
@@ -765,19 +736,18 @@ In the string: #{line}
       end
     end
 
-    # FIXME error in the head of the rules aren't detcted during parsing but
+    # FIXME error in the head of the rules aren't detected during parsing but
     # here it is too late.
     #
     # Make joins when there is more than two atoms in the body. Need to call
     # make_dic before calling this function. it return the beginning of the body
     # of the bud rule containing the join of relations along with their join
-    # tuple criterion for example (rel1 * rel2).combos(rel1.1 => rel2.2) TODO
-    # move to wlvocabulary
+    # tuple criterion for example (rel1 * rel2).combos(rel1.1 => rel2.2)
     #
     # For a bud rule like the following it produce the part between stars marked
     # with ** around
     #
-    # sibling <= *(childOf*childOf).pairs(:father => :father,:mother =>
+    # sibling <= *(childOf*childOf).combos(:father => :father,:mother =>
     # :mother)* {|s1,s2| [s1[0],s2[0]] unless s1==s2}
     def make_combos (wlrule)
 
@@ -825,7 +795,7 @@ In the string: #{line}
       end
       str.slice!(-1) if combos
       str << ')'
-
+      
       return str
     end
 

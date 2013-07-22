@@ -76,9 +76,9 @@ module WLBud
     attr_reader :filter_delegations, :pending_delegations
 
     # TODO: define the following attributes only if options[:wl_test]
-
-    # @return the content returned by read_packet_channel at the beginning of
-    #   the tick (an array of WLPacketData)
+    #
+    # the content returned by read_packet_channel at the beginning of the tick
+    # (an array of WLPacketData)
     attr_reader :test_received_on_chan
     attr_reader :test_send_on_chan, :wl_callback, :wl_callback_step
 
@@ -105,9 +105,10 @@ module WLBud
     #   can run the peer you shall call the load_program method. Used with
     #   wrapper that required to be bind before we have started to add facts
     #   into them
-    # * +:filter_delegations+ if true all the delegation will be put in a
-    #   waiting queue  instead of being added to the program. Some external
-    #   intervention will be required to validate them.
+    # * +:filter_delegations+ if true all rules received on the channel will be
+    #   put in a waiting queue  instead of being added to the program.  Some
+    #   external intervention will be required to validate them such as calling
+    #   {WLRunner::update_add_rule} on @pending_delegations entries.
     def initialize (peername, pgfilename, options={})
       # ### WLBud:Begin adding to Bud special bud parameter initialization
       if options[:mesure]
@@ -149,13 +150,17 @@ module WLBud
       # if true rule received will be placed into pending_delegations instead of
       # being added
       @filter_delegations = options[:filter_delegations] ||= false
+      # @!attributes [Hash] if filter_delegations is true, delegations received
+      #   from other peers are put in this hash peername: timestamp: rule1 rule2
+      @pending_delegations = Hash.new{ |h,k| h[k]=Hash.new{ |h2,k2| h2[k2]=Array.new } }
 
       if options[:wl_test]
         @test_received_on_chan = []
         @test_send_on_chan = []
         @wl_callback = {}
         @wl_callback_id = 0
-        @wl_callback_step = Set[ :callback_step_received_on_chan,
+        @wl_callback_step = Set[
+          :callback_step_received_on_chan,
           :callback_step_write_on_chan,
           :callback_step_write_on_chan_2,
           :callback_step_end_tick ]
@@ -214,10 +219,7 @@ module WLBud
       @wlb_tmp_inc=0
       @need_rewrite_strata=false
       @done_rewrite={}
-      @collection_added=false
-      # @!attributes [Hash] if filter_delegations is true, delegations received
-      #   from other peers are put in this hash peername: timestamp: rule1 rule2
-      @pending_delegations = Hash.new{ |h,k| h[k]=Hash.new{ |h2,k2| h2[k2]=Array.new } }
+      @collection_added=false      
 
       # XXX : added comments on budlib (unofficial):
       # - wlbud => initialize
@@ -750,27 +752,27 @@ module WLBud
     # Takes in a string representing a WLRule, parses it and adds it directly
     # into the WLBud instance.
     #
-    # @raise [WLError] if something goes wrong
-    # @return [Array] rule_id, rule string of the local rule installed or nil if the rule is fully delegated.
+    # @raise [WLError] if something goes wrong @return [Array] rule_id, rule
+    # string of the local rule installed or nil if the rule is fully delegated.
     def add_rule(wlpg_rule)
       rule = @wl_program.parse(wlpg_rule, true)
       raise WLErrorProgram, "parse rule and get #{rule.class}" unless rule.is_a?(WLBud::WLRule)
       unless @wl_program.local?(rule)
         @wl_program.rewrite_non_local(rule)
         localcolls = @wl_program.flush_new_local_declaration
-        unless localcolls.empty?
-          return nil, nil # fully non-local rules
+        unless localcolls.empty? # if it is not a fully non-local install the local part
+          raise WLError, "exactly one intermediary collection should have been generated while splitting a non-local rule instead of #{localcolls.length}" unless localcolls.length == 1
+          intercoll = localcolls.first
+          add_collection(intercoll)
+          localrules = @wl_program.flush_new_rewritten_local_rule_to_install
+          raise WLError, "exactly one local rule should have been generated while splitting a non-local rule instead of #{localrules.length}" unless localrules.length == 1
+          rule = localrules.first
+          @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){ |key,oldv,newv| oldv<<newv }
+          @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){ |key,oldv,newv| oldv<<newv }
         end
-        raise WLError, "one intermediary collection should have been generated while splitting a non-local rule instead of #{localcolls.length}" if localcolls.length > 1
-        intercoll = localcolls.first
-        add_collection(intercoll)
-        localrules = @wl_program.flush_new_rewritten_local_rule_to_install
-        raise WLError, "one local rule should have been generated while splitting a non-local rule instead of #{localrules.length}" if localrules.length > 1
-        rule = localrules.first
-        @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){|key,oldv,newv| oldv<<newv}
-        @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv<<newv}
       end
-      # if a fully non-local rule is parsed a empty local rule is the result
+      # if a fully non-local rule is parsed a empty local rule is the result and
+      # there is nothing to install locally
       unless rule.nil?
         puts "Adding a rule: #{wlpg_rule}" if @options[:debug]
         translate_rule(rule)

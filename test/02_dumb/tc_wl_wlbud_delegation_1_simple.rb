@@ -91,7 +91,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     # In test I use it as a callback block to evaluate and wait for pop in test
     # to ensure that underlying bud thread has finished tick
     #
-    # XXX not really usefull since tick is already blocking 
+    # XXX not really useful since tick is already blocking 
     #
     q0 = Queue.new
     q1 = Queue.new
@@ -115,8 +115,6 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     #p "===wl_peer[0].tick 1==="
     wl_peer[0].tick
     q0.pop
-#    p "wait in delegation_1 to let EventMachine take the priority"
-#    p EventMachine::connection_count
     # sleep 0.2 unless EventMachine::defers_finished?
     assert_equal 4, wl_peer[0].local_at_p0.length
     assert_equal [["1"], ["2"], ["3"], ["4"]], wl_peer[0].local_at_p0.to_a.sort

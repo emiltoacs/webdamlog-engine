@@ -293,14 +293,15 @@ EOF
   # EOL comments with # or // or C-style comment on multiple lines /* ... */.
   # C-style comment should start on a line without a previous  webdamlog command
   # ie. no ';' could precede a '/*' on the same line
-  def test_comment    
+  def test_300_comment
     prog = <<-EOF
 # comment should start with # // for end of line comment or /* */ for C-style comment
 peer sigmod_peer = localhost:10000;
 // some other comments here
 # comments again
 peer p1=localhost:11111;
-peer p2=localhost:11112;
+peer p2=localhost:11112; /* comment start at end of instruction
+ and finish on another line */
 peer p3=localhost:11113;
 peer p4=localhost:11114;
 /* some C-style comment
@@ -317,7 +318,7 @@ fact local@p1(2);
 fact local@p1(3);
 fact local@p1(4);
 rule joindelegated@p1($x):- local@p1($x),
-  delegated@p2($x),
+  delegated@p2($x), # inline eol comment in the middle of a rule
   delegated@p3($x), 
   delegated@p4($x);
 end
@@ -346,7 +347,7 @@ end
 
 # Put here some sample test program that must be correct syntactically
 class TcParseProgram < Test::Unit::TestCase
-  include MixinTcWlTest  
+  include MixinTcWlTest
 
   # Check collection declaration syntax on multiple lines with special character
   # in attributes
@@ -355,8 +356,8 @@ class TcParseProgram < Test::Unit::TestCase
 peer sigmod_peer = localhost:10000;
 collection ext persistent contact@local(username*,    peerlocation*
 , online*,email*, facebook*);
-fact contact@local(sigmod_peer, localhost:10000, false, none, none);
-fact contact@local(Jules, localhost:10000, false, "jules.testard@mail.mcgill.ca", "Jules Testard");
+fact contact@local(sigmod_peer, "localhost:10000", false, none, none);
+fact contact@local(Jules, "localhost:10000", false, "jules.testard@mail.mcgill.ca", "Jules Testard");
 end
     EOF
     begin
@@ -379,7 +380,33 @@ end
       File.delete('test_program_2') if File.exists?('test_program_2')
     end
   end
-end
+
+  # load the treetop grammar file and create the treetop parser object by hand
+  # (ie. without polyglot) then parse the program given in example to test
+  # custom grammar
+  def test_load_treetop_grammar
+    prog = <<-EOF
+peer sigmod_peer = localhost:10000;
+collection ext persistent contact@local(username*,    peerlocation*
+, online*,email*, facebook*);
+fact contact@local(sigmod_peer, "localhost:10000", false, none, none);
+fact contact@local(Jules, "localhost:10000", false, "jules.testard@mail.mcgill.ca", "Jules Testard");
+    EOF
+    begin
+      File.open('test_program_2',"w"){ |file| file.write prog}
+      Treetop.load(File.join(File.dirname(__FILE__), "..", "..", "lib", "wlbud","wlgrammar.treetop"))
+      @parser = WLBud::WebdamLogGrammarParser.new
+      IO.readlines('test_program_2',';').each do |line|
+        output = @parser.parse(line)
+        if output
+          assert_kind_of(WLBud::WLVocabulary, output, "output should be an object of class WLBud::WLVocabulary instead of #{output.class}")
+        end
+      end
+    ensure
+      File.delete('test_program_2') if File.exists?('test_program_2')
+    end
+  end # test_load_treetop_grammar
+end # class TcParseProgram
 
 
 # Test variables in rules and rule rewriting in rule_mapping
@@ -440,7 +467,6 @@ rule contact@local($username, $peerlocation, $online, $email, none):-contact@sig
 rule query2@local($title, $contact, $id, $image_url):- contact@local($contact, $_, $_, $_, $_),picture@$contact($title, $contact, $id, $image_url);
 end
     EOF
-
     File.open('test_program_2',"w"){ |file| file.write prog}
     program = nil
     assert_raise WLBud::WLErrorProgram do
@@ -450,8 +476,7 @@ end
         'localhost',
         '11111',
         {:debug => true} )
-    end    
-    
+    end
   end
-
 end
+
