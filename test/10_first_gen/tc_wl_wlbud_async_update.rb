@@ -69,7 +69,7 @@ EOF
     ensure
       wl_peer.each{ |peer| peer.clear_rule_dir }
       if EventMachine::reactor_running?        
-        wl_peer.each { |peer| peer.stop(true) }
+        wl_peer.each { |peer| peer.stop }
       end
     end
   end
@@ -101,10 +101,8 @@ EOF
     ensure
       wl_peer.each{ |peer| peer.clear_rule_dir }
       if EventMachine::reactor_running?        
-        wl_peer.each { |peer| peer.stop(true) }
+        wl_peer.each { |peer| peer.stop }
       end
     end
-  end
-
-  
+  end  
 end

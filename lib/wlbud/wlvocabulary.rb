@@ -62,9 +62,7 @@ module WLBud
     #
     def initialize (a1,a2,a3)
       @dic_made = false
-      # PENDING add self-join detection and think of the structure to use to create
-      # the symbolic predicates of linkage during joins instead of named
-      # perspective. See function make_combos in wlprogram @has_self_join=false
+      # unique id of the rule for this peer
       @rule_id = nil
       @body = nil
       # The dic_relation_name is a hash defines variables included in the
@@ -191,9 +189,9 @@ module WLBud
           end
         end
 
-        # TODO list all the useful relation, a relation is useless if it's arity
-        # is more than zero and none variable and constant inside are used in
-        # other relation of this rule insert here the function
+        # PENDING list all the useful relation, a relation is useless if it's
+        # arity is more than zero and none variable and constant inside are used
+        # in other relation of this rule insert here the function
         if self.dic_relation_name.has_key?(atom.fullrelname)
           self.dic_relation_name[atom.fullrelname] << n
         else
@@ -205,12 +203,12 @@ module WLBud
     end
 
     # Set a unique id for this rule for the peer which has parsed this rule
-    #
     def rule_id= int
       @rule_id = int
       # #@rule_id.freeze
     end
 
+    # Get the unique id for this rule
     def rule_id
       if @rule_id.nil?
         raise WLError, <<-"EOS"

@@ -230,7 +230,7 @@ end
           "http://www.cs.tau.ac.il/workshop/modas/webdam3.png"]], fact.map { |fact| fact.content }
 
     ensure
-      File.delete('test_050_peername_NamedSentence') if File.exists?('test_050_peername_NamedSentence')
+      File.delete('test_060_fact_disamb') if File.exists?('test_060_fact_disamb')
     end
   end
 
@@ -341,8 +341,7 @@ end
       File.delete('test_program_2') if File.exists?('test_program_2')
     end
   end # test_comment
-end
-
+end # class
 
 
 # Put here some sample test program that must be correct syntactically
@@ -384,6 +383,9 @@ end
   # load the treetop grammar file and create the treetop parser object by hand
   # (ie. without polyglot) then parse the program given in example to test
   # custom grammar
+  #
+  # note the special way to read the program thanks to IO.readlines with ;
+  # separator instead of the wlprogram.parse_lines method
   def test_load_treetop_grammar
     prog = <<-EOF
 peer sigmod_peer = localhost:10000;
@@ -402,6 +404,7 @@ fact contact@local(Jules, "localhost:10000", false, "jules.testard@mail.mcgill.c
           assert_kind_of(WLBud::WLVocabulary, output, "output should be an object of class WLBud::WLVocabulary instead of #{output.class}")
         end
       end
+      
     ensure
       File.delete('test_program_2') if File.exists?('test_program_2')
     end

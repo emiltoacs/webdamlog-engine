@@ -34,14 +34,14 @@ end
     ObjectSpace.garbage_collect
   end
 
-  # check that delegations are retained in pending_delgation and not installed
+  # check that delegations are retained in pending_delegation and not installed
   def test_pending_delegation_content
     runner = nil
-    # assert_nothing_raised do
-    runner = WLRunner.create(@username, @pg_file, @port, {filter_delegations: true})
-    # end
+    assert_nothing_raised do
+      runner = WLRunner.create(@username, @pg_file, @port, {filter_delegations: true})
+    end
     assert runner.filter_delegations
-    runner.run_engine    
+    runner.run_engine
     runner.sync_do {
       runner.chan <~ [["localhost:11110",
           ["p0", "0",
@@ -75,10 +75,8 @@ end
             ["rule local2@test_pending_delegation_content('15') :- local@test_pending_delegation_content('4');"]]}},
       runner.flush_delegations)
     assert_equal({}, runner.pending_delegations)
-
   ensure
     runner.stop
     File.delete(@pg_file) if File.exists?(@pg_file)
-  end
-  
+  end  
 end
