@@ -139,6 +139,8 @@ end
   end # test_run  
 end # class TcWlRunner
 
+
+
 class SnapshotTester < Test::Unit::TestCase
   include MixinTcWlTest
 
@@ -180,6 +182,8 @@ end
       "intensional local2_at_test_snapshot_collection( atom1* ) ;",
       "intermediary deleg_from_test_snapshot_collection_1_1_at_p1( deleg_from_test_snapshot_collection_1_1_x_0* ) ;"],
       wl_obj.snapshot_collections
+  ensure
+    File.delete(@pg_file) if File.exists?(@pg_file)
   end
 
   def test_snapshot_peers
@@ -193,6 +197,8 @@ end
       "p2 localhost:11112",
       "p3 localhost:11113"],
       wl_obj.snapshot_peers
+  ensure
+    File.delete(@pg_file) if File.exists?(@pg_file)
   end
 
   def test_snapshot_rules
@@ -205,6 +211,8 @@ end
         2=> "rule local2_at_test_snapshot_collection($x) :- local_at_test_snapshot_collection($x);",
         3=> "rule deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x);"},
       wl_obj.snapshot_rules)
+  ensure
+    File.delete(@pg_file) if File.exists?(@pg_file)
   end
 
   def test_snapshot_full_state
@@ -228,6 +236,8 @@ end
           3=>
             "rule deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x);"}],
       wl_obj.snapshot_full_state)
+  ensure
+    File.delete(@pg_file) if File.exists?(@pg_file)
   end
 
   def test_snapshot_relname
@@ -242,6 +252,8 @@ end
       :local2_at_test_snapshot_collection,
       :local_at_test_snapshot_collection,
       :sbuffer], wl_obj.snapshot_relname
+  ensure
+    File.delete(@pg_file) if File.exists?(@pg_file)
   end
 
   def test_snapshot_facts
@@ -252,6 +264,8 @@ end
     wl_obj.run_engine
     assert_equal [{:atom1=>"1"}, {:atom1=>"2"}, {:atom1=>"3"}, {:atom1=>"4"}],
       wl_obj.snapshot_facts(:local_at_test_snapshot_collection)
+  ensure
+    File.delete(@pg_file) if File.exists?(@pg_file)
   end
   
 end

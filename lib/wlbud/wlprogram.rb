@@ -186,10 +186,12 @@ module WLBud
     #
     # This will parse one by one the whole file until it meets a semi-colon
     #
+    # @deprecated Use {IO.readlines} instead with ';' separator or customize
+    # this to display nice parsing error
+    #
     # ===parameter
     # * +lines+ is an array of string, each cell containing a line of the file.
     #   Usually lines is the result of IO.readlines.
-    #
     def parse_lines (lines, add_to_program=false)
       ans=[]
       current=""
@@ -201,7 +203,7 @@ module WLBud
           rest = ""
           splitted[(1..-1)].each{ |r| rest << r }
           ans << parse(current, add_to_program, false, {:line_nb=>i+1})
-          current = rest || "" #reset current line after parsing
+          current = rest || "" # reset current line after parsing
         else
           current << line
         end
@@ -218,7 +220,7 @@ module WLBud
     # Rule and facts and collections are disambiguate that is local and me
     # keywords are changed into username
     #
-    # TODO: should check before adding rule that the all the local atoms have
+    # PENDING should check before adding rule that the all the local atoms have
     # been declared. The atoms in the head that are not local should also be
     # declared but I can also make my parser declare them automatically since
     # the type is not important.

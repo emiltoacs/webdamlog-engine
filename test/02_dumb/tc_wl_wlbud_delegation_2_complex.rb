@@ -93,8 +93,8 @@ EOF
     end
   end
 
-  # TODO intensional not supported in non-local check with join collection int
-  # join_delegated@p0(atom1*);
+  # PENDING intensional not supported in non-local check with join collection
+  # int join_delegated@p0(atom1*);
   #
   def test_1_complex_delegation
     
@@ -231,4 +231,79 @@ EOF
       wl_peer.last.stop(true) # for the last I also stop EM to be clean
     end
   end
+end
+
+
+class TcWlDelegation2FullynonLocal
+  include MixinTcWlTest
+
+  @@first_test=true
+  NUMBER_OF_TEST_PG = 3
+  TEST_FILENAME_VAR = "test_filename_"
+  CLASS_PEER_NAME = "PeerDeleg2FullynonLocal"
+  PREFIX_PORT_NUMBER = "1111"
+
+  STR0 = <<EOF
+peer p0=localhost:11110;
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+collection ext persistent local@p0(atom1*);
+collection ext persistent copy1@p0(atom1*);
+collection ext persistent copy2@p0(atom1*);
+collection ext per join_delegated@p0(atom1*);
+fact local@p0(1);
+fact local@p0(2);
+fact local@p0(3);
+fact local@p0(4);
+rule join_delegated@p0($x):- local@p0($x),local@p1($x),local@p2($x);
+rule copy1@p0($X):-copy@p1($X);
+rule copy2@p0($X):-copy@p1($X);
+end
+EOF
+
+  STR1 = <<EOF
+peer p0=localhost:11110;
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+collection ext persistent local@p1(atom1*);
+fact delegated@p1(2);
+fact delegated@p1(3);
+fact delegated@p1(4);
+fact delegated@p1(5);
+end
+EOF
+
+  STR2 = <<EOF
+peer p0=localhost:11110;
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+collection ext persistent local@p2(atom1*);
+fact delegated@p2(3);
+fact delegated@p2(4);
+fact delegated@p2(5);
+fact delegated@p2(6);
+end
+EOF
+
+  def setup
+    if @@first_test
+      create_wlpeers_classes(NUMBER_OF_TEST_PG, CLASS_PEER_NAME)
+      @@first_test=false
+    end
+    @wloptions = Struct.new :ip, :port, :wl_test
+    (0..NUMBER_OF_TEST_PG-1).each do |i|
+      eval("@#{TEST_FILENAME_VAR}#{i} = \"prog_#{create_name}_peer#{i}\"")
+      eval("@tcoption#{i} = @wloptions.new \"localhost\",\"#{PREFIX_PORT_NUMBER}#{i}\",\"true\"")
+    end
+  end
+
+  def teardown
+    (0..NUMBER_OF_TEST_PG-1).each do |i|
+      eval("File.delete @#{TEST_FILENAME_VAR}#{i} if File.exist? @#{TEST_FILENAME_VAR}#{i}")
+    end
+  end
+
+  # TODO finish here test fully non-local ...
+  
+
 end

@@ -923,10 +923,9 @@ module WLBud
     # and rules deduce at the same timestep will be received in the remote peer
     # at the same timestep.
     #
-    # TODO: optimization this fact aggregation is a useless overhead that can be
+    # FIXME optimization this fact aggregation is a useless overhead that can be
     # avoid if I create as many sbuffer collection as non-local relation in head
     # of rules.
-    #
     def write_packet_on_channel
       packets_to_send = []
       facts_to_send = aggregate_facts(sbuffer)
