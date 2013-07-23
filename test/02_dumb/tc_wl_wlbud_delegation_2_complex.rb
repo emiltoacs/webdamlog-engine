@@ -256,6 +256,7 @@ fact local@p0(1);
 fact local@p0(2);
 fact local@p0(3);
 fact local@p0(4);
+fact local@p0("jointuple");
 rule join_delegated@p0($x):- local@p0($x),local@p1($x),local@p2($x); # test delegation
 rule copy1@p0($X):-local@p1($X); # test full non-local body delegation
 rule copy2@p0($X):-local@p2($X);
@@ -272,6 +273,7 @@ fact local@p1("p1_2");
 fact local@p1("p1_3");
 fact local@p1("p1_4");
 fact local@p1("p1_5");
+fact local@p1("jointuple");
 rule copy2@p1($X):-local@p2($X);
 EOF
 
@@ -285,6 +287,7 @@ fact local@p2("p2_3");
 fact local@p2("p2_4");
 fact local@p2("p2_5");
 fact local@p2("p2_6");
+fact local@p2("jointuple");
 EOF
 
   def setup
@@ -315,7 +318,6 @@ EOF
     
 
     # start p2 with nothing to do
-    
     wl_peer[2].tick
     # check that there is no rules
     assert_equal([],
@@ -324,7 +326,11 @@ EOF
     assert_equal([{:chan=>[]},
         {:extcopy_at_p2=>[]},
         {:local_at_p2=>
-            [{:atom1=>"p2_3"}, {:atom1=>"p2_4"}, {:atom1=>"p2_5"}, {:atom1=>"p2_6"}]},
+            [{:atom1=>"p2_3"},
+            {:atom1=>"p2_4"},
+            {:atom1=>"p2_5"},
+            {:atom1=>"p2_6"},
+            {:atom1=>"jointuple"}]},
         {:sbuffer=>[]}],
       wl_peer[2].app_tables.map { |item| item.tabname }.sort.map { |at|
         tab = wl_peer[2].tables[at].map { |t|
@@ -336,9 +342,9 @@ EOF
         Hash[at, tab]
       }
     )
+    
 
     # start p1 which send a delegation to p2
-
     wl_peer[1].tick
     # check that there is no local rules
     assert_equal(["rule copy2_at_p1($X) :- local_at_p2($X);",
@@ -354,7 +360,11 @@ EOF
     assert_equal([{:chan=>[]},
         {:copy2_at_p1=>[]},
         {:local_at_p1=>
-            [{:atom1=>"p1_2"}, {:atom1=>"p1_3"}, {:atom1=>"p1_4"}, {:atom1=>"p1_5"}]},
+            [{:atom1=>"p1_2"},
+            {:atom1=>"p1_3"},
+            {:atom1=>"p1_4"},
+            {:atom1=>"p1_5"},
+            {:atom1=>"jointuple"}]},
         {:sbuffer=>[]}],
       wl_peer[1].app_tables.map { |item| item.tabname }.sort.map { |at|
         tab = wl_peer[1].tables[at].map { |t|
@@ -366,9 +376,9 @@ EOF
         Hash[at, tab]
       }
     )
+    
 
     # fire p2 to install the delegation
-
     wl_peer[2].tick
     # check that there is one new rule installed
     assert_equal(["rule copy2_at_p1($X) :- local_at_p2($X);"],
@@ -383,12 +393,19 @@ EOF
     assert_equal([{:chan=>[]},
         {:extcopy_at_p2=>[]},
         {:local_at_p2=>
-            [{:atom1=>"p2_3"}, {:atom1=>"p2_4"}, {:atom1=>"p2_5"}, {:atom1=>"p2_6"}]},
+            [{:atom1=>"p2_3"},
+            {:atom1=>"p2_4"},
+            {:atom1=>"p2_5"},
+            {:atom1=>"p2_6"},
+            {:atom1=>"jointuple"}]},
         {:sbuffer=>
             [{:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_3"]},
             {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_4"]},
             {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_5"]},
-            {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_6"]}]}],
+            {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_6"]},
+            {:dst=>"localhost:11111",
+              :rel_name=>"copy2_at_p1",
+              :fact=>["jointuple"]}]}],
       wl_peer[2].app_tables.map { |item| item.tabname }.sort.map { |at|
         tab = wl_peer[2].tables[at].map { |t|
           h = Hash[t.each_pair.to_a]
@@ -399,10 +416,10 @@ EOF
         Hash[at, tab]
       }
     )
+    
 
     # fire p1 to check that facts from the delegation to p2 has been produced
     # and sent to p1
-
     wl_peer[1].tick
     # there is no new rules only the remember that we made a delegation
     assert_equal(["rule copy2_at_p1($X) :- local_at_p2($X);",
@@ -417,9 +434,17 @@ EOF
     # but there are new facts thanks to the result of evaluating the delegation
     assert_equal([{:chan=>[]},
         {:copy2_at_p1=>
-            [{:atom1=>"p2_3"}, {:atom1=>"p2_4"}, {:atom1=>"p2_5"}, {:atom1=>"p2_6"}]},
+            [{:atom1=>"p2_3"},
+            {:atom1=>"p2_4"},
+            {:atom1=>"p2_5"},
+            {:atom1=>"p2_6"},
+            {:atom1=>"jointuple"}]},
         {:local_at_p1=>
-            [{:atom1=>"p1_2"}, {:atom1=>"p1_3"}, {:atom1=>"p1_4"}, {:atom1=>"p1_5"}]},
+            [{:atom1=>"p1_2"},
+            {:atom1=>"p1_3"},
+            {:atom1=>"p1_4"},
+            {:atom1=>"p1_5"},
+            {:atom1=>"jointuple"}]},
         {:sbuffer=>[]}],
       wl_peer[1].app_tables.map { |item| item.tabname }.sort.map { |at|
         tab = wl_peer[1].tables[at].map { |t|
@@ -435,14 +460,11 @@ EOF
 
     # fire p0 to send all the delegation
     wl_peer[0].tick
-    # fire p1 and p2 to processs the delegation
+    # fire p1 and p2 to process the delegation
     wl_peer[1].tick
     wl_peer[2].tick
-
     # check the status of p0
-
     wl_peer[0].tick
-
     # there is no new rules only the remember that we made a delegation
     assert_equal(["rule join_delegated_at_p0($x) :- local_at_p0($x), local_at_p1($x), local_at_p2($x);",
         "rule copy1_at_p0($X) :- local_at_p1($X);",
@@ -462,14 +484,27 @@ EOF
       end)
     # but there are new facts thanks to the result of evaluating the delegation
     assert_equal([{:chan=>[]},
-        {:copy1_at_p0=>
-            [{:atom1=>"p1_2"}, {:atom1=>"p1_3"}, {:atom1=>"p1_4"}, {:atom1=>"p1_5"}]},
-        {:copy2_at_p0=>
-            [{:atom1=>"p2_3"}, {:atom1=>"p2_4"}, {:atom1=>"p2_5"}, {:atom1=>"p2_6"}]},
-        {:deleg_from_p0_1_1_at_p1=>[]},
-        {:join_delegated_at_p0=>[]},
-        {:local_at_p0=>[{:atom1=>"1"}, {:atom1=>"2"}, {:atom1=>"3"}, {:atom1=>"4"}]},
-        {:sbuffer=>
+        {:copy1_at_p0=> # delegation to p1
+            [{:atom1=>"p1_2"},
+            {:atom1=>"p1_3"},
+            {:atom1=>"p1_4"},
+            {:atom1=>"p1_5"},
+            {:atom1=>"jointuple"}]},
+        {:copy2_at_p0=> # delegation to p2
+            [{:atom1=>"p2_3"},
+            {:atom1=>"p2_4"},
+            {:atom1=>"p2_5"},
+            {:atom1=>"p2_6"},
+            {:atom1=>"jointuple"}]},
+        {:deleg_from_p0_1_1_at_p1=>[]}, # intermediary for delegation
+        {:join_delegated_at_p0=>[{:atom1=>"jointuple"}]}, # join across two peers
+        {:local_at_p0=> # base fact at p0
+            [{:atom1=>"1"},
+            {:atom1=>"2"},
+            {:atom1=>"3"},
+            {:atom1=>"4"},
+            {:atom1=>"jointuple"}]},
+        {:sbuffer=> # send buffer
             [{:dst=>"localhost:11111",
               :rel_name=>"deleg_from_p0_1_1_at_p1",
               :fact=>["1"]},
@@ -481,7 +516,10 @@ EOF
               :fact=>["3"]},
             {:dst=>"localhost:11111",
               :rel_name=>"deleg_from_p0_1_1_at_p1",
-              :fact=>["4"]}]}],
+              :fact=>["4"]},
+            {:dst=>"localhost:11111",
+              :rel_name=>"deleg_from_p0_1_1_at_p1",
+              :fact=>["jointuple"]}]}],
       wl_peer[0].app_tables.map { |item| item.tabname }.sort.map { |at|
         tab = wl_peer[0].tables[at].map { |t|
           h = Hash[t.each_pair.to_a]
@@ -493,10 +531,10 @@ EOF
       }
     )
 
-    # check that the fully non-local rule from p0 installed on p1 as sent facts
-    # to p2
-
-    # check rules on p1
+    # check that the fully non-local rule from p0:
+    # rule extcopy@p2($X) :- local@p1($X);
+    #
+    # has been installed on p1
     assert_equal(["rule copy2_at_p1($X) :- local_at_p2($X);",
         "rule copy2@p1($X) :- local@p2($X);",
         "rule join_delegated_at_p0($x) :- deleg_from_p0_1_1_at_p1($x), local_at_p1($x), local_at_p2($x);",
@@ -513,12 +551,20 @@ EOF
       end)
     # check facts on p2
     assert_equal([{:chan=>[]},
-        {:deleg_from_p1_2_1_at_p2=>[]},
-        {:extcopy_at_p2=>
-            [{:atom1=>"p1_2"}, {:atom1=>"p1_3"}, {:atom1=>"p1_4"}, {:atom1=>"p1_5"}]},
-        {:local_at_p2=>
-            [{:atom1=>"p2_3"}, {:atom1=>"p2_4"}, {:atom1=>"p2_5"}, {:atom1=>"p2_6"}]},
-        {:sbuffer=>
+        {:deleg_from_p1_2_1_at_p2=>[{:deleg_from_p1_2_1_x_0=>"jointuple"}]}, # join across tuples
+        {:extcopy_at_p2=> # result of fully non-local rule from p0 to p1 generating fact for p2
+            [{:atom1=>"p1_2"},
+            {:atom1=>"p1_3"},
+            {:atom1=>"p1_4"},
+            {:atom1=>"p1_5"},
+            {:atom1=>"jointuple"}]},
+        {:local_at_p2=> # base facts on p2
+            [{:atom1=>"p2_3"},
+            {:atom1=>"p2_4"},
+            {:atom1=>"p2_5"},
+            {:atom1=>"p2_6"},
+            {:atom1=>"jointuple"}]},
+        {:sbuffer=> # send buffer check
             [{:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_3"]},
             {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["p2_3"]},
             {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_4"]},
@@ -526,7 +572,12 @@ EOF
             {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_5"]},
             {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["p2_5"]},
             {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_6"]},
-            {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["p2_6"]}]}],
+            {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["p2_6"]},
+            {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["jointuple"]},
+            {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["jointuple"]},
+            {:dst=>"localhost:11110",
+              :rel_name=>"join_delegated_at_p0",
+              :fact=>["jointuple"]}]}],
       wl_peer[2].app_tables.map { |item| item.tabname }.sort.map { |at|
         tab = wl_peer[2].tables[at].map { |t|
           h = Hash[t.each_pair.to_a]
