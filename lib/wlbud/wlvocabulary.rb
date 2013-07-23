@@ -34,7 +34,7 @@ module WLBud
       raise MethodNotImplementedError, "a WLBud::NamedSentence subclass must implement the method peername"
     end
 
-    # Assign value returned by block on each peername
+    # Assign value returned by block on each peer name
     def map_peername! &block
       raise MethodNotImplementedError, "a WLBud::NamedSentence subclass must implement the method map_peername!"
     end
@@ -65,12 +65,12 @@ module WLBud
       # unique id of the rule for this peer
       @rule_id = nil
       @body = nil
-      # The dic_relation_name is a hash defines variables included in the
+      # The dic_relation_name is a hash that defines variables included in the
       # conversion from webdamlog-formatted rule to bud-formatted rule. Its key
       # is the name of the relation of which the variable is bound to. Its value
       # correspond to the local variable position where this relation appear.
       @dic_relation_name = {}
-      # Inverted dictionary corresponding to dic_relation_name ie. it maps body
+      # Inverted dictionary corresponding to dic_relation_name ie. It maps body
       # atom position to string name of the relation
       @dic_invert_relation_name = {}
       # The wlvar dictionary is a hash that contains the position of the
@@ -129,6 +129,10 @@ module WLBud
       return @body
     end
 
+    # Seeds are intermediary relation used when relation or peer name are
+    # variables in a rule.
+    #
+    # @return true if this rule may be rewritten with seeds
     def seed?
       if @seed.nil?
         if head.variable?
@@ -165,8 +169,9 @@ module WLBud
     # joins. As value it's location in the following format :
     # 'relation_pos.field_pos'
     #
-    # Detect variable by checking field names starting with a '$' sign This
-    # populate the four dictionaries
+    # Detect variable by checking field names starting with a '$' sign. This
+    # populate the two dictionaries dic_wlconst and dic_wlvar and the relation
+    # dictionary with its reverse.
     def make_dictionaries ()
       self.body.each_with_index do |atom,n|
         # field variable goes to dic_wlvar and constant to dic_wlconst
@@ -188,10 +193,9 @@ module WLBud
             end
           end
         end
-
-        # PENDING list all the useful relation, a relation is useless if it's
+        # PENDING list only the useful relation, a relation is useless if it's
         # arity is more than zero and none variable and constant inside are used
-        # in other relation of this rule insert here the function
+        # in other relation of this rule. Insert here the function
         if self.dic_relation_name.has_key?(atom.fullrelname)
           self.dic_relation_name[atom.fullrelname] << n
         else
