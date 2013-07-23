@@ -44,7 +44,6 @@ class TcBudCollection < Test::Unit::TestCase
   #
   # add constant fact via deferred into the scratch makes it persist across
   # timestamps
-  #
   class ScratchDeferredOpAddFact
     include Bud
     state do
@@ -84,7 +83,6 @@ class TcBudCollection < Test::Unit::TestCase
   end
 
   # Check how the internal buffers in collections reacts
-  #
   class InternalBuffer
     include Bud
     state do
@@ -100,7 +98,6 @@ class TcBudCollection < Test::Unit::TestCase
   end
   # Values inserted in tables with <= or <+ goes to delta but here there are no
   # rules hence the behavior is a bit strange
-  #
   def test_internal_buffer
     puts "=== test_internal_buffer BEGIN" if $test_verbose
     pg = InternalBuffer.new
