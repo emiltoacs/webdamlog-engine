@@ -117,10 +117,35 @@ end
     end
   end
 
+  # Test rule syntax
+  #
+  # FIXME semi-colon ';' in comment are still interpreted as and of instruction
+  # because of the readline technique to parse files.
+  #
+  # FIXME relax parser constraint to accept _at_ instead of @ as relation to
+  # peer delimiter
+  def test_045_rule
+    program = nil
+    File.open('test_045_rules',"w") do |file|
+      file.write <<-END
+collection ext persistent local1@p1();
+collection ext persistent local2@p1();
+rule local1@p1($X):-local2@p1($X);
+#rule local1_at_p1($Y):-local2@p1($Y)
+#last rule doesn't work because of _at_ format
+      END
+    end
+    program = WLBud::WLProgram.new('p1', 'test_045_rules', 'localhost', '11111', {:debug => true})
+    assert_equal "local1_at_p1", program.wlcollections.first[0]
+    assert_equal 0, program.wlcollections.first[1].arity
+    assert_equal 0, program.wlfacts.size
+    File.delete('test_045_rules')
+  end
+
   # test disambiguation mechanism
   def test_050_peername_namedsentence_disamb
     program = nil
-    begin      
+    begin
       # test disambiguation with real name
       File.open('test_050_peername_NamedSentence',"w"){ |file| file.write "collection ext persistent picture@myself(atom1*);"}
       assert_nothing_raised {program = WLBud::WLProgram.new('myself', 'test_050_peername_NamedSentence', 'localhost', '4100', {:debug => true})}
@@ -184,7 +209,7 @@ end
       assert_equal ["myself", "sigmod_peer"], rule.peername
     ensure
       File.delete('test_050_peername_NamedSentence') if File.exists?('test_050_peername_NamedSentence')
-    end    
+    end
   end
 
   # test disambiguation mechanism
@@ -237,7 +262,7 @@ end
 
   # This is just a test file, in regular use it is forbidden to declare
   # intermediary relation
-  STR1 = <<EOF
+  STR1 = <<-EOF
 peer p1=localhost:11111;
 peer p2=localhost:11112;
 peer p3=localhost:11113;
@@ -253,7 +278,7 @@ fact local@p1(3);
 fact local@p1(4);
 rule joindelegated@p1($x):- local@p1($x),delegated@p2($x),delegated@p3($x),delegated@p4($x);
 end
-EOF
+  EOF
   # Test parsing and WLVocabulary instantiation of a simple init program file
   def test_200_program_1
     begin
@@ -326,14 +351,14 @@ end
     begin
       File.open('test_program_2',"w"){ |file| file.write prog}
       program = nil
-      assert_nothing_raised do
-        program = WLBud::WLProgram.new(
-          'the_peername',
-          'test_program_2',
-          'localhost',
-          '11111',
-          {:debug => true} )
-      end
+      # #assert_nothing_raised do
+      program = WLBud::WLProgram.new(
+        'the_peername',
+        'test_program_2',
+        'localhost',
+        '11111',
+        {:debug => true} )
+      # #end
       assert_equal 5, program.wlcollections.length
       assert_equal 4, program.wlfacts.length
       assert_equal 2, program.rule_mapping.size
@@ -371,7 +396,7 @@ end
           {:debug => true} )
       end
       assert_equal 2, program.wlfacts.size
-      assert_equal ["sigmod_peer", "localhost:10000", "false", "none", "none"], program.wlfacts[0].content      
+      assert_equal ["sigmod_peer", "localhost:10000", "false", "none", "none"], program.wlfacts[0].content
       assert_equal ["Jules", "localhost:10000", "false", "jules.testard@mail.mcgill.ca", "Jules Testard"], program.wlfacts[1].content
       assert_equal 5, program.wlcollections.first[1].arity
       assert_equal ["username", "peerlocation", "online", "email", "facebook"], program.wlcollections["contact_at_sigmod_peer"].fields
@@ -414,7 +439,7 @@ end # class TcParseProgram
 
 # Test variables in rules and rule rewriting in rule_mapping
 class TcRulesWLVocabulary < Test::Unit::TestCase
-  include MixinTcWlTest 
+  include MixinTcWlTest
 
   # Test variables in atom fields
   def test_variables_atoms_rules
@@ -427,17 +452,17 @@ end
   
     File.open('test_program_2',"w"){ |file| file.write prog}
     program = nil
-    assert_nothing_raised do
-      program = WLBud::WLProgram.new(
-        'the_peername',
-        'test_program_2',
-        'localhost',
-        '11111',
-        {:debug => true} )
-    end
+    # #assert_nothing_raised do
+    program = WLBud::WLProgram.new(
+      'the_peername',
+      'test_program_2',
+      'localhost',
+      '11111',
+      {:debug => true} )
+    # #end
     assert_equal 2, program.rule_mapping.size
     local = "rule contact_at_the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact_at_sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
-    delegation = "rule contact_at_the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact_at_sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
+    delegation = "rule contact@the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact@sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
     keys = program.rule_mapping.keys
     assert_equal 1, keys[0]
     assert_equal local, program.rule_mapping.first[1].first.show_wdl_format
@@ -453,12 +478,12 @@ end
     assert_equal delegation, values[1].first
 
     assert_equal 4, program.rule_mapping[1].first.head.rfields.fields.length
-    assert_equal 3, program.rule_mapping[1].first.head.rfields.variables.length
-    
+    assert_equal 3, program.rule_mapping[1].first.head.rfields.variables.length    
   ensure
     File.delete('test_program_2') if File.exists?('test_program_2')
   end
-
+  
+  # 
   def test_variables_relation_name_rules
     prog = <<-EOF
 peer sigmod_peer = localhost:10000;
@@ -468,18 +493,19 @@ collection ext persistent contact@local(username*, ip*, port*, online*, email*);
 collection int query2@local(title*,contact*,id*,image_url*);
 rule contact@local($username, $peerlocation, $online, $email, none):-contact@sigmod_peer($username, $peerlocation, $online, $email, none);
 rule query2@local($title, $contact, $id, $image_url):- contact@local($contact, $_, $_, $_, $_),picture@$contact($title, $contact, $id, $image_url);
-end
     EOF
-    File.open('test_program_2',"w"){ |file| file.write prog}
+    File.open('test_variables_relation_name_rules',"w"){ |file| file.write prog }
     program = nil
     assert_raise WLBud::WLErrorProgram do
       program = WLBud::WLProgram.new(
         'the_peername',
-        'test_program_2',
+        'test_variables_relation_name_rules',
         'localhost',
         '11111',
         {:debug => true} )
     end
+  ensure
+    File.delete('test_variables_relation_name_rules') if File.exists?('test_variables_relation_name_rules')
   end
 end
 

@@ -319,6 +319,8 @@ In the string: #{line}
 
         if wlrule.bound.empty? # the whole body is non-local, no rewriting are needed just delegate all the rule
           delegation = wlrule.show_wdl_format
+          # FIXME hacky substitute of _at_ by @
+          delegation.gsub!(/_at_/, '@')
         else # if the rule must be cut in two part
           
           # RULE REWRITING If local atoms are present at the beginning of the

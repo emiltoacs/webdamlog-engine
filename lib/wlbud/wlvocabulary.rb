@@ -574,7 +574,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
 
-  # WebdamLog Atom, element of a WLrule: rrelation@rpeer(rfields)
+  # WebdamLog Atom, element of a WLRule: rrelation@rpeer(rfields)
   class WLAtom < WLVocabulary
     include WLBud::NamedSentence
 

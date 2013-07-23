@@ -20,7 +20,7 @@ module WLBud
       ### Root program ###
       #### Each line is either a comment or it describe either a peer a fact a collection or a rule
       rule root
-        sep instruction:(fact / collection / rul / peer_dec) sep ';' sep <WLVocabulary>
+        sep instruction:(fact / collection / rul / peer_dec / comment) sep ';' sep <WLVocabulary>
       end
 
       ### Optional separator
@@ -130,7 +130,7 @@ module WLBud
       ### for fact ###
         #### relation name ####
         rule relation_name
-          word
+            word
         end
 
         
