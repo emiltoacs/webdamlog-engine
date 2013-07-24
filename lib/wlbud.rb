@@ -758,7 +758,7 @@ module WLBud
       rule = @wl_program.parse(wlpg_rule, true)
       raise WLErrorProgram, "parse rule and get #{rule.class}" unless rule.is_a?(WLBud::WLRule)
       unless @wl_program.local?(rule)
-        @wl_program.rewrite_non_local(rule)
+        @wl_program.rewrite_rule(rule)
         localcolls = @wl_program.flush_new_local_declaration
         unless localcolls.empty? # if it is not a fully non-local install the local part
           raise WLError, "exactly one intermediary collection should have been generated while splitting a non-local rule instead of #{localcolls.length}" unless localcolls.length == 1

@@ -149,6 +149,9 @@ module WLBud
       @seed
     end
 
+    # The logical peer name ie. disambiguated according to the local program
+    # knowledge.
+    #
     # @return [Array] the list of name of peers appearing in atoms, it could be
     # different from self.peer_name.text_value when called by {WLProgram} since
     # disambiguation could have modified this field.
@@ -627,7 +630,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @variables
     end
 
-    # return [Boolean] true if relation or peername is a variable
+    # return [Boolean] true if relation or peer name is a variable
     def variable?
       rrelation.variable? or rpeer.variable? ? true : false
     end
