@@ -50,7 +50,7 @@ module WLBud
 
     attr_accessor :has_self_join
     attr_reader :dic_made, :dic_relation_name, :dic_invert_relation_name, :dic_wlvar, :dic_wlconst
-    attr_accessor :split, :bound, :unbound
+    attr_accessor :split, :seed, :bound, :unbound
 
     # Creates a new WLRule and instantiate empty dictionaries for that rule.
     #

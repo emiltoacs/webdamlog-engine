@@ -58,8 +58,6 @@ if ARGV.include?("ordered")
   require "tc_wl_wlbud_parse_program.rb"
   require "tc_wl_wlbud_send_packet.rb"
 else
-  #  int = 0
-  #  files.each { |file| p "#{int+=1} #{file}"; require file }
   files.each { |file| require file }
 end
 
