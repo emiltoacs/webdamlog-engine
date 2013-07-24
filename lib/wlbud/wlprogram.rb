@@ -175,12 +175,6 @@ module WLBud
     # Return true if the whole program to evaluate is empty
     def empty? ; return (rules_empty? and facts_empty? and collection_empty?) ; end
 
-    def print_arg_tab(target,str)
-      string=""
-      target.each {|r| string << "#{r};\n"}
-      puts "#{str} :{\n#{string}}"
-    end
-
     # Parse a program. Notice that ';' is a reserved keyword for end sentence. A
     # sentence could define a peer, a collection, a fact or a rule.
     #
@@ -288,9 +282,7 @@ In the string: #{line}
 
     # TODO call the whole rewrite process in order
     def rewrite_rule(wlrule)
-
-      
-      
+      rewrite_non_local(wlrule)
     end
 
     private
