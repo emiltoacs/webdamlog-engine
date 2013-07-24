@@ -144,7 +144,7 @@ module WLBud
       parse_lines(IO.readlines(@programfile, ';'), true)
       # process non-local rules
       @nonlocalrules.each do |rule|
-        rewrite_non_local rule
+        rewrite_rule rule
       end
     end
 
@@ -286,6 +286,20 @@ In the string: #{line}
       return peername, address
     end
 
+    # TODO call the whole rewrite process in order
+    def rewrite_rule(wlrule)
+
+      
+      
+    end
+
+    private
+
+    # TODO make the seeds
+    def rewrite_unbound_rules(wlrule)
+      
+    end
+
     # This method creates a body-local rule with destination peer p and a fully
     # non-local rule that should be delegated to p.
     #
@@ -299,7 +313,7 @@ In the string: #{line}
     # declaration that should be created into bud to store intermediary local
     # results of non-local rules rewritten
     #
-    def rewrite_non_local(wlrule)  
+    def rewrite_non_local(wlrule)
       raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed?
 
@@ -376,21 +390,32 @@ In the string: #{line}
     end # def rewrite_non_local(wlrule)
 
     # Split the rule by reading atoms from left to right until non local atom or
-    # variable in relation name or peer name has been found
+    # variable in relation name or peer name has been found.
+    #
+    # Seed attribute is set to true if 
+    #
+    # @return [boolean] split which is true if rules has been cut(either because of a non-local part or a variable)
     def split_rule wlrule
       unless wlrule.split
-        to_delegate = false
+        wlrule.split = false
         wlrule.body.each do |atom|
-          if !to_delegate and local?(atom) and not atom.variable?
-            wlrule.bound << atom
-          else
-            to_delegate=true
+          if not wlrule.split and local?(atom)
+            if not atom.variable?
+              wlrule.bound << atom
+            else
+              wlrule.seed = true
+              wlrule.split = true
+            end
+          else     
             wlrule.unbound << atom
+            wlrule.split = true
           end
         end
-        wlrule.split = true
+        wlrule.split
       end
     end
+
+    public
 
     # Generates the string representing the rule in the Bud format from a
     # WLrule.
@@ -422,23 +447,8 @@ In the string: #{line}
         end
       end
 
-      # #Obsolete code when self-joins where badly implemented #rename_atoms
-      # adds temp relations in case of self joins. #renamed = rename_atoms(body)
-      # #renamed.each {|relation| strRes <<  "#{relation};\n"} unless
-      # @make_binary_rules
-
-      # #Make the locations dictionaries for this rule
+      # Make the locations dictionaries for this rule
       wlrule.make_dictionaries unless wlrule.dic_made
-
-      #      if @options[:debug] then
-      #        WLTools::Debug_messages.h4("Display dictionaries generated for rule \n\t#{wlrule.to_s}\n")
-      #        puts <<-END
-      #          dic_wlvar - #{wlrule.dic_wlvar.inspect}
-      #          dic_wlconst - #{wlrule.dic_wlconst.inspect}
-      #          dic_relation_name - #{wlrule.dic_relation_name.inspect}
-      #          dic_invert_relation_name - #{wlrule.dic_invert_relation_name.inspect}
-      #        END
-      #      end
 
       if body.length==0
         str_res << " ["
@@ -548,15 +558,14 @@ In the string: #{line}
       return flush
     end
 
-    # return true if the given wlword is local
-    #
-    # according to the type of wlword which should be a wlvocabulary object or a
-    # string of the peername, it test if the given argument is local ie. match
-    # one of the alias name specifed in @localpeername
+    # According to the type of wlword which should be a wlvocabulary object or a
+    # string of the peer name, it test if the given argument is local ie. match
+    # one of the alias name specified in @localpeername
     #
     # Note that a rule is local if the body is local whatever the state of the
     # head
     #
+    # @return true if the given wlword is local
     def local? (wlword)
       if wlword.is_a? WLBud::WLCollection or wlword.is_a? WLBud::WLAtom
         if @localpeername.include?(wlword.peername)
@@ -583,8 +592,8 @@ In the string: #{line}
       end
     end
 
-    # Disambiguate peername, it replace alias such as local or me by the local
-    # peername id. Hence subsequent call to peername will use the unique id of
+    # Disambiguate peer name, it replace alias such as local or me by the local
+    # peer name id. Hence subsequent call to peer name will use the unique id of
     # this peer. @param [WLBud::NamedSentence] a {WLBud::NamedSentence} object
     # @return [String] the disambiguated namedSentence
     def disamb_peername! namedSentence
