@@ -255,11 +255,11 @@ In the string: #{line}
     end
 
     # TODO call the whole rewrite process in order
-    def rewrite_rule(wlrule)
+    def rewrite_rule wlrule
 
       split_rule wlrule
 
-      if wlrule.seed?
+      if wlrule.seed?        
         rewrite_unbound_rules(wlrule)
       end
 
@@ -270,7 +270,15 @@ In the string: #{line}
 
     # TODO make the seeds
     def rewrite_unbound_rules(wlrule)
-      
+      # XXX hacky here we force to reevaluate with seed? method in wlvocabulary
+      # instead of split_rule that already set seed to true without evaluating
+      # the head
+      wlrule.seed = nil
+      wlrule.seed?
+
+      # TODO both case: I body seeded II head seed
+      # extract common rewriting from rewrite non-local
+
     end
 
     # This method creates a body-local rule with destination peer p and a fully
@@ -375,12 +383,12 @@ In the string: #{line}
         wlrule.body.each do |atom|
           if not wlrule.split and local?(atom)
             if not atom.variable?
-              wlrule.bound << atom
+              wlrule.bound << atom              
             else
               wlrule.seed = true
               wlrule.split = true
             end
-          else     
+          else
             wlrule.unbound << atom
             wlrule.split = true
           end
