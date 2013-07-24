@@ -39,7 +39,7 @@ module WLBud
     #
     def initialize (peername, filename, ip, port, make_binary_rules=false, options={})
       raise WLBud::WLError, 'Program file cannot be found' unless File.exist?(filename)
-      # #absolute path file to the program *.wl
+      # absolute path file to the program *.wl
       @programfile = filename
       @parser = WLBud::WebdamLogGrammarParser.new
       @peername=WLTools.sanitize(peername)
@@ -130,13 +130,12 @@ module WLBud
       #
       @new_local_declaration = []
       # The list of all the new local rule to create due to processing of a
-      # wlgrammar line in rewrite_non_local. It contains the local part of the
-      # rule that have been splitted.
+      #   wlgrammar line in rewrite_non_local. It contains the local part of the
+      #   rule that have been splitted.
       # === data struct
       # Array:(WLBud::WLRule)
       #
       @new_rewritten_local_rule_to_install = []
-      # #@name=@programfile.split('/').last.split('.').first
       options[:debug] ||= false
       @options=options.clone
 
@@ -148,32 +147,7 @@ module WLBud
       end
     end
 
-    public
-
-    # The print_content method prints the content of the relations declarations,
-    # extensional facts and rules of the program to the screen.
-    #
-    def print_content
-      puts "-----------------------RELATIONS------------------------"
-      @wlcollections.each_value {|wl| wl.show}
-      puts "\n\n------------------------FACTS---------------------------"
-      @wlfacts.each {|wl| wl.show}
-      puts "\n\n------------------------RULES---------------------------"
-      @localrules.each {|wl| wl.show}
-      puts "\n\n--------------------------------------------------------"
-    end
-
-    # Returns true if no rules are loaded for evaluation.
-    def rules_empty? ; return @rule_mapping.empty?; end
-
-    # Returns true if no facts are loaded for evaluation.
-    def facts_empty? ; return @wlfacts.empty?; end
-
-    # Return true if no collection is loaded for evaluation.
-    def collection_empty? ; return @wlcollections.empty?; end
-
-    # Return true if the whole program to evaluate is empty
-    def empty? ; return (rules_empty? and facts_empty? and collection_empty?) ; end
+    public  
 
     # Parse a program. Notice that ';' is a reserved keyword for end sentence. A
     # sentence could define a peer, a collection, a fact or a rule.
@@ -282,6 +256,13 @@ In the string: #{line}
 
     # TODO call the whole rewrite process in order
     def rewrite_rule(wlrule)
+
+      split_rule wlrule
+
+      if wlrule.seed?
+        rewrite_unbound_rules(wlrule)
+      end
+
       rewrite_non_local(wlrule)
     end
 
@@ -384,9 +365,10 @@ In the string: #{line}
     # Split the rule by reading atoms from left to right until non local atom or
     # variable in relation name or peer name has been found.
     #
-    # Seed attribute is set to true if 
+    # Seed attribute is set to true if
     #
-    # @return [boolean] split which is true if rules has been cut(either because of a non-local part or a variable)
+    # @return [boolean] split which is true if rules has been cut(either because
+    # of a non-local part or a variable)
     def split_rule wlrule
       unless wlrule.split
         wlrule.split = false
@@ -846,6 +828,33 @@ In the string: #{line}
       end
       return @next
     end
+
+    public
+
+    # The print_content method prints the content of the relations declarations,
+    # extensional facts and rules of the program to the screen.
+    #
+    def print_content
+      puts "-----------------------RELATIONS------------------------"
+      @wlcollections.each_value {|wl| wl.show}
+      puts "\n\n------------------------FACTS---------------------------"
+      @wlfacts.each {|wl| wl.show}
+      puts "\n\n------------------------RULES---------------------------"
+      @localrules.each {|wl| wl.show}
+      puts "\n\n--------------------------------------------------------"
+    end
+
+    # Returns true if no rules are loaded for evaluation.
+    def rules_empty? ; return @rule_mapping.empty?; end
+
+    # Returns true if no facts are loaded for evaluation.
+    def facts_empty? ; return @wlfacts.empty?; end
+
+    # Return true if no collection is loaded for evaluation.
+    def collection_empty? ; return @wlcollections.empty?; end
+
+    # Return true if the whole program to evaluate is empty
+    def empty? ; return (rules_empty? and facts_empty? and collection_empty?) ; end
 
   end # class WLProgram
 

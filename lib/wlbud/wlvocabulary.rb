@@ -129,20 +129,31 @@ module WLBud
       return @body
     end
 
+    # Set the attributes @seed and @seed_pos respectively to true if there is an
+    # atom with variable in relation or peer name ; and @seedpos with the
+    # position of this atom in the body starting from 0 or -1 if the variable is
+    # in the head.
+    #
+    # Note it always return the first atom to be a seed by evaluating the body
+    # from left to right then the head.
+    #
     # Seeds are intermediary relation used when relation or peer name are
     # variables in a rule.
     #
-    # @return true if this rule may be rewritten with seeds
+    # @return true if this rule may be rewritten with seeds.
     def seed?
       if @seed.nil?
+        body.each_with_index do |atom,index|
+          if atom.variable?
+            @seed_pos = index
+            return @seed = true
+          end
+        end
         if head.variable?
+          @seed_pos = -1
           @seed = true
         else
-          body.each do |atom|
-            if atom.variable?
-              return @seed = true
-            end            
-          end
+          @seed_poes = nil
           @seed = false
         end
       end
@@ -593,9 +604,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       super(a1,a2,a3)
     end
 
-    # Return the name of the peer, it could be different from
-    # self.peer_name.text_value when called by {WLProgram} since disambiguation
-    # could have modified this field
+    #   Return the name of the peer, it could be different from
+    #   self.peer_name.text_value when called by {WLProgram} since
+    #   disambiguation could have modified this field
     #
     def peername
       unless @peername
@@ -604,7 +615,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @peername
     end
 
-    # @return [String] relationname without the peer name
+    #   @return [String] relationname without the peer name
     def relname
       unless @relname
         @relname = self.rrelation.text_value
@@ -617,7 +628,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     # @return [Array] the variables included in the atom in an array format e.g.
-    # : [relation_var,peer_var,[field_var1,field_var2,...]]
+    # :
+    # [relation_var,peer_var,[field_var1,field_var2,...]]
     def variables
       if @variables.nil?
         vars = []
