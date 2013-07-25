@@ -483,7 +483,7 @@ end
     File.delete('test_program_2') if File.exists?('test_program_2')
   end
   
-  # 
+  #
   def test_variables_relation_name_rules
     prog = <<-EOF
 peer sigmod_peer = localhost:10000;
@@ -496,14 +496,13 @@ rule query2@local($title, $contact, $id, $image_url):- contact@local($contact, $
     EOF
     File.open('test_variables_relation_name_rules',"w"){ |file| file.write prog }
     program = nil
-    assert_raise WLBud::WLErrorProgram do
-      program = WLBud::WLProgram.new(
-        'the_peername',
-        'test_variables_relation_name_rules',
-        'localhost',
-        '11111',
-        {:debug => true} )
-    end
+    program = WLBud::WLProgram.new(
+      'the_peername',
+      'test_variables_relation_name_rules',
+      'localhost',
+      '11111',
+      {:debug => true} )
+    
   ensure
     File.delete('test_variables_relation_name_rules') if File.exists?('test_variables_relation_name_rules')
   end

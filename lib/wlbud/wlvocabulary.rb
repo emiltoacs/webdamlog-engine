@@ -4,7 +4,6 @@ module WLBud
   # all inherit the Treetop::Runtime::SyntaxNode class. When a .wl file is
   # parsed, a tree of nodes is created, with each node (not only the leaves) are
   # assigned a proper subclass of WLVocabulary.
-  #
   class WLVocabulary < Treetop::Runtime::SyntaxNode
     public
     def to_s
@@ -19,12 +18,11 @@ module WLBud
     end
   end
 
-  # A webdamlog sentence with a peer name in it.
+  # A Webdamlog sentence with a peer name in it.
   #
   # It could be a WLPeerDec, WLColletion, WLFact, or a WLAtom in this case it
   # returns a String which is the peer name. Or it could be WLRule, in this case
-  # it returns an array with the list of peername.
-  #
+  # it returns an array with the list of peer name.
   module NamedSentence
 
     attr_accessor :peername
@@ -59,7 +57,6 @@ module WLBud
     # * input
     # * interval
     # * elements
-    #
     def initialize (a1,a2,a3)
       @dic_made = false
       # unique id of the rule for this peer
@@ -255,6 +252,36 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str.slice!(-2..-1)
       str << ";"
     end
+
+    # Create a new rule with a new relation in the head that receive the
+    # valuations of all the useful variable in the bound part of a wlrule
+    def create_intermediary_relation_from_bound_atoms interm_relname, interm_peername
+      localbody = ""
+      local_vars=[]
+      @bound.each do |atom|
+        local_vars += atom.variables.flatten
+        localbody << "#{atom},"
+      end
+      local_vars = local_vars.flatten.compact.uniq
+      localbody.slice!(-1)
+      # build the list of attributes for relation declaration (dec_fields)
+      # removing the '$' of variable and create attributes names
+      dec_fields=''
+      var_fields=''
+      local_vars.each_index do |i|
+        local_var=local_vars[i]
+        dec_fields << local_var.gsub( /(^\$)(.*)/ , interm_relname+"_\\2_"+i.to_s+"\*," )
+        var_fields << local_var << ","
+      end ; dec_fields.slice!(-1); var_fields.slice!(-1);
+
+      # new collection declaration
+      interm_rel_declaration = "#{interm_relname}@#{interm_peername}(#{dec_fields})"
+      # new rule to install
+      interm_rel_in_rule = "#{interm_relname}@#{interm_peername}(#{var_fields})"
+      new_rule = "rule #{interm_rel_in_rule}:-#{localbody};"
+
+      return interm_rel_declaration, new_rule, interm_rel_in_rule
+    end # def create_intermediary_relation_from_bound_atoms
 
     private
 

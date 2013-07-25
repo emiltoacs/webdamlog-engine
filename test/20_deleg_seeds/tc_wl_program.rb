@@ -6,24 +6,25 @@ require 'test/unit'
 
 class TcWlProgram < Test::Unit::TestCase
 
-  # test the method split-rule in wlprogram that parse and divide the rule according to local atoms and variables in relation or peer name
-  def test_split_rules
-
-    Treetop.load(File.join(File.dirname(__FILE__), "..", "..", "lib", "wlbud","wlgrammar.treetop"))
-    @@parser = WLBud::WebdamLogGrammarParser.new
-
-    # create a new program with just another peer declaration
-    prog = <<-EOF
+  # create a new program with just another peer declaration
+  @@prog = <<-EOF
 peer other = localhost:10000;
-    EOF
-    File.open('test_split_rules',"w"){ |file| file.write prog }
-    program = WLBud::WLProgram.new(
-      'the_peername',
-      'test_split_rules',
-      'localhost',
-      '11111',
-      {:debug => true} )
+  EOF
+  File.open('test_split_rules',"w"){ |file| file.write @@prog }
+  @@program = WLBud::WLProgram.new(
+    'the_peername',
+    'test_split_rules',
+    'localhost',
+    '11111',
+    {:debug => true} )
 
+  Treetop.load(File.join(File.dirname(__FILE__), "..", "..", "lib", "wlbud","wlgrammar.treetop"))
+  @@parser = WLBud::WebdamLogGrammarParser.new
+
+  # Test the method split-rule in WLProgram that parse and divide the rule
+  # according to local atoms and variables in relation or peer name
+  def test_split_rules
+    
     # each case of distribution
 
     # check loading of basic local rule
@@ -36,28 +37,28 @@ peer other = localhost:10000;
     assert_equal [], rule.bound
     assert_equal [], rule.unbound
     # check basic local rules aren't split
-    assert_equal false, program.send(:split_rule, rule)
+    assert_equal false, @@program.send(:split_rule, rule)
     assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
     assert_equal [], rule.unbound.map { |item| item.show_wdl_format }
 
     # check delegation are split
     output = @@parser.parse('rule contact@local($username):-friend@local($username),friend@other($username);')
     rule = output.get_inst
-    assert_equal true, program.send(:split_rule, rule)
+    assert_equal true, @@program.send(:split_rule, rule)
     assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
     assert_equal ["friend_at_other($username)"], rule.unbound.map { |item| item.show_wdl_format }
 
     # check full delegation are split
     output = @@parser.parse('rule contact@local($username):-friend@other($username);')
     rule = output.get_inst
-    assert_equal true, program.send(:split_rule, rule)
+    assert_equal true, @@program.send(:split_rule, rule)
     assert_equal [], rule.bound.map { |item| item.show_wdl_format }
     assert_equal ["friend_at_other($username)"], rule.unbound.map { |item| item.show_wdl_format }
 
     # check non-local head are not split
     output = @@parser.parse('rule contact@other($username):-friend@local($username),family@local($username);')
     rule = output.get_inst
-    assert_equal false, program.send(:split_rule, rule)
+    assert_equal false, @@program.send(:split_rule, rule)
     assert_equal ["friend_at_local($username)", "family_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
     assert_equal [], rule.unbound.map { |item| item.show_wdl_format }
 
@@ -66,7 +67,7 @@ peer other = localhost:10000;
     # variable in the middle of the body
     output = @@parser.parse('rule contact@other($family):-friend@local($username),family@$username($family);')
     rule = output.get_inst
-    assert_equal true, program.send(:split_rule, rule)
+    assert_equal true, @@program.send(:split_rule, rule)
     assert_equal true, rule.seed
     assert_equal 1, rule.seed_pos
     assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
@@ -75,7 +76,7 @@ peer other = localhost:10000;
     # multiple variable in the body detect the first one
     output = @@parser.parse('rule contact@other($family):-friend@$username($username),family@$username($family);')
     rule = output.get_inst
-    assert_equal true, program.send(:split_rule, rule)
+    assert_equal true, @@program.send(:split_rule, rule)
     assert_equal true, rule.seed
     assert_equal 0, rule.seed_pos
     assert_equal [], rule.bound.map { |item| item.show_wdl_format }
@@ -84,7 +85,7 @@ peer other = localhost:10000;
     # variable in the head
     output = @@parser.parse('rule contact@$username($family):-friend@local($username),family@local($family);')
     rule = output.get_inst
-    assert_equal true, program.send(:split_rule, rule)
+    assert_equal true, @@program.send(:split_rule, rule)
     assert_equal true, rule.seed
     assert_equal -1, rule.seed_pos
     assert_equal ["friend_at_local($username)", "family_at_local($family)"], rule.bound.map { |item| item.show_wdl_format }
@@ -95,7 +96,7 @@ peer other = localhost:10000;
     # with non-local first, seed should not be detected
     output = @@parser.parse('rule contact@$username($family):-friend@local($username),family@other($family);')
     rule = output.get_inst
-    assert_equal true, program.send(:split_rule, rule)
+    assert_equal true, @@program.send(:split_rule, rule)
     assert_equal false, rule.seed
     assert_equal nil, rule.seed_pos
     assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
@@ -104,14 +105,32 @@ peer other = localhost:10000;
     # with seed first non-local should not be detected
     output = @@parser.parse('rule contact@$username($family):-friend@local($username),family@$username($family),friend@local($username);')
     rule = output.get_inst
-    assert_equal true, program.send(:split_rule, rule)
-    assert_equal true, rule.seed
+    assert @@program.send(:split_rule, rule)
+    assert rule.seed
     assert_equal 1, rule.seed_pos
     assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
     assert_equal ["family_at_$username($family)", "friend_at_local($username)"], rule.unbound.map { |item| item.show_wdl_format }
     
   ensure
     File.delete('test_split_rules') if File.exists?('test_split_rules')
+  end
+
+
+  # Test create_intermediary_relation_from_bound_atoms in WLProgram
+  def test_create_intermediary_relation_from_bound_atoms
+
+    # check loading of basic delegation
+    output = @@parser.parse('rule contact@local($username):-friend@local($username),friend@other($username);')
+    wlrule = output.get_inst
+    assert @@program.send(:split_rule, wlrule)
+    interm_relname = "test_inter_relname"
+    destination_peer = "other"
+    interm_rel_in_rule, local_rule_delegate_facts = wlrule.create_intermediary_relation_from_bound_atoms(interm_relname, destination_peer)
+    assert_equal "test_inter_relname@other(test_inter_relname_username_0*)", interm_rel_in_rule
+    assert_equal "rule test_inter_relname@other($username):-friend@local($username);", local_rule_delegate_facts
+
+    
+
   end
 
 end
