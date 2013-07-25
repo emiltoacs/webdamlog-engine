@@ -6,7 +6,7 @@ require 'test/unit'
 
 class TcWlProgram < Test::Unit::TestCase
 
-  # test
+  # test the method split-rule in wlprogram that parse and divide the rule according to local atoms and variables in relation or peer name
   def test_split_rules
 
     Treetop.load(File.join(File.dirname(__FILE__), "..", "..", "lib", "wlbud","wlgrammar.treetop"))
