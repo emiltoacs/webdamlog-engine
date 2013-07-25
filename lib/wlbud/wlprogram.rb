@@ -74,8 +74,9 @@ module WLBud
       # The original rules before the rewriting used for evaluation. It gives
       # the original semantic of the program.
       #
-      # Original rules id are stored as key and rewriting of these ones as value
-      # in an array
+      # Original rules id are stored as key and value is an array with first the
+      # original rule as a WLBud::WLRule then the id of rules rewritten or
+      # string representing the rewriting.
       @rule_mapping = Hash.new{ |h,k| h[k]=Array.new }
       # The local rules straightforward to convert into bud (simple syntax
       # translation)
@@ -259,26 +260,26 @@ In the string: #{line}
 
       split_rule wlrule
 
-      if wlrule.seed?        
+      if wlrule.seed?
         rewrite_unbound_rules(wlrule)
+      elsif wlrule.split
+        rewrite_non_local(wlrule)
       end
-
-      rewrite_non_local(wlrule)
+      
     end
 
     private
 
     # TODO make the seeds
     def rewrite_unbound_rules(wlrule)
-      # XXX hacky here we force to reevaluate with seed? method in wlvocabulary
-      # instead of split_rule that already set seed to true without evaluating
-      # the head. Overhead is very small biut split_rule and seed may be done in
-      # hte same method
-      wlrule.seed = nil
-      wlrule.seed?
-
+      
       # TODO both case: I body seeded II head seed extract common rewriting from
       # rewrite non-local
+
+      # TODO generate inter with bound
+
+      intermediary_seed_declaration_for_local_peer = nil      
+      
 
     end
 
@@ -298,8 +299,7 @@ In the string: #{line}
     def rewrite_non_local(wlrule)
       raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed?
-
-      intermediary_relation_declaration_for_local_peer = nil
+      
       split_rule wlrule
       if wlrule.unbound.empty?
         raise WLErrorProgram, "rewrite_non_local : You are trying to rewrite a local rule. There may be an error in your rule filter"
@@ -315,52 +315,34 @@ In the string: #{line}
 
         if wlrule.bound.empty? # the whole body is non-local, no rewriting are needed just delegate all the rule
           delegation = wlrule.show_wdl_format
-          # FIXME hacky substitute of _at_ by @
+          # FIXME hacky substitute of _at_ by @ to be parsed correctly by the
+          # receiver
           delegation.gsub!(/_at_/, '@')
-        else # if the rule must be cut in two part
           
+        else # if the rule must be cut in two part          
           # RULE REWRITING If local atoms are present at the beginning of the
           # non local rule, then we have to add a local rule to the program.
           # Otherwise, the nonlocal rule can be sent as is to its destination.
-          # Create a relation for this declaration that has an arity
+          # Create a relation for intermediary relation that has the arity
           # corresponding to the number of distinct variables present in the
-          # local stack.
-          localbody = ""
-          local_vars=[]
-          wlrule.bound.each do |atom|
-            atom.variables.flatten.each { |var|
-              local_vars << var unless var.nil? or local_vars.include?(var)
-            }
-            localbody << "#{atom},"
-          end
-          localbody.slice!(-1)
-          relation_name = generate_intermediary_relation_name(wlrule.rule_id)
-          # build the list of attributes for relation declaration (dec_fields)
-          # removing the '$' of variable and create attributes names
-          dec_fields=''
-          var_fields=''
-          local_vars.each_index do |i|
-            local_var=local_vars[i]
-            dec_fields << local_var.gsub( /(^\$)(.*)/ , relation_name+"_\\2_"+i.to_s+"\*," )
-            var_fields << local_var << ","
-          end ; dec_fields.slice!(-1);var_fields.slice!(-1);
-
-          intermediary_relation_atom_in_rule = "#{relation_name}@#{destination_peer}(#{var_fields})"
-          intermediary_relation_declaration_for_remote_peer = "collection inter persistent #{relation_name}@#{destination_peer}(#{dec_fields});"
-          intermediary_relation_declaration_for_local_peer = intermediary_relation_declaration_for_remote_peer.gsub("persistent ", "")
-          local_rule_which_delegate_facts = "rule #{intermediary_relation_atom_in_rule}:-#{localbody};"
-          # #Declare the new remote relation as a scratch for the local peer and
+          # bound atoms.
+          interm_relname = generate_intermediary_relation_name(wlrule.rule_id)
+          interm_rel_decla, local_rule_delegate_facts, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_relname, destination_peer)
+          interm_rel_declaration_for_remote_peer = "collection inter persistent #{interm_rel_decla};"
+          interm_rel_declaration_for_local_peer = interm_rel_declaration_for_remote_peer.gsub("persistent ", "")
+          
+          # Declare the new remote relation as a scratch for the local peer and
           # add it to the program
-          @new_local_declaration << parse(intermediary_relation_declaration_for_local_peer,true,true)
-          @new_relations_to_declare_on_remote_peer[addr_destination_peer] << intermediary_relation_declaration_for_remote_peer
+          @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true,true)
+          @new_relations_to_declare_on_remote_peer[addr_destination_peer] << interm_rel_declaration_for_remote_peer
           # #Add local rule to the set of rewritten local rules
-          @new_rewritten_local_rule_to_install << ru = parse(local_rule_which_delegate_facts, true, true)
+          @new_rewritten_local_rule_to_install << ru = parse(local_rule_delegate_facts, true, true)
           @rule_mapping[wlrule.rule_id] << ru.rule_id
           @rule_mapping[ru.rule_id] << ru
-          # #Create the delegation rule string
+          # Create the delegation rule string
           nonlocalbody="" ;
           wlrule.unbound.each { |atom| nonlocalbody << "#{atom}," } ; nonlocalbody.slice!(-1)
-          delegation="rule #{wlrule.head}:-#{intermediary_relation_atom_in_rule},#{nonlocalbody};"
+          delegation="rule #{wlrule.head}:-#{interm_rel_in_rule},#{nonlocalbody};"
         end # if not wlrule.bound.empty? and not wlrule.unbound.empty? # if the rule must be cut in two part
 
         # Register the delegation
@@ -368,8 +350,7 @@ In the string: #{line}
         @rule_mapping[wlrule.rule_id] << delegation
         @rule_mapping[delegation] << delegation
       end # if wlrule.unbound.empty?
-      return intermediary_relation_declaration_for_local_peer
-    end # def rewrite_non_local(wlrule)
+    end # def rewrite_non_local(wlrule)    
 
     # Split the rule by reading atoms from left to right until non local atom or
     # variable in relation name or peer name has been found.
@@ -848,7 +829,6 @@ In the string: #{line}
     #
     # @param [Fixnum] the rule id used in @rule_mapping usually given by
     # WLRule.rule_id
-    #
     def generate_intermediary_relation_name(orig_rule_id)
       return "deleg_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
     end
@@ -866,7 +846,6 @@ In the string: #{line}
 
     # The print_content method prints the content of the relations declarations,
     # extensional facts and rules of the program to the screen.
-    #
     def print_content
       puts "-----------------------RELATIONS------------------------"
       @wlcollections.each_value {|wl| wl.show}
