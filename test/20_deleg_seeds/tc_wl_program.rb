@@ -123,14 +123,34 @@ peer other = localhost:10000;
     output = @@parser.parse('rule contact@local($username):-friend@local($username),friend@other($username);')
     wlrule = output.get_inst
     assert @@program.send(:split_rule, wlrule)
+    assert !wlrule.seed
     interm_relname = "test_inter_relname"
     destination_peer = "other"
     interm_rel_in_rule, local_rule_delegate_facts = wlrule.create_intermediary_relation_from_bound_atoms(interm_relname, destination_peer)
     assert_equal "test_inter_relname@other(test_inter_relname_username_0*)", interm_rel_in_rule
     assert_equal "rule test_inter_relname@other($username):-friend@local($username);", local_rule_delegate_facts
 
-    
+    # check loading of delegation followed by seeder
+    output = @@parser.parse('rule contact@local($username):-friend@local($username),familly@local($username),friend@other($username),friend@$username("eric");')
+    wlrule = output.get_inst
+    assert @@program.send(:split_rule, wlrule)
+    assert !wlrule.seed
+    interm_relname = "test_inter_relname"
+    destination_peer = "other"
+    interm_rel_in_rule, local_rule_delegate_facts = wlrule.create_intermediary_relation_from_bound_atoms(interm_relname, destination_peer)
+    assert_equal "test_inter_relname@other(test_inter_relname_username_0*)", interm_rel_in_rule
+    assert_equal "rule test_inter_relname@other($username):-friend@local($username),familly@local($username);", local_rule_delegate_facts
 
+    # check loading of seed rule
+    output = @@parser.parse('rule contact@local($username):-friend@local($username,$group),nice@local($group),familly@$username($username),friend@other($username, $group);')
+    wlrule = output.get_inst
+    wlrule.rule_id = @@program.send(:rule_id_generator)
+    assert @@program.send(:split_rule, wlrule)
+    assert wlrule.seed
+    interm_seed_name = @@program.send(:generate_intermediary_seed_name, wlrule.rule_id)
+    interm_rel_in_rule, local_rule_seed = wlrule.create_intermediary_relation_from_bound_atoms(interm_seed_name, @@program.peername)
+    assert_equal "seed_rule_1_0@the_peername(seed_rule_1_0_username_0*,seed_rule_1_0_group_1*)", interm_rel_in_rule
+    assert_equal "rule seed_rule_1_0@the_peername($username,$group):-friend@local($username,$group),nice@local($group);", local_rule_seed
   end
 
 end
