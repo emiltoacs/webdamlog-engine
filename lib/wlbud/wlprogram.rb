@@ -132,11 +132,16 @@ module WLBud
       @new_local_declaration = []
       # The list of all the new local rule to create due to processing of a
       #   wlgrammar line in rewrite_non_local. It contains the local part of the
-      #   rule that have been splitted.
+      #   rule that have been split.
       # === data struct
       # Array:(WLBud::WLRule)
-      #
       @new_rewritten_local_rule_to_install = []
+      # The list of all the new local seeds to create due to processing of a
+      #   wlgrammar line in rewrite_unbound_rules. It contains the bound part of
+      #   the rule that have been split.
+      # === data struct
+      # Array:(WLBud::WLRule)
+      @new_seed_rule_to_install = []
       options[:debug] ||= false
       @options=options.clone
 
@@ -271,16 +276,24 @@ In the string: #{line}
     private
 
     # TODO make the seeds
-    def rewrite_unbound_rules(wlrule)
-      
+    def rewrite_unbound_rules(wlrule)      
       # TODO both case: I body seeded II head seed extract common rewriting from
       # rewrite non-local
-
-      # TODO generate inter with bound
-
-      intermediary_seed_declaration_for_local_peer = nil      
-      
-
+      split_rule wlrule
+      interm_seed_name = generate_intermediary_seed_name(wlrule.rule_id)
+      interm_rel_decla, local_seed_rule, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_seed_name, @peername)
+      interm_rel_declaration_for_local_peer = "collection inter #{interm_rel_decla};"
+      # Declare the new intermediary seed for the local peer and add it to the
+      # program
+      @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true,true)    
+      # Add local rule to the program and register into the set of seed
+      # generator
+      seeder = parse(local_seed_rule, true, true)
+      @new_seed_rule_to_install << [seeder,interm_rel_in_rule,wlrule]
+      @rule_mapping[wlrule.rule_id] << seeder.rule_id
+      @rule_mapping[seeder.rule_id] << seeder
+      # TODO install the content of new_seed_rule_to_install and create the
+      # offshoot when new facts are inserted in in seed_rule in tick_internal
     end
 
     # This method creates a body-local rule with destination peer p and a fully
@@ -335,7 +348,7 @@ In the string: #{line}
           # add it to the program
           @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true,true)
           @new_relations_to_declare_on_remote_peer[addr_destination_peer] << interm_rel_declaration_for_remote_peer
-          # #Add local rule to the set of rewritten local rules
+          # Add local rule to the set of rewritten local rules
           @new_rewritten_local_rule_to_install << ru = parse(local_rule_delegate_facts, true, true)
           @rule_mapping[wlrule.rule_id] << ru.rule_id
           @rule_mapping[ru.rule_id] << ru
@@ -831,6 +844,10 @@ In the string: #{line}
     # WLRule.rule_id
     def generate_intermediary_relation_name(orig_rule_id)
       return "deleg_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
+    end
+
+    def generate_intermediary_seed_name(orig_rule_id)
+      return "seed_rule_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
     end
 
     # Simple successor function useful to create id for rules in this WLprogram.
