@@ -50,7 +50,7 @@ module WLBud
 
     attr_accessor :has_self_join
     attr_reader :dic_made, :dic_relation_name, :dic_invert_relation_name, :dic_wlvar, :dic_wlconst
-    attr_accessor :split, :seed, :bound, :unbound
+    attr_accessor :split, :seed, :seed_pos, :bound, :unbound
 
     # Creates a new WLRule and instantiate empty dictionaries for that rule.
     #
@@ -87,11 +87,20 @@ module WLBud
       # !@attribute [Hash] list of constants name of variable =>
       # ["relpos.atompos", ... ]
       @dic_wlconst = {}
-      # false until WLProgram.split_rule has been called which populate @bound,
-      # @unbound
-      @split = false
+      # nil until WLProgram.split_rule has been called which populate @bound,
+      # @unbound and set split to true if unbound atoms has been found
+      @split = nil      
+      # nil until WLProgram.split_rule has been called, set to true if seeds
+      # variables in relation or peer names
+      @seed = nil
+      # nil until WLProgram.split_rule has been called, receive the position of
+      # the last bound atom if there are unbound.
+      @seed_pos = nil
+      # atom to use for local rule
       @bound = []
+      # atom left to further processing
       @unbound = []
+      
       super(a1,a2,a3)
     end
 
@@ -129,32 +138,34 @@ module WLBud
       return @body
     end
 
-    # Set the attributes @seed and @seed_pos respectively to true if there is an
-    # atom with variable in relation or peer name ; and @seedpos with the
-    # position of this atom in the body starting from 0 or -1 if the variable is
-    # in the head.
-    #
-    # Note it always return the first atom to be a seed by evaluating the body
-    # from left to right then the head.
-    #
-    # Seeds are intermediary relation used when relation or peer name are
-    # variables in a rule.
-    #
-    # @return true if this rule may be rewritten with seeds.
+    # @deprecated use the generic wlprogram.split_rule
     def seed?
       if @seed.nil?
+        @bound = []
+        @unbound = []
+        @seed = false
+        # find seed in the body
         body.each_with_index do |atom,index|
-          if atom.variable?
-            @seed_pos = index
-            return @seed = true
+          unless @seed
+            unless atom.variable?
+              @bound << atom
+            else
+              @seed_pos = index
+              @seed = true
+            end
+          else
+            @unbound << atom
           end
         end
-        if head.variable?
-          @seed_pos = -1
-          @seed = true
-        else
-          @seed_poes = nil
-          @seed = false
+        # if no seeds appears in the body check in the head
+        unless @seed
+          if head.variable?
+            @seed_pos = -1
+            @seed = true
+          else
+            @seed_poes = nil
+            @seed = false
+          end
         end
       end
       @seed

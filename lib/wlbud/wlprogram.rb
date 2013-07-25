@@ -272,12 +272,13 @@ In the string: #{line}
     def rewrite_unbound_rules(wlrule)
       # XXX hacky here we force to reevaluate with seed? method in wlvocabulary
       # instead of split_rule that already set seed to true without evaluating
-      # the head
+      # the head. Overhead is very small biut split_rule and seed may be done in
+      # hte same method
       wlrule.seed = nil
       wlrule.seed?
 
-      # TODO both case: I body seeded II head seed
-      # extract common rewriting from rewrite non-local
+      # TODO both case: I body seeded II head seed extract common rewriting from
+      # rewrite non-local
 
     end
 
@@ -373,28 +374,52 @@ In the string: #{line}
     # Split the rule by reading atoms from left to right until non local atom or
     # variable in relation name or peer name has been found.
     #
-    # Seed attribute is set to true if
+    # Set the attributes @seed and @seed_pos respectively to true if there is an
+    # atom with variable in relation or peer name ; and @seedpos with the
+    # position of this atom in the body starting from 0 or -1 if the variable is
+    # in the head.
+    #
+    # Note it always return the first atom to be a seed by evaluating the body
+    # from left to right then the head.
     #
     # @return [boolean] split which is true if rules has been cut(either because
     # of a non-local part or a variable)
     def split_rule wlrule
-      unless wlrule.split
+      if wlrule.split.nil?
         wlrule.split = false
-        wlrule.body.each do |atom|
-          if not wlrule.split and local?(atom)
-            if not atom.variable?
-              wlrule.bound << atom              
-            else
+        # check for variables or non-local atoms in the body
+        wlrule.body.each_with_index do |atom,index|
+          unless wlrule.split
+            if atom.variable?
+              wlrule.unbound << atom
+              wlrule.seed_pos = index
               wlrule.seed = true
               wlrule.split = true
+            elsif not local?(atom)
+              wlrule.unbound << atom
+              wlrule.seed = false
+              wlrule.split = true
+            else
+              wlrule.bound << atom
             end
           else
             wlrule.unbound << atom
-            wlrule.split = true
           end
         end
-        wlrule.split
+        # if the body has not been split
+        unless wlrule.split
+          if wlrule.head.variable?
+            wlrule.seed_pos = -1
+            wlrule.seed = true
+            wlrule.split = true
+          else
+            wlrule.seed_pos = nil
+            wlrule.seed = false
+            wlrule.split = false
+          end
+        end
       end
+      wlrule.split
     end
 
     public
