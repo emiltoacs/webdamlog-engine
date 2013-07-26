@@ -140,7 +140,12 @@ module WLBud
       #   wlgrammar line in rewrite_unbound_rules. It contains the bound part of
       #   the rule that have been split.
       # === data struct
-      # Array:(WLBud::WLRule)
+      # Array:[[WRule:seeder,String:interm_rel_in_rule,WLRule:wlrule],...]
+      # * seeder is the new rule to install
+      # * interm_rel_in_rule is the string with the atom where the seed appear
+      #   in the rule with the correct variables assignation
+      # * wlrule is the original rule before rewriting that leads to create this
+      #   rewriting
       @new_seed_rule_to_install = []
       options[:debug] ||= false
       @options=options.clone
@@ -260,7 +265,8 @@ In the string: #{line}
       return peername, address
     end
 
-    # TODO call the whole rewrite process in order
+    # The whole rewrite process to compile webdamlog into bud + delegation and seeds
+    # Delegation and seeds are handled latter in tick internal
     def rewrite_rule wlrule
 
       split_rule wlrule
@@ -275,10 +281,11 @@ In the string: #{line}
 
     private
 
-    # TODO make the seeds
-    def rewrite_unbound_rules(wlrule)      
-      # TODO both case: I body seeded II head seed extract common rewriting from
-      # rewrite non-local
+    # This methods extract the local part without variables and generate the
+    # seed to evaluate the rest of the rule
+    def rewrite_unbound_rules(wlrule)
+      raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
+
       split_rule wlrule
       interm_seed_name = generate_intermediary_seed_name(wlrule.rule_id)
       interm_rel_decla, local_seed_rule, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_seed_name, @peername)
@@ -303,12 +310,17 @@ In the string: #{line}
     # The intermediary relation created to link the delegated rule with the
     # rewritten local is automatically added
     #
+    # RULE REWRITING If local atoms are present at the beginning of the non
+    # local rule, then we have to add a local rule to the program. Otherwise,
+    # the nonlocal rule can be sent as is to its destination. Create a relation
+    # for intermediary relation that has the arity corresponding to the number
+    # of distinct variables present in the bound atoms.
+    #
     # ===return [do not use prefer the instance variable @new_local_declaration]
     # +intermediary_relation_declaration_for_local_peer+ if it exists that is
     # when splitting the rule has been necessary. That is the relation
     # declaration that should be created into bud to store intermediary local
     # results of non-local rules rewritten
-    #
     def rewrite_non_local(wlrule)
       raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed?
@@ -332,13 +344,8 @@ In the string: #{line}
           # receiver
           delegation.gsub!(/_at_/, '@')
           
-        else # if the rule must be cut in two part          
-          # RULE REWRITING If local atoms are present at the beginning of the
-          # non local rule, then we have to add a local rule to the program.
-          # Otherwise, the nonlocal rule can be sent as is to its destination.
-          # Create a relation for intermediary relation that has the arity
-          # corresponding to the number of distinct variables present in the
-          # bound atoms.
+        else # if the rule must be cut in two part
+          
           interm_relname = generate_intermediary_relation_name(wlrule.rule_id)
           interm_rel_decla, local_rule_delegate_facts, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_relname, destination_peer)
           interm_rel_declaration_for_remote_peer = "collection inter persistent #{interm_rel_decla};"
@@ -489,7 +496,6 @@ In the string: #{line}
     # and clear it after.
     #
     # == return
-    #
     # a hash with
     # * +key+  peerIp:port
     # * +value+ array with the relation as strings in wlpg format
@@ -509,7 +515,6 @@ In the string: #{line}
     # and clear it after.
     #
     #  == return
-    #
     # a hash with
     # * +key+  peerIp:port
     # * +value+ array with the relation as strings in wlpg format
@@ -529,7 +534,6 @@ In the string: #{line}
     # the collections to create and clear it after.
     #
     # == return
-    #
     # an array of wlgrammar collections
     #
     def flush_new_local_declaration
@@ -546,13 +550,23 @@ In the string: #{line}
     # the array of the rules to create and clear it after.
     #
     # == return
-    #
     # an array of wlgrammar rules
     #
     def flush_new_rewritten_local_rule_to_install
       unless @new_rewritten_local_rule_to_install.empty?
         flush = @new_rewritten_local_rule_to_install.dup
         @new_rewritten_local_rule_to_install.clear
+      else
+        flush=[]
+      end
+      return flush
+    end
+
+    # @return 
+    def flush_new_seed_rule_to_install
+      unless @new_seed_rule_to_install.empty?
+        flush = @new_seed_rule_to_install.dup
+        @new_seed_rule_to_install.clear
       else
         flush=[]
       end
