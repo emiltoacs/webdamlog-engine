@@ -167,7 +167,7 @@ EOF
             "facts"=>{"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
             "declarations"=>[]}]]],
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
-      "p0 should have sent again the list of facts but not the declaratiosn or rules"
+      "p0 should have sent again the list of facts but not the declarations or rules"
 
     assert(wait_inbound(wl_peer[1]), "TIMEOUT it seems that #{wl_peer[1].peername} is not receiving any message")
     assert_equal 2, wl_peer[1].inbound[:chan].first.length, "two packets pending to be processed"

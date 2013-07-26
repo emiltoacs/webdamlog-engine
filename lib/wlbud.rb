@@ -131,7 +131,7 @@ module WLBud
       # This flag is set to true when the wl_program is made via the
       # make_program method. It is used to consider the delegation spawned by
       # the program evaluation.
-      @fist_tick_after_make_program=false
+      @first_tick_after_make_program=false
       # It represents the list of new delegations to send at this tick.
       #
       # ===Details
@@ -235,7 +235,7 @@ module WLBud
       else
         raise WLError, "the program is empty, impossible to generate corresponding facts and rules"
       end
-      @fist_tick_after_make_program=true
+      @first_tick_after_make_program=true
       # ### WLBud:End adding to Bud
 
       resolve_imports
@@ -266,7 +266,7 @@ module WLBud
     # call tick which will call start(true) allowing the EventMachine to call
     # the tick_internal.
     #
-    # Override bud method Bud.tick_internal.
+    # Override bud method Bud.tick_internal
     #
     def tick_internal
       # ### WLBud:Begin adding to Bud
@@ -284,11 +284,11 @@ module WLBud
       # TODO: improvement relation_to_declare and rules_to_delegate could be
       # emptied only when a ack message is received from remote peers to be sure
       # that rules and relations have been correctly installed.
-      if @fist_tick_after_make_program
+      if @first_tick_after_make_program
         @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){|key,oldv,newv| oldv<<newv}
         @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv<<newv}
-        @fist_tick_after_make_program=false
-        @fist_tick_after_make_program.freeze
+        @first_tick_after_make_program=false
+        @first_tick_after_make_program.freeze
       else
         @relation_to_declare.clear
         @rules_to_delegate.clear
@@ -303,8 +303,7 @@ module WLBud
         starttime = Time.now if @options[:metrics]
         if @options[:metrics] and not @endtime.nil?
           @metrics[:betweentickstats] ||= initialize_stats
-          @metrics[:betweentickstats] = running_stats(@metrics[:betweentickstats],
-            starttime - @endtime)
+          @metrics[:betweentickstats] = running_stats(@metrics[:betweentickstats], starttime - @endtime)
         end
 
         @inside_tick = true
@@ -336,13 +335,12 @@ module WLBud
             puts "Process packets received from #{packet_value.print_meta_data}"
             puts "---------"
           end
-          if @options[:filter_delegations]
-            packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
+          # Declare all the new relations and insert the rules
+          packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
+          if @options[:filter_delegations]            
             @pending_delegations[packet_value.peer_name.to_sym][packet_value.src_time_stamp] << packet_value.rules
             add_facts(packet_value.facts) unless packet_value.facts.nil?
-          else
-            # Declare all the new relations and insert the rules
-            packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
+          else         
             packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?
             add_facts(packet_value.facts) unless packet_value.facts.nil?
           end
@@ -749,35 +747,57 @@ module WLBud
       return name.to_s, schema
     end
 
-    # Takes in a string representing a WLRule, parses it and adds it directly
-    # into the WLBud instance.
+    # Takes in a string representing a WLRule,
+    #  * parses it
+    #  * rewrite it
+    #  * adds its local part to the engine
     #
     # @raise [WLError] if something goes wrong @return [Array] rule_id, rule
     # string of the local rule installed or nil if the rule is fully delegated.
     def add_rule(wlpg_rule)
-      rule = @wl_program.parse(wlpg_rule, true)
-      raise WLErrorProgram, "parse rule and get #{rule.class}" unless rule.is_a?(WLBud::WLRule)
-      unless @wl_program.local?(rule)
-        @wl_program.rewrite_rule(rule)
+      # parse
+      wlrule = @wl_program.parse(wlpg_rule, true)
+      raise WLErrorProgram, "parse rule and get #{wlrule.class}" unless wlrule.is_a?(WLBud::WLRule)
+
+      # rewrite and add it to the engine
+      install_rule wlrule
+    end
+
+    private
+
+    # rewrite a parsed wlrule and install it in the engine
+    def install_rule wlrule
+      # rewrite
+      unless @wl_program.local?(wlrule)
+        @wl_program.rewrite_rule(wlrule)
         localcolls = @wl_program.flush_new_local_declaration
-        unless localcolls.empty? # if it is not a fully non-local install the local part
+        if wlrule.seed? # if seed install the seed and setup offshoot spawn
+          raise WLError, "exactly one seed relation should be declared if variables has been detected" unless localcolls.length == 1
+          intercoll = localcolls.first
+          add_collection(intercoll)
+          seedarray = @wl_program.flush_new_seed_rule_to_install
+          raise WLError, "exactly one seed could be generated if variables has been detected" unless seedarray.length == 1
+          seeder, interm_rel_in_rule, rule = seedarray.first
+          wlrule = seeder
+          # TODO setup offshoot spawn
+        elsif wlrule.split # if it is not a fully non-local install the local part
           raise WLError, "exactly one intermediary collection should have been generated while splitting a non-local rule instead of #{localcolls.length}" unless localcolls.length == 1
           intercoll = localcolls.first
           add_collection(intercoll)
           localrules = @wl_program.flush_new_rewritten_local_rule_to_install
           raise WLError, "exactly one local rule should have been generated while splitting a non-local rule instead of #{localrules.length}" unless localrules.length == 1
-          rule = localrules.first
+          wlrule = localrules.first
           @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){ |key,oldv,newv| oldv<<newv }
           @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){ |key,oldv,newv| oldv<<newv }
         end
       end
-      # if a fully non-local rule is parsed a empty local rule is the result and
-      # there is nothing to install locally
-      unless rule.nil?
+      # adds local part: if a fully non-local rule is parsed a empty local rule
+      # is the result and there is nothing to install locally
+      unless wlrule.nil?
         puts "Adding a rule: #{wlpg_rule}" if @options[:debug]
-        translate_rule(rule)
+        translate_rule(wlrule)
         @need_rewrite_strata = true
-        return rule.rule_id, rule.show_wdl_format
+        return wlrule.rule_id, wlrule.show_wdl_format
       end
     end
 
@@ -794,14 +814,7 @@ module WLBud
     # than the builtin :chan
     #
     def make_bud_program
-      if @options[:debug]
-        WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment comment="Peer #{@peername} make program parse input file from WLGrammar to wlvocabulary internal representation")
-        WLTools::Debug_messages.h3 "make_program start generate_schema"
-      end
       @wl_program.wlcollections.each_value {|s| add_collection(s)}
-      if @options[:debug]
-        WLTools::Debug_messages.h3 "make_program start generate_facts"
-      end
       # :delay_fact_loading is used in application to delay facts loading when
       # wrappers needs to be defined and bind before we can add facts
       if @options[:delay_fact_loading]
@@ -810,9 +823,10 @@ module WLBud
         generate_bootstrap(@wl_program.wlfacts,@wl_program.wlcollections)
         @program_loaded = true
       end
-      # #WLTools::Debug_messages.h3 "make_program translate" if @options[:debug]
-      WLTools::Debug_messages.h2(WLTools::Debug_messages.end_comment comment) if @options[:debug]
-      create_rule_blocks
+      # add rules aready parsed
+      @wl_program.localrules.each {|wlrule| install_rule wlrule }
+      @wl_program.rewrittenlocal.each {|wlrule| install_rule wlrule}
+      #create_rule_blocks
     end
 
     # The generate_bootstrap method creates an array containing all extensional
@@ -848,20 +862,21 @@ module WLBud
     # * the rules in +wl_program#localrules+
     # * the rules in +wl_program#rewrittenlocal+
     #
-    def create_rule_blocks
-      WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment comment="Peer #{@peername} translate wlvocabulary internal representation into bud rules") if @options[:debug]
-      if @wl_program.localrules.nil? || @wl_program.localrules.empty?
-        puts 'no local rule to translate' if @options[:debug]
-      else
-        @wl_program.localrules.each {|wlrule| translate_rule wlrule }
-      end
-      if @wl_program.rewrittenlocal.nil? || @wl_program.rewrittenlocal.empty?
-        puts 'no rewritten rule to translate' if @options[:debug]
-      else
-        @wl_program.rewrittenlocal.each {|wlrule| translate_rule wlrule}
-      end
-      WLTools::Debug_messages.h2(WLTools::Debug_messages.end_comment comment) if @options[:debug]
-    end
+    # @deprecated use the generic method install_rule instead
+    #    def create_rule_blocks
+    #      WLTools::Debug_messages.h2(WLTools::Debug_messages.begin_comment comment="Peer #{@peername} translate wlvocabulary internal representation into bud rules") if @options[:debug]
+    #      if @wl_program.localrules.nil? || @wl_program.localrules.empty?
+    #        puts 'no local rule to translate' if @options[:debug]
+    #      else
+    #        @wl_program.localrules.each {|wlrule| translate_rule wlrule }
+    #      end
+    #      if @wl_program.rewrittenlocal.nil? || @wl_program.rewrittenlocal.empty?
+    #        puts 'no rewritten rule to translate' if @options[:debug]
+    #      else
+    #        @wl_program.rewrittenlocal.each {|wlrule| translate_rule wlrule}
+    #      end
+    #      WLTools::Debug_messages.h2(WLTools::Debug_messages.end_comment comment) if @options[:debug]
+    #    end
 
     # Insert or delete facts in collections according to messages received from
     # channel. facts should respect {WLPacketData.valid_hash_of_facts} format
@@ -972,6 +987,8 @@ module WLBud
         puts "END"
       end
     end
+
+    public
 
     # Register a callback triggered during the tick at the moment specified by
     # *step*, it will execute &blk
@@ -1085,14 +1102,6 @@ module WLBud
     facts_by_peer.each_pair do |k, v|
       facts_by_peer_and_relations[k] = WLTools::merge_multivaluehash_grouped_by_field(v,0)
     end
-    #          if @options[:debug]
-    #            puts "BEGIN display aggregate facts format"
-    #            puts "facts_by_peer_and_relations with inspect"
-    #            puts facts_by_peer_and_relations.inspect
-    #            # puts "facts_by_peer_and_relations in yaml"
-    #            # y facts_by_peer_and_relations
-    #            puts "END"
-    #          end
     return facts_by_peer_and_relations
   end
 
@@ -1113,29 +1122,6 @@ module WLBud
     s1.strip!;s2.strip!;s3.strip!
     return "[fact]:" + s1 + ":"+ s2 + ":" + s3
   end
-  #     Oldies
-  #
-  # Takes in an array of rule tuples and adds them to the current WLBud
-  # instance. The first element of the tuple is the rule name, and the second
-  # element is the rule content.
-  #
-  #    def rule_init (rule)
-  #      create_method(rule.first,rule.last) unless rule.nil?
-  #    end
-  # Create for this bud engine a new method representing a rule to add with a
-  # name which should be a Symbol and proc should be a Proc.
-  #
-  # Basically it check the type of both argument and create a call to the
-  # private define_method
-  #    def create_method(name, proc)
-  #      raise WLErrorGrammarParsing unless name.is_a?(Symbol)
-  #      raise WLErrorGrammarParsing unless proc.is_a?(Proc)
-  #      # Call the Module#define_method that create an instance method with name
-  #      # and proc as block this is equivalent to the following call:
-  #      # self.define_method(name, proc)
-  #      self.class.send(:define_method, name, proc)
-  #    end
-
 end
 
 module Bud

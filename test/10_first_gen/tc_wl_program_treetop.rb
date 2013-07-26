@@ -501,7 +501,7 @@ rule query2@local($title, $contact, $id, $image_url):- contact@local($contact, $
       'test_variables_relation_name_rules',
       'localhost',
       '11111',
-      {:debug => true} )
+      {:debug => true})
     
   ensure
     File.delete('test_variables_relation_name_rules') if File.exists?('test_variables_relation_name_rules')

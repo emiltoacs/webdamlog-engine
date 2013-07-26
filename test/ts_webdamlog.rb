@@ -1,4 +1,7 @@
-# #!/usr/bin/env ruby -*- coding: utf-8 -*-
+#!/usr/bin/env ruby
+#
+#-*- coding: utf-8 -*-
+#
 #  File name ts_webdamlog.rb
 #  Copyright © by INRIA
 #
