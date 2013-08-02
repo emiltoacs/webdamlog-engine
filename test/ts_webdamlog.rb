@@ -35,7 +35,7 @@ files = []
 Dir.chdir(File.dirname(__FILE__)) do
   Dir.glob('**/tc_*.rb').each do|f|
     files << f
-  end  
+  end
 end
 
 

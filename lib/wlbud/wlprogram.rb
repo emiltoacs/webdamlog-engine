@@ -234,19 +234,11 @@ In the string: #{line}
             @wlfacts << result
           when WLBud::WLRule
             result.rule_id = rule_id_generator
-            if rewritten
-              if local?(result)
-                @rewrittenlocal << result
-              else
-                @delegations << result
-              end
+            @rule_mapping[result.rule_id] << result
+            if local?(result)
+              @localrules << result
             else
-              @rule_mapping[result.rule_id] << result
-              if local?(result)
-                @localrules << result
-              else
-                @nonlocalrules << result
-              end
+              @nonlocalrules << result
             end
           end
         end
@@ -265,8 +257,8 @@ In the string: #{line}
       return peername, address
     end
 
-    # The whole rewrite process to compile webdamlog into bud + delegation and seeds
-    # Delegation and seeds are handled latter in tick internal
+    # The whole rewrite process to compile webdamlog into bud + delegation and
+    # seeds Delegation and seeds are handled latter in tick internal
     def rewrite_rule wlrule
 
       split_rule wlrule
@@ -562,7 +554,7 @@ In the string: #{line}
       return flush
     end
 
-    # @return 
+    # @return
     def flush_new_seed_rule_to_install
       unless @new_seed_rule_to_install.empty?
         flush = @new_seed_rule_to_install.dup

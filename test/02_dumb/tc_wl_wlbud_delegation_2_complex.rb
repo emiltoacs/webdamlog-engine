@@ -116,7 +116,18 @@ EOF
     assert_equal [["3"],["4"],["5"],["6"]], wl_peer[2].delegated_at_p2.to_a.sort
     assert_equal [["4"],["5"],["6"],["7"]], wl_peer[3].delegated_at_p3.to_a.sort
     p "check message sent from p0 to p1" if $test_verbose
-    assert_equal 4, wl_peer[0].sbuffer.length
+    assert_equal [
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["1"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["2"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["3"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["4"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_3_at_p1", :fact=>["1"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_3_at_p1", :fact=>["2"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_3_at_p1", :fact=>["3"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_3_at_p1", :fact=>["4"]}],
+      wl_peer[0].tables[:sbuffer].sort.map { |t| Hash[t.each_pair.to_a] },
+      "content of sbuffer: facts sent from p0 looks incorrect"
+    assert_equal 8, wl_peer[0].sbuffer.length
     assert_equal [["1"], ["2"], ["3"], ["4"]], wl_peer[0].sbuffer.to_a.sort.map{ |obj| obj.fact }, "p0 send its local relation content to p1"
     assert_equal 1, wl_peer[0].rules_to_delegate.length
     assert_equal 1, wl_peer[0].relation_to_declare.length
@@ -485,13 +496,13 @@ EOF
     # but there are new facts thanks to the result of evaluating the delegation
     assert_equal([{:chan=>[]},
         {:copy1_at_p0=> # delegation to p1
-            [{:atom1=>"p1_2"},
+          [{:atom1=>"p1_2"},
             {:atom1=>"p1_3"},
             {:atom1=>"p1_4"},
             {:atom1=>"p1_5"},
             {:atom1=>"jointuple"}]},
         {:copy2_at_p0=> # delegation to p2
-            [{:atom1=>"p2_3"},
+          [{:atom1=>"p2_3"},
             {:atom1=>"p2_4"},
             {:atom1=>"p2_5"},
             {:atom1=>"p2_6"},
@@ -499,13 +510,13 @@ EOF
         {:deleg_from_p0_1_1_at_p1=>[]}, # intermediary for delegation
         {:join_delegated_at_p0=>[{:atom1=>"jointuple"}]}, # join across two peers
         {:local_at_p0=> # base fact at p0
-            [{:atom1=>"1"},
+          [{:atom1=>"1"},
             {:atom1=>"2"},
             {:atom1=>"3"},
             {:atom1=>"4"},
             {:atom1=>"jointuple"}]},
         {:sbuffer=> # send buffer
-            [{:dst=>"localhost:11111",
+          [{:dst=>"localhost:11111",
               :rel_name=>"deleg_from_p0_1_1_at_p1",
               :fact=>["1"]},
             {:dst=>"localhost:11111",
@@ -531,8 +542,8 @@ EOF
       }
     )
 
-    # check that the fully non-local rule from p0:
-    # rule extcopy@p2($X) :- local@p1($X);
+    # check that the fully non-local rule from p0: rule extcopy@p2($X) :-
+    # local@p1($X);
     #
     # has been installed on p1
     assert_equal(["rule copy2_at_p1($X) :- local_at_p2($X);",
@@ -553,19 +564,19 @@ EOF
     assert_equal([{:chan=>[]},
         {:deleg_from_p1_2_1_at_p2=>[{:deleg_from_p1_2_1_x_0=>"jointuple"}]}, # join across tuples
         {:extcopy_at_p2=> # result of fully non-local rule from p0 to p1 generating fact for p2
-            [{:atom1=>"p1_2"},
+          [{:atom1=>"p1_2"},
             {:atom1=>"p1_3"},
             {:atom1=>"p1_4"},
             {:atom1=>"p1_5"},
             {:atom1=>"jointuple"}]},
         {:local_at_p2=> # base facts on p2
-            [{:atom1=>"p2_3"},
+          [{:atom1=>"p2_3"},
             {:atom1=>"p2_4"},
             {:atom1=>"p2_5"},
             {:atom1=>"p2_6"},
             {:atom1=>"jointuple"}]},
         {:sbuffer=> # send buffer check
-            [{:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_3"]},
+          [{:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_3"]},
             {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["p2_3"]},
             {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_4"]},
             {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["p2_4"]},
