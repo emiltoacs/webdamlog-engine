@@ -346,17 +346,6 @@ module WLBud
           end
         end
 
-        if @need_rewrite_strata
-          rewrite_strata
-          @done_wiring=false
-          puts "do_wiring at tick #{budtime}" if @options[:debug]
-          do_wiring
-          @viz = VizOnline.new(self) if @options[:trace]
-          @need_rewrite_strata=false
-        elsif @collection_added # only if collections have been added and do_wiring has not been called because no new rules appeared
-          update_app_tables
-          @collection_added = false
-        end
         if @options[:mesure]
           end_time = Time.now
           timetick[@budtime] << end_time - inter_time
@@ -368,6 +357,18 @@ module WLBud
           do_bootstrap
           do_wiring
         else
+          if @need_rewrite_strata
+            rewrite_strata
+            @done_wiring=false
+            puts "do_wiring at tick #{budtime}" if @options[:debug]
+            do_wiring
+            @viz = VizOnline.new(self) if @options[:trace]
+            @need_rewrite_strata=false
+          elsif @collection_added # only if collections have been added and @need_rewrite_strata is false because no rules has been added
+            update_app_tables
+            @collection_added = false
+          end
+
           # inform tables and elements about beginning of tick.
           @app_tables.each {|t| t.tick}
           @default_rescan.each {|elem| elem.rescan = true}
@@ -823,10 +824,14 @@ module WLBud
         generate_bootstrap(@wl_program.wlfacts,@wl_program.wlcollections)
         @program_loaded = true
       end
-      # add rules aready parsed
+      # XXX hacky way to remove the new declaration, since everything is new
+      # here the delta with previous program as no sense
+      localcolls = @wl_program.flush_new_local_declaration
+      localrules = @wl_program.flush_new_rewritten_local_rule_to_install
+      # add rules already parsed
       @wl_program.localrules.each {|wlrule| install_rule wlrule }
-      @wl_program.rewrittenlocal.each {|wlrule| install_rule wlrule}
-      #create_rule_blocks
+      @wl_program.nonlocalrules.each {|wlrule| install_rule wlrule}
+      # #create_rule_blocks
     end
 
     # The generate_bootstrap method creates an array containing all extensional
