@@ -79,31 +79,40 @@ end
   def test_040_string_relation_type
     program = nil
     begin
+      # extensional persistent
       File.open('test_string_rel_type',"w"){ |file| file.write "collection ext persistent local_1@p1(atom1*);"}
       assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true})}
       assert_equal :Extensional, program.wlcollections.first[1].get_type
+      assert program.wlcollections.first[1].rel_type.extensional?
       assert_kind_of WLBud::WLExtensional, program.wlcollections.first[1].rel_type
       assert program.wlcollections.first[1].persistent?
+      # extensional
       File.open('test_string_rel_type',"w"){ |file| file.write "collection extensional local_1@p1(atom1*);"}
       assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
       assert_kind_of WLBud::WLExtensional, program.wlcollections.first[1].rel_type
       assert (not program.wlcollections.first[1].persistent?)
-      File.open('test_string_rel_type',"w"){ |file| file.write "collection intensional local_1@p1(atom1*);"}
+      # intensional
+      File.open('test_string_rel_type',"w"){ |file| file.write "collection intensional local_1@p1(atom1*);"}      
       assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert_equal :Intensional, program.wlcollections.first[1].get_type
+      assert program.wlcollections.first[1].rel_type.intensional?
       assert_kind_of WLBud::WLIntensional, program.wlcollections.first[1].rel_type
       assert (not program.wlcollections.first[1].persistent?)
       File.open('test_string_rel_type',"w"){ |file| file.write "collection int local_1@p1(atom1*);"}
       assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
       assert_kind_of WLBud::WLIntensional, program.wlcollections.first[1].rel_type
       assert (not program.wlcollections.first[1].persistent?)
+      # intermediary
       File.open('test_string_rel_type',"w"){ |file| file.write "collection intermediary local_1@p1(atom1*);"}
       assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
+      assert program.wlcollections.first[1].rel_type.intermediary?
       assert_kind_of WLBud::WLIntermediary, program.wlcollections.first[1].rel_type
       assert (not program.wlcollections.first[1].persistent?)
       File.open('test_string_rel_type',"w"){ |file| file.write "collection inter local_1@p1(atom1*);"}
       assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
       assert_kind_of WLBud::WLIntermediary, program.wlcollections.first[1].rel_type
       assert (not program.wlcollections.first[1].persistent?)
+      # intermediary persistent
       File.open('test_string_rel_type',"w"){ |file| file.write "collection intermediary persistent local_1@p1(atom1*);"}
       assert_nothing_raised{ program = WLBud::WLProgram.new('the_peername', 'test_string_rel_type', 'localhost', '11111', {:debug => true}) }
       assert_kind_of WLBud::WLIntermediary, program.wlcollections.first[1].rel_type

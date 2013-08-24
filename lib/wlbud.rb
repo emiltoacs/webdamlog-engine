@@ -274,7 +274,7 @@ module WLBud
       # part 1: setup
       if @options[:debug]
         puts "==================================================================\n"
-        puts "\t\t\tOutput for internal tick turn #{budtime}\n"
+        puts "\t\t\tOutput for internal tick turn #{budtime} at #{peername}\n"
       end
       if @options[:mesure]
         timetick = {}
@@ -334,7 +334,6 @@ module WLBud
         read_packet_channel.each do |packet_value|
           if @options[:debug]
             puts "Process packets received from #{packet_value.print_meta_data}"
-            puts "---------"
           end
           if @options[:filter_delegations]
             packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
@@ -662,24 +661,24 @@ module WLBud
     # be used to declare all collection that should be declared in a state block
     # in bloom.
     #
-    # @param [WLCollection] wlcollection that should be declared in bud @param
-    # colltype must be a sub class of Bud::Collection. It is use to force the
-    # declaration of the given type of Bud Collection for this WLCollection. Use
-    # it in test only as the method is supposed to parse correctly the
-    # WLCollection @param args optional args if colltype is a channel then args
-    # could be "loopback"
+    # @param [WLCollection] wlcollection that should be declared in bud
+    #
+    # @param [String] colltype must be a sub class of Bud::Collection i.e
+    # "table, scratch or channel". It is used to force the declaration of the
+    # given type of Bud Collection for this WLCollection. Use it in test only as
+    # the method is supposed to parse correctly the WLCollection @param args
+    # optional args if colltype is a channel then args could be "loopback"
     #
     def schema_init(wlcollection, colltype=nil, *args)
       name = wlcollection.atom_name.to_sym
       if colltype.nil?
-        if wlcollection.persistent?
+        if wlcollection.persistent? or wlcollection.rel_type.intensional?
           self.table(name,wlcollection.schema)
         else
           self.scratch(wlcollection.atom_name.to_sym,wlcollection.schema)
         end
       else
-        # Force the type of the collection to declare (non-conventional policy
-        # for test)
+        # Force the type of the collection to declare (for test only)
         if colltype=="table"
           self.table(name,wlcollection.schema)
         else if colltype=="scratch"
@@ -691,7 +690,7 @@ module WLBud
                 self.channel(name,wlcollection.schema)
               end
             else
-              raise WLError, "trying to force the type of a collection to a non-supported format"
+              raise WLError, "trying to force the type of a collection to #{colltype} that is a non-supported format"
             end
           end
         end
@@ -706,7 +705,7 @@ module WLBud
       if wl_facts.is_a? Hash
         valid, msg = WLPacketData.valid_hash_of_facts wl_facts
         if valid
-          facts, err = insert_updates(wl_facts)
+          facts, err = insert_updates(wl_facts)          
         else
           raise WLErrorTyping, msg
         end
@@ -743,7 +742,7 @@ module WLBud
       raise WLErrorProgram, "parse relation and get #{collection.class}" unless collection.is_a?(WLBud::WLCollection)
       valid, msg = @wl_program.valid_collection? collection
       raise WLErrorProgram, msg unless valid
-      puts "Adding a collection: \n #{collection.show}" if @options[:debug]
+      puts "Adding a collection: \n #{collection.show_wdl_format}" if @options[:debug]
       name, schema = self.schema_init(collection)
       @collection_added = true
       return name.to_s, schema
@@ -890,8 +889,8 @@ module WLBud
             if tuple.is_a? Array or tuple.is_a? Struct
               if tuple.size == @wl_program.wlcollections[relation_name].arity
                 begin
-                  tables[k.to_sym] <+ [tuple]
-                  (valid[k] ||= []) << tuple
+                  tables[relation_name.to_sym] <+ [tuple]
+                  (valid[relation_name] ||= []) << tuple                  
                 rescue StandardError => error
                   err[[k,tuple]]=error.inspect
                 end
@@ -906,6 +905,9 @@ module WLBud
           err[[k,tuples]] = "relation name #{k} translated to #{relation_name} has not been declared previously"
         end
       end # end facts.each_pair
+      valid.each do |rel, facts|
+        puts "Add in relation #{rel} facts: \n #{facts}" if @options[:debug]
+      end
       return valid, err
     end # end insert_updates
 
@@ -965,10 +967,21 @@ module WLBud
       end
       if @options[:debug]
         puts "BEGIN display what I wrote in chan to be send"
-        # #puts chan.pending.inspect
-        puts "number of facts: #{chan.pending.size}, sample of ten first keys #{chan.pending.keys[1..10].inspect}"
-        puts "chan in yaml"
-        # #y chan.pending
+        wlpacketsdata = chan.pending
+        puts "number of packets: #{wlpacketsdata.size}"
+        wlpacketsdata.keys.each do |packet|
+          puts "Received from #{packet.first}"
+          if packet[1].nil?
+            puts "empty packet from #{packet.first}"
+          else
+            data = packet[1]
+            wlpacketdata = WLPacketData.new data[0], data[1], data[2]
+            wlpacketdata.pretty_print
+            # puts "Sample of ten first keys #{chan.pending.keys[0..9].inspect}"
+            # puts "chan.pending.inspect: " puts chan.pending.inspect puts "chan
+            # in yaml" #y chan.pending
+          end
+        end
         puts "END"
       end
     end
@@ -1103,7 +1116,7 @@ module WLBud
     return s1 + s2 + s3
   end
 
-  # #This method formats a fact table to be #processed by WebdamExchange manager
+  # This method formats a fact table to be processed by WebdamExchange manager
   # module.
   #
   def fact_we_output(print_table)

@@ -81,7 +81,7 @@ module WLBud
       # the peer which send the message: String
       raise WLErrorTyping, "peer name should be a string" unless peername.is_a?(String)
       @peer_name = peername
-      # #the timeStamp when the source peer send the message: Integer
+      # the timeStamp when the source peer send the message: Integer
       @src_time_stamp = srcTimeStamp.to_i
 
       # TODO type check could be more elaborated here it is just hash or array
@@ -111,17 +111,19 @@ module WLBud
       # a WLPacketData object
       #
       def read_from_channel(array, debug=false)
-        # #raise WLErrorTyping.new("I received a packet with wrong structure
+        # raise WLErrorTyping.new("I received a packet with wrong structure
         # maybe payload != 1 length:" + array.length.to_s + " content:" +
         # array.inspect.to_s) unless (array.length==1) #puts "Warning! length of
         # payloads different from 1!" unless debug and (array.length==1)
         packet = array[0]
         puts "packet is nil" if debug and packet.nil?
+        wlpacketdata = WLPacketData.new(packet[0], packet[1], packet[2])
         if debug
-          puts "inspect packet received"
-          puts packet.inspect
+          puts "BEGIN Read from channel: "
+          puts wlpacketdata.pretty_print
+          puts "END Read from channel"
         end
-        return WLPacketData.new(packet[0], packet[1], packet[2])
+        return wlpacketdata
       end
 
       # Valid fact structure is Hash with relation name as key and array of
@@ -172,10 +174,25 @@ module WLBud
     # Return the metadata in the packet @peer_name, @src_time_stamp
     #
     def print_meta_data
-      return @peer_name.to_s + ' : ' + @src_time_stamp.to_s
+      return @peer_name.to_s + ' at tick ' + @src_time_stamp.to_s
     end
 
-    # #return the string representation of the content of the fields of this
+    def pretty_print
+      # collection added
+      puts "#{self.declarations.size} collections to add:"
+      puts "#{self.declarations}"
+      # facts added
+      puts "#{self.facts.size} relations to update:"
+      self.facts.each do |rel|
+        puts "#{rel.first} updated with"
+        puts "#{rel[1]}"
+      end
+      # rules added
+      puts "#{self.rules.size} rules to add:"
+      puts "#{self.rules.inspect}"
+    end
+
+    # return the string representation of the content of the fields of this
     # object
     #
     def to_s

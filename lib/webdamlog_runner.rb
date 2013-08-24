@@ -135,9 +135,11 @@ module WLRunner
     return coll
   end
 
-  # @return [Array] list of relation name of this application as declared in
-  # webdamlog
-  # @return [Array] list of relation name as declared in webdamlog
+  # This method filter out the relation created by the webdamlog engine for bud
+  # to display only relevant relation of the webdamlog program. E.g. internal
+  # channel for communications will not be displayed.
+  # 
+  # @return [Array] list of relevant relation name as declared in webdamlog
   def snapshot_relname
     list_rel = []
     sync_do do

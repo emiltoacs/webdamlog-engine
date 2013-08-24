@@ -54,7 +54,7 @@ class TcParseProgram < Test::Unit::TestCase
 peer p1=localhost:11111;
 peer p2=localhost:11112;
 collection ext persistent local@p1(atom1*);
-collection int delegated@p2(atom1*);
+collection ext localint@p1(atom1*);
 fact local@p1(1);
 fact local@p1(2);
 fact local@p1(3);
@@ -91,8 +91,8 @@ EOF
       assert(Bud::BudTable === wl_peer[0].tables.values_at(:local_at_p1).first,
         "wrong type found #{wl_peer[0].tables.values_at(:local_at_p1).first.class} expected to be include in BudTable")
     
-      assert(Bud::BudScratch === wl_peer[0].tables.values_at(:delegated_at_p2).first,
-        "wrong type found #{wl_peer[1].tables.values_at(:local_at_p1).first.class} expected to be include in BudScratch")
+      assert(Bud::BudScratch === wl_peer[0].tables.values_at(:localint_at_p1).first,
+        "wrong type found #{wl_peer[0].tables.values_at(:localint_at_p1).first.class} expected to be include in BudScratch")
 
       wl_peer[1].tick
       assert(Bud::BudTable === wl_peer[1].tables.values_at(:delegated_at_p2).first,

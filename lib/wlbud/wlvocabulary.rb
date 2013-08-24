@@ -402,7 +402,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @schema
     end # schema
 
-    # @return [String] the relation type intensional extensional
+    # @return [Symbol] the relation type :Intensional :Extensional or :Intermediary
     def get_type
       rel_type.type
     end
@@ -480,6 +480,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
 
+  # Object return by wlcollection.rel_type
   class WLRelType < WLVocabulary
     attr_reader :type
     def initialize (a1,a2,a3)
@@ -489,6 +490,15 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
     def persistent?
       return @persistent
+    end
+    def intensional?
+      return @type == :Intensional
+    end
+    def extensional?
+      return @type == :Extensional
+    end
+    def intermediary?
+      return @type == :Intermediary
     end
   end
 
