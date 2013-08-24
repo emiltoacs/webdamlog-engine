@@ -143,6 +143,7 @@ EOF
     end
   end
 
+  # test adding rule rule join13@p1($x):- local@p1($x),local3@p1($x);
   def test_local_3_join_after_dynamic_adding_of_rule
     wl_peer_1 = TestLocal3.new('p1', Hash[@tcoption0.each_pair.to_a])
     assert_equal(1,

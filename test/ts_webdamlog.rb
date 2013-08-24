@@ -17,6 +17,9 @@ require 'header_test'
 # name starting with the prefix tc_ therefore the test files should be named
 # with this prefix.
 
+# Simple debug constant to trigger debug messages in tests
+DEBUG = false unless defined?(DEBUG)
+
 # This flag $quick-mode could be use to skip the most expensive time test file
 if  ARGV.include?("quick")
   ARGV.delete("quick")
