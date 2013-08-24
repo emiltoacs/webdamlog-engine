@@ -27,9 +27,6 @@ end
     @pg_file1 = "test_access_control_remote_rules1"
     File.open(@pg_file1,"w"){ |file| file.write @pg1 }
 
-    # rule local3@test_access($x, $y) :- local2@test_access($x), local1@p1($y);
-    # rule delegated_join@p1($x,$y) :- local2@test_access($x), local1@p1($y);
-
     @pg2 = <<-EOF
 peer p1=localhost:11111;
 peer test_access=localhost:11110;
@@ -43,7 +40,6 @@ end
     @port2 = "11111"
     @pg_file2 = "test_access_control_remote_rules2"
     File.open(@pg_file2,"w"){ |file| file.write @pg2 }
-    #    collection int delegated1@p1(atom1*);
   end
 
   def teardown
