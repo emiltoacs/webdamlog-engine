@@ -8,7 +8,7 @@
 #
 #   Encoding - UTF-8
 $:.unshift File.dirname(__FILE__)
-require 'header_test'
+require_relative '../header_test'
 
 # TODO Test the deletion of facts according to the type of relations in which it
 # spreads

@@ -10,7 +10,7 @@
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
-require 'header_test'
+require_relative '../header_test'
 
 # Test the treetop parser implementation in WLProgram and WLVocabulary objects
 # instantiation.

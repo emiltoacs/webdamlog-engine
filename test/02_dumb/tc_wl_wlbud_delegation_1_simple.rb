@@ -13,7 +13,7 @@ $:.unshift File.dirname(__FILE__)
 # Note: important to load global variable before include since it could
 # influence the behavior of inclusion
 # $WL_TEST = true # changed for an options in hash of WL object
-require 'header_test'
+require_relative '../header_test'
 
 class TcWlDelegation1Simple < Test::Unit::TestCase
   include MixinTcWlTest

@@ -10,7 +10,7 @@
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
-require 'header_test'
+require_relative '../header_test'
 
 # To test the behavior of the bud collection in the spirit of their test
 # https://github.com/bloom-lang/bud/blob/master/test/tc_collections.rb
