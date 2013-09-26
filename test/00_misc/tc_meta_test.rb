@@ -10,7 +10,7 @@
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
-require 'header_test'
+require_relative '../header_test'
 require 'rexml/syncenumerator'
 
 class TestMeta < Test::Unit::TestCase

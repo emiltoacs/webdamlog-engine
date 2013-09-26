@@ -10,7 +10,7 @@
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
-require 'header_test'
+require_relative '../header_test'
 
 class TcWlLocal2AddSourceRelation < Test::Unit::TestCase
   include MixinTcWlTest
