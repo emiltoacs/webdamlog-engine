@@ -63,7 +63,7 @@ if ARGV.include?("ordered")
 else
   #  int = 0
   #  files.each { |file| p "#{int+=1} #{file}"; require file }
-  files.each { |file| require file }
+  files.each { |file| p file ; require file }
 end
 
 # clean rule dir created during tests

@@ -73,6 +73,6 @@ EOF
       if EventMachine::reactor_running?
         wl_peer_1.stop(true)
       end
-    end    
+    end
   end
 end
