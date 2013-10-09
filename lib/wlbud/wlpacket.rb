@@ -34,7 +34,7 @@ module WLBud
     end
 
     public    
-    # Write this wlpacket objects as a nesting of hashes and arrays
+    # Write this wlpacket objects as a nesting of hashes and arrays: [@dest,[@peer_name.to_s,@src_time_stamp.to_s,{'facts'=>@facts,'rules'=>@rules,'declarations'=>@declarations}]]
     #
     def serialize_for_channel
       return [@dest,@data.serialize_for_channel]
