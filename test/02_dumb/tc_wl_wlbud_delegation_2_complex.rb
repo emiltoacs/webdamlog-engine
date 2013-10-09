@@ -118,10 +118,10 @@ EOF
     p "check message sent from p0 to p1" if $test_verbose
     assert_equal 4, wl_peer[0].sbuffer.length
     assert_equal [["1"], ["2"], ["3"], ["4"]], wl_peer[0].sbuffer.to_a.sort.map{ |obj| obj.fact }, "p0 send its local relation content to p1"
-    assert_equal 1, wl_peer[0].rules_to_delegate.length
-    assert_equal 1, wl_peer[0].relation_to_declare.length
-    assert_equal 1, wl_peer[0].relation_to_declare.values.length    
-    new_declaration = wl_peer[0].relation_to_declare.values.first.to_s
+
+    assert_equal 1, wl_peer[0].test_send_on_chan[0][1][2]['rules'].length
+    assert_equal 1, wl_peer[0].test_send_on_chan[0][1][2]['declarations'].length
+    new_declaration = wl_peer[0].test_send_on_chan[0][1][2]['declarations'].first.to_s
     /(deleg.*)\(/ =~ new_declaration
     new_rel_at_p1 = Regexp.last_match(1).gsub('@', '_at_')
     assert_kind_of Bud::BudScratch, wl_peer[0].tables[new_rel_at_p1.to_sym], "check the type of the newly created relation Table or Scratch"
@@ -484,27 +484,27 @@ EOF
       end)
     # but there are new facts thanks to the result of evaluating the delegation
     assert_equal([{:chan=>[]},
-        {:copy1_at_p0=> # delegation to p1
+        {:copy1_at_p0=>
             [{:atom1=>"p1_2"},
             {:atom1=>"p1_3"},
             {:atom1=>"p1_4"},
             {:atom1=>"p1_5"},
             {:atom1=>"jointuple"}]},
-        {:copy2_at_p0=> # delegation to p2
+        {:copy2_at_p0=>
             [{:atom1=>"p2_3"},
             {:atom1=>"p2_4"},
             {:atom1=>"p2_5"},
             {:atom1=>"p2_6"},
             {:atom1=>"jointuple"}]},
-        {:deleg_from_p0_1_1_at_p1=>[]}, # intermediary for delegation
-        {:join_delegated_at_p0=>[{:atom1=>"jointuple"}]}, # join across two peers
-        {:local_at_p0=> # base fact at p0
+        {:deleg_from_p0_1_1_at_p1=>[]},
+        {:join_delegated_at_p0=>[{:atom1=>"jointuple"}]},
+        {:local_at_p0=>
             [{:atom1=>"1"},
             {:atom1=>"2"},
             {:atom1=>"3"},
             {:atom1=>"4"},
             {:atom1=>"jointuple"}]},
-        {:sbuffer=> # send buffer
+        {:sbuffer=>
             [{:dst=>"localhost:11111",
               :rel_name=>"deleg_from_p0_1_1_at_p1",
               :fact=>["1"]},
@@ -531,8 +531,8 @@ EOF
       }
     )
 
-    # check that the fully non-local rule from p0:
-    # rule extcopy@p2($X) :- local@p1($X);
+    # check that the fully non-local rule from p0: rule extcopy@p2($X) :-
+    # local@p1($X);
     #
     # has been installed on p1
     assert_equal(["rule copy2_at_p1($X) :- local_at_p2($X);",
@@ -551,20 +551,20 @@ EOF
       end)
     # check facts on p2
     assert_equal([{:chan=>[]},
-        {:deleg_from_p1_2_1_at_p2=>[{:deleg_from_p1_2_1_x_0=>"jointuple"}]}, # join across tuples
-        {:extcopy_at_p2=> # result of fully non-local rule from p0 to p1 generating fact for p2
+        {:deleg_from_p1_2_1_at_p2=>[{:deleg_from_p1_2_1_x_0=>"jointuple"}]},
+        {:extcopy_at_p2=>
             [{:atom1=>"p1_2"},
             {:atom1=>"p1_3"},
             {:atom1=>"p1_4"},
             {:atom1=>"p1_5"},
             {:atom1=>"jointuple"}]},
-        {:local_at_p2=> # base facts on p2
+        {:local_at_p2=>
             [{:atom1=>"p2_3"},
             {:atom1=>"p2_4"},
             {:atom1=>"p2_5"},
             {:atom1=>"p2_6"},
             {:atom1=>"jointuple"}]},
-        {:sbuffer=> # send buffer check
+        {:sbuffer=>
             [{:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_3"]},
             {:dst=>"localhost:11110", :rel_name=>"copy2_at_p0", :fact=>["p2_3"]},
             {:dst=>"localhost:11111", :rel_name=>"copy2_at_p1", :fact=>["p2_4"]},

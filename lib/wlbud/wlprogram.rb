@@ -74,8 +74,9 @@ module WLBud
       # The original rules before the rewriting used for evaluation. It gives
       # the original semantic of the program.
       #
-      # Original rules id are stored as key and rewriting of these ones as value
-      # in an array
+      # Original rules are stored as key and rewriting of these ones as value in
+      # an array
+      #
       @rule_mapping = Hash.new{ |h,k| h[k]=Array.new }
       # The local rules straightforward to convert into bud (simple syntax
       # translation)
