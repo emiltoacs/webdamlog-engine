@@ -759,30 +759,32 @@ module WLBud
     def add_rule(wlpg_rule)
       rule = @wl_program.parse(wlpg_rule, true)
       raise WLErrorProgram, "parse rule and get #{rule.class}" unless rule.is_a?(WLBud::WLRule)
-      unless @wl_program.local?(rule) # skip this if the rule is fully local
+      if @wl_program.local?(rule) # skip this if the rule is fully local
+        local_rule = rule
+      else
         @wl_program.rewrite_non_local(rule)
         localcolls = @wl_program.flush_new_local_declaration
         if localcolls.empty? # if a fully non-local rule has been parsed
-          rule = nil
+          local_rule = nil
         else
           raise WLError, "one intermediary collection should have been generated while splitting a non-local rule instead of #{localcolls.length}" unless localcolls.length == 1
           intercoll = localcolls.first
           add_collection(intercoll)
           localrules = @wl_program.flush_new_rewritten_local_rule_to_install
           raise WLError, "one local rule should have been generated while splitting a non-local rule instead of #{localrules.length}" unless localrules.length == 1
-          rule = localrules.first
+          local_rule = localrules.first
           @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){|key,oldv,newv| oldv<<newv}
         end
         @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv<<newv}
       end
 
-      if rule.nil? # if a fully non-local rule is parsed a empty local rule is the result
+      if local_rule.nil? # if a fully non-local rule is parsed a empty local rule is the result
         return nil, nil # nothing has been install return nil
       else
         puts "Adding a rule: #{wlpg_rule}" if @options[:debug]
-        translate_rule(rule)
+        translate_rule(local_rule)
         @need_rewrite_strata = true
-        return rule.rule_id, rule.show_wdl_format # return id and rule installed
+        return local_rule.rule_id, local_rule.show_wdl_format # return id and rule installed
       end
     end
 

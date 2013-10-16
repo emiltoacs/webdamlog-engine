@@ -314,8 +314,7 @@ EOF
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|
       wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
-    end
-    
+    end    
 
     # start p2 with nothing to do
     wl_peer[2].tick
@@ -356,7 +355,7 @@ EOF
           ar.first
         end      
       end)
-    # check that all collection are empty
+    # check that all collection are empty except local@p1
     assert_equal([{:chan=>[]},
         {:copy2_at_p1=>[]},
         {:local_at_p1=>

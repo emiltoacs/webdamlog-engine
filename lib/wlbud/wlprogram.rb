@@ -193,6 +193,7 @@ module WLBud
     # ===parameter
     # * +lines+ is an array of string, each cell containing a line of the file.
     #   Usually lines is the result of IO.readlines.
+    #
     def parse_lines (lines, add_to_program=false)
       ans=[]
       current=""
