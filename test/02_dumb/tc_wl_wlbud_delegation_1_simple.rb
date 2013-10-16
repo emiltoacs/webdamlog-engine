@@ -156,6 +156,8 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     packet = wl_peer[1].test_received_on_chan.first
     assert_equal 1, packet.declarations.length, "only one new relation"
     assert_equal new_declaration, packet.declarations, "new declaration received is suppose to be #{new_declaration}"
+    assert_equal({"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]}, packet.facts, "new facts for the deleg relation should have been received")
+    assert_equal(["rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),delegated@p1($x);"], packet.rules, "")
 
     assert_equal old_nb_rel_peer2 + 1, nb_rel_peer2, "one new relation should have been created"
     assert wl_peer[1].tables.keys.include?(new_rel.to_sym), "don't find the new relation #{new_rel}"

@@ -130,7 +130,7 @@ module WLBud
       ### for fact ###
         #### relation name ####
         rule relation_name
-            word
+          word
         end
 
         
