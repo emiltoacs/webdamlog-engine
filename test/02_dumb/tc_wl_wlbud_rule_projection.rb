@@ -134,6 +134,7 @@ end
       assert_equal [{:atom1=>"1",:atom2=>"2"},{:atom1=>"1",:atom2=>"3"}], runner2.tables[:proj_at_p2].map{ |t| Hash[t.each_pair.to_a] }
     ensure
       File.delete(@pg_file1) if File.exists?(@pg_file1)
+      File.delete(@pg_file2) if File.exists?(@pg_file2)
       if EventMachine::reactor_running?
         runner1.stop
         runner2.stop true
