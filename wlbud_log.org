@@ -1,4 +1,22 @@
-* TODO Improvement
+
+* Current notes
+
+** Test harness and experiment auto deploy
+
+1. data_generators.rb create the program files for each peers.
+   1. generate file name with peer name
+2. send files on peers
+3. start remote peers in order
+   1. define start order accodding to xp
+   2. create chain of message: first to start send message to second once started, last started send message to master (start ended)
+4. Retrieve log files
+
+
+*** TODO benchmark
+file in parameter by default under bench_files
+
+
+* Improvement
 
 ** TODO goes to minitest and more
 
@@ -139,4 +157,3 @@ def pro(the_name=tabname, the_schema=schema, &blk)
 * exemple
 
 fact delegation@ungars("unautre", 0, false, "rule contact@local($username, $ip, $port, $online, $email):-contact@sigmod_peer($username, $ip, $port, $online, $email);")
-

@@ -85,7 +85,7 @@ module WLBud
     #   array as described in WLChannel serialize for channel that is: [[@dest,[@peer_name.to_s,@src_time_stamp.to_s,{'facts'=>@facts,'rules'=>@rules,'declarations'=>@declarations}]]]
     attr_reader :test_send_on_chan
     attr_reader :wl_callback, :wl_callback_step
-
+    attr_reader :measure_obj
 
     # The initializer for WLBud directly overrides the initializer from Bud.
     #
@@ -115,7 +115,7 @@ module WLBud
     #   {WLRunner::update_add_rule} on @pending_delegations entries.
     def initialize (peername, pgfilename, options={})
       # ### WLBud:Begin adding to Bud special bud parameter initialization
-      if options[:mesure]
+      if options[:measure]
         @start_time = Time.now
       end
       # Name of that peer
@@ -216,10 +216,10 @@ module WLBud
 
       # #### WLBud:Begin adding to Bud
       #
-      if @options[:mesure]
-        @tick_measure = WlMeasure.new @budtime, @options[:measure_file]
+      if @options[:measure]        
+        @measure_obj = WlMeasure.new @budtime, @options[:measure_file]
       end
-      # #Loads .wl file containing the setup(facts and rules) for the Webdamlog
+      # Loads .wl file containing the setup(facts and rules) for the Webdamlog
       #   instance.
       @wl_program = WLBud::WLProgram.new(@peername, @filename, @ip, @options[:port], false, {:debug => @options[:debug]} )
       @wl_program.flush_new_local_declaration
@@ -283,8 +283,8 @@ module WLBud
         puts "==================================================================\n"
         puts "\t\t\tOutput for internal tick turn #{budtime}\n"
       end
-      if @options[:mesure]
-        @tick_measure.initialize_measures @budtime
+      if @options[:measure]
+        @measure_obj.initialize_measures @budtime
       end
       if @fist_tick_after_make_program
         @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){|key,oldv,newv| oldv<<newv}
@@ -309,8 +309,8 @@ module WLBud
         @inside_tick = true
 
         # ### WLBud:Begin adding to Bud
-        if @options[:mesure]
-          @tick_measure.append_measure @budtime
+        if @options[:measure]
+          @measure_obj.append_measure @budtime
         end
         if @options[:wl_test]
           # callback insertion of callback_step_received_on_chan Marshalling is
@@ -355,8 +355,8 @@ module WLBud
           update_app_tables
           @collection_added = false
         end
-        if @options[:mesure]
-          @tick_measure.append_measure @budtime
+        if @options[:measure]
+          @measure_obj.append_measure @budtime
         end
         # ### WLBud:End adding to Bud
 
@@ -399,8 +399,8 @@ module WLBud
         #
         # #part 2: logic
         #
-        if @options[:mesure]
-          @tick_measure.append_measure @budtime
+        if @options[:measure]
+          @measure_obj.append_measure @budtime
         end
         # removed receive_inbound since it has been done earlier ### WLBud:End
         # adding to Bud compute fixpoint for each stratum in order
@@ -440,8 +440,8 @@ module WLBud
         #
         # WLBud:Begin adding to Bud
         #
-        if @options[:mesure]
-          @tick_measure.append_measure @budtime
+        if @options[:measure]
+          @measure_obj.append_measure @budtime
         end
         # diplay the content of dbm
         if @options[:debug] and @options[:trace]
@@ -460,8 +460,8 @@ module WLBud
         # my own structure that is the facts, the delegated rules along with the
         # newly created relations (declaration of new collections)
         write_packet_on_channel
-        if @options[:mesure]
-          @tick_measure.append_measure @budtime
+        if @options[:measure]
+          @measure_obj.append_measure @budtime
         end
         #
         # ### WLBud:End adding to Bud
@@ -495,9 +495,9 @@ module WLBud
         @metrics[:tickstats] ||= initialize_stats
         @metrics[:tickstats] = running_stats(@metrics[:tickstats], @endtime - starttime)
       end
-      if @options[:mesure]
-        @tick_measure.append_measure @budtime-1
-        @tick_measure.dump_measures @budtime-1
+      if @options[:measure]
+        @measure_obj.append_measure @budtime-1
+        @measure_obj.dump_measures @budtime-1
       end
     end
 
