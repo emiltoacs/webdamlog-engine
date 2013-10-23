@@ -11,6 +11,7 @@ require 'csv'
 $mod = CSV
 
 module WLBud
+  BENCH_FILE_DIR = "bench_files"
 
   # Wrapper around CSV ruby stdlib to record timesteps during bud ticks.
   class WlMeasure
@@ -19,10 +20,11 @@ module WLBud
 
     def initialize budtime=0, measure_file
       raise WLBud::WLError, "take care to initialize WlMeasure object at tick 0" if budtime != 0
+      Dir.mkdir(BENCH_FILE_DIR) unless File.exist?(BENCH_FILE_DIR)
       if measure_file.nil?
-        @measure_file = File.new("benchark_time_log_#{Time.now}", "a+")
+        @measure_file = File.new(File.join(BENCH_FILE_DIR,"benchark_time_log_#{@peername}_#{Time.now}"), "a+")
       else
-        @measure_file = File.new(measure_file, "a+")
+        @measure_file = File.new(File.join(BENCH_FILE_DIR,measure_file), "a+")
       end
       @stats_per_ticks = {}
     end
