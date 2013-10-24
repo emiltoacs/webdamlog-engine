@@ -8,7 +8,6 @@
 #   Encoding - UTF-8
 require_relative '../wlerror'
 require 'csv'
-$mod = CSV
 
 module WLBud
   BENCH_FILE_DIR = "bench_files"
@@ -42,17 +41,11 @@ module WLBud
     end
 
     def dump_measures budtime
-      
-      #      wltime=@stats_per_ticks[budtime][1]+@timetick[budtime][4]
-      #      budtime=@stats_per_ticks[budtime][0]+@timetick[budtime][3]+@timetick[budtime][5]
-      #      mixin=@stats_per_ticks[budtime][2]
-
       CSV.open(@measure_file.path, "w", :force_quotes=>true) do |csv|
         @stats_per_ticks.each do |stat_tick|
           csv << stat_tick
         end
-      end
-
+      end      
     end # def dump_mesures budtime
   end # class WlMeasure
 end # module WLBud

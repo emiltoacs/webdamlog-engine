@@ -10,54 +10,66 @@ require_relative 'data_generators'
 require_relative '../../lib/webdamlog_runner'
 
 # generate the dataset and start the experiment
-def run!
+def run_xp!
   if ARGV.include?("xp1")
-    include XP1
-    p NB_PEERS
+    include WLXP1
+    xpfiles = []
+    CSV.foreach(get_run_xp_file) do |row|
+      xpfiles = row
+      p xpfiles
+      p xpfiles.class
+    end
+    runners = []
+    xpfiles.each do |f|
+      runners << create_wl_runner(f)
+      p "#{runners.last.peername} created"
+    end
+    runners.reverse_each do |runner| 
+      runner.run_engine
+      p "#{runner.peername} started"
+    end
   end
   if ARGV.include?("xp2")
-    include XP2
+    include WLXP2
     p NB_PEERS
   end
   if ARGV.include?("xp5")
-    include XP5
+    include WLXP5
     p NB_PEERS
   end
 end
 
-module WLXP
-  include WLRunner
-
-  PEERS_ADDRESS = %w(
-  localhost:12345
-  localhost:12346
-  localhost:12347
-  )
-
-  
-
-  # Giving a program file generated from data_generators start the peer given in
-  # the name of the file using the address found in the program file
-  def create_wl_runner pg_file
-    ip = port = ''
-    pg_splitted = pg_file.split "_"
-    peername = pg_splitted.last
-    file = File.new "pg_file", "r"
-    endloop = false
-    while endloop and line = file.gets
-      if(/^peer/.match line and line.includes? peername) # find line which contains peer current peer address
-        peerline = line.split "="
-        peerline.slice(-1) # remove last ;
-        ip, port = peerline.slice ":"
-      else
-        raise WLError, "impossible to find the peername given in the end of the program \
+include WLRunner
+   
+# Giving a program file generated from data_generators start the peer given in
+# the name of the file using the address found in the program file
+def create_wl_runner pg_file
+  ip_addr = port = ''
+  pg_splitted = pg_file.split "_"
+  peername = pg_splitted.last
+  file = File.new pg_file, "r"
+  loop = true
+  while loop and line = file.gets
+    if(/^peer/.match line and line.include? peername) # find line which contains peer current peer address
+      peerline = line.split("=").last.strip
+      peerline.slice!(-1) # remove last ;
+      ip_addr, port = peerline.split ":"
+      loop = false
+    else
+      raise WLError, "impossible to find the peername given in the end of the program \
 filename: #{peername} in the list of peer specified in the program"
-      end
     end
-    WLRunner.create(peername, pg_file, port, {ip: ip, measure: true})
-  end # def start_peer  
+  end
+  file.close
+  return WLRunner.create(peername, pg_file, port, {:ip => ip_addr, :measure => true})
+end # def start_peer
   
-end # module WLXP
 
-include WLXP
-run! if __FILE__==$0
+#run_xp! if __FILE__==$0
+create_wl_runner "xp_files/data_gen_xp1_peer1"
+
+#runner = WLRunner.create("peer1""", "xp_files/data_gen_xp1_peer1", 12345, {:ip => "localhost", :measure => true})
+#p runner.peername
+#runner.tick
+#runner.tick
+#p runner.budtime

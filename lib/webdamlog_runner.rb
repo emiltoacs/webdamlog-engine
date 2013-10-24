@@ -93,6 +93,7 @@ module WLRunner
     return "" if pg.nil?
     file = StringIO.new(pg)
     line = file.readlines
+    file.close
     ret = []
     begin
       ret = self.wl_program.parse_lines line, false
