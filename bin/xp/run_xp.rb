@@ -65,8 +65,8 @@ filename: #{peername} in the list of peer specified in the program"
 end # def start_peer
   
 
-#run_xp! if __FILE__==$0
-create_wl_runner "xp_files/data_gen_xp1_peer1"
+run_xp! if __FILE__==$0
+#create_wl_runner "xp_files/data_gen_xp1_peer1"
 
 #runner = WLRunner.create("peer1""", "xp_files/data_gen_xp1_peer1", 12345, {:ip => "localhost", :measure => true})
 #p runner.peername
