@@ -216,7 +216,7 @@ module WLBud
 
       # #### WLBud:Begin adding to Bud
       #
-      if @options[:measure]        
+      if @options[:measure]
         @measure_obj = WlMeasure.new @budtime, @options[:measure_file]
       end
       # Loads .wl file containing the setup(facts and rules) for the Webdamlog
@@ -448,7 +448,7 @@ module WLBud
           puts "-----see viz logtab dbm-----"
           # #logtab = @viz.class.send(:logtab) #dbm = logtab.class.send(:dbm)
           logtab = @viz.instance_eval{ @logtab }
-          dbm = logtab.instance_eval{ @dbm }
+          #dbm = logtab.instance_eval{ @dbm }
           # #dbm.each{ |o| puts "#{o.class} : #{o}" } #logtab.each_storage{ |s|
           # puts s }
           logtab.to_a.sort_by{ |t| [t[0],t[1]] }.each{|s| puts s}
@@ -510,7 +510,7 @@ module WLBud
     #
     # Extend bud method
     #
-    def builtin_state
+    def builtin_state      
       super
       # Contains the times nodes informations TODO: facts should be the list of
       # facts used to derive head: define field to use(some kind of id)
@@ -864,7 +864,7 @@ module WLBud
         relation_name = k
         # translate into internal relation name and check for existence of
         # relation
-        relation_name = k.gsub /@/, "_at_" if k.to_s.include?'@'
+        relation_name = k.gsub(/@/, "_at_") if k.to_s.include?('@')
         if @wl_program.wlcollections.has_key? relation_name
           arity = @wl_program.wlcollections[relation_name].arity
           tuples.each do |tuple|
@@ -888,8 +888,8 @@ module WLBud
         end
       end # end facts.each_pair
       if @options[:debug]
-        valid.each do |rel, facts|
-          puts "Add in relation #{rel} facts: \n #{facts}"
+        valid.each do |rel, fcts|
+          puts "Add in relation #{rel} facts: \n #{fcts}"
         end
       end
       return valid, err
