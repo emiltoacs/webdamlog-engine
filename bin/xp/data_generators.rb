@@ -6,25 +6,25 @@ def run_data_generators!
     ARGV.delete("xp1")
     include WLXP1
     WLXP1::data_gen_xp1
-    puts "Experience 1 generated"
+    puts "Experience 1 data generated"
   end
   if ARGV.include?("xp2")
     ARGV.delete("xp2")
     include WLXP2
     WLXP2::data_gen_xp2
-    puts "Experience 2 generated"
+    puts "Experience 2 data generated"
   end
   if ARGV.include?("xp3")
     ARGV.delete("xp3")
     include WLXP3
     WLXP3::data_gen_xp3 70, false
-    puts "Experience 3 generated"
+    puts "Experience 3 data generated"
   end
   if ARGV.include?("xp4")
     include WLXP4
     ARGV.delete("xp4")
     WLXP4::data_gen_xp4
-    puts "Experience 4 generated"
+    puts "Experience 4 data generated"
   end
   if ARGV.include?("xp5_base")
     ARGV.delete("xp5_base")
@@ -161,6 +161,7 @@ module WLXP2
   include WLGENERICXP
 
   NB_PEERS = 3
+  XPFILE = "XP2"
 
   # Experience: Relation and peer variables
   #
@@ -171,7 +172,7 @@ module WLXP2
     relations_per_peers = 4
     facts_per_relations = 1000
     range_value_in_facts = 10000
-
+    xp_pg_arr = []
     peer_str=<<END
 peer #{WLXP_BASEPEERNAME}1=#{WLXP_PEER_IP}:12345;
 peer #{WLXP_BASEPEERNAME}2=#{WLXP_PEER_IP}:12346;
@@ -187,8 +188,9 @@ END
           pg += create_wlpg_fact("rel#{rel_ind+1}","#{WLXP_BASEPEERNAME}#{peer_ind+1}",rand(range_value_in_facts), rand(range_value_in_facts))
         end
       end
-      write_xp_file(pg, program_file_name(__method__, "#{WLXP_BASEPEERNAME}#{peer_ind}"))
+      xp_pg_arr << write_xp_file(pg, program_file_name(__method__, "#{WLXP_BASEPEERNAME}#{peer_ind}"))
     end
+    create_run_xp_file xp_pg_arr, XPFILE
   end
 end # module XP2
 
@@ -196,6 +198,7 @@ module WLXP3
   include WLGENERICXP
 
   NB_PEERS = 3
+  XPFILE = "XP3"
 
   # Experience: QSQ-style optimization
   #
@@ -208,7 +211,7 @@ module WLXP3
   def data_gen_xp3 (pourcent_matching=50, qsq=true)
 
     facts_per_relations = 1000
-
+    xp_pg_arr = []
     peer_str=<<END
 peer #{WLXP_BASEPEERNAME}1=#{WLXP_PEER_IP}:12345;
 peer #{WLXP_BASEPEERNAME}2=#{WLXP_PEER_IP}:12346;
@@ -231,20 +234,21 @@ END
       (facts_per_relations-(pourcent_matching*10)).times do |fact_ind|
         pg += create_wlpg_fact("photos", user, "Not Charlie", (pourcent_matching*10)+fact_ind)
       end
-      write_xp_file(pg, program_file_name(__method__, user))
+      xp_pg_arr << write_xp_file(pg, program_file_name(__method__, user))
     end
     if qsq
       ["#{WLXP_BASEPEERNAME}2","#{WLXP_BASEPEERNAME}3"].each do |user|
         pg = "rule union@#{WLXP_BASEPEERNAME}1(\"Charlie\",$X) :- photos@#{user}(\"Charlie\",$X)"
-        write_xp_file(pg, program_file_name(__method__, user))
+        xp_pg_arr << write_xp_file(pg, program_file_name(__method__, user))
       end
     else
       ["#{WLXP_BASEPEERNAME}2","#{WLXP_BASEPEERNAME}3"].each do |user|
         pg =  "rule union@#{WLXP_BASEPEERNAME}1($user,$X) :- photos@#{WLXP_BASEPEERNAME}2($user,$X)" + "\n"
         pg += "rule union@#{WLXP_BASEPEERNAME}1($user,$X) :- photos@#{WLXP_BASEPEERNAME}3($user,$X)"
-        write_xp_file(pg, program_file_name(__method__, user))
+        xp_pg_arr << write_xp_file(pg, program_file_name(__method__, user))
       end
     end
+    create_run_xp_file xp_pg_arr, XPFILE
   end
 end # module XP3
 
@@ -252,6 +256,7 @@ module WLXP4
   include WLGENERICXP
 
   NB_PEERS = 3
+  XPFILE = "XP4"
 
   # Overhead of provenance
   #
@@ -261,7 +266,7 @@ module WLXP4
   # orders
   def data_gen_xp4
     facts_per_relations = 1500
-
+    xp_pg_arr = []
     peer_str=<<END
 peer #{WLXP_BASEPEERNAME}1=#{WLXP_PEER_IP}:12345;
 peer #{WLXP_BASEPEERNAME}2=#{WLXP_PEER_IP}:12346;
@@ -272,7 +277,7 @@ END
     pg += declare_wlpg_collection("union", "#{WLXP_BASEPEERNAME}1",2)
     pg +=  "rule union@#{WLXP_BASEPEERNAME}1($user,$X) :- photos@#{WLXP_BASEPEERNAME}2($user,$X)" + "\n"
     pg += "rule union@#{WLXP_BASEPEERNAME}1($user,$X) :- photos@#{WLXP_BASEPEERNAME}3($user,$X)"
-    write_xp_file(pg, program_file_name(__method__, "#{WLXP_BASEPEERNAME}1"))
+    xp_pg_arr << write_xp_file(pg, program_file_name(__method__, "#{WLXP_BASEPEERNAME}1"))
 
     # remote peers alice and bob
     ["#{WLXP_BASEPEERNAME}2","#{WLXP_BASEPEERNAME}3"].each do |user|
@@ -281,8 +286,9 @@ END
       facts_per_relations.times do |i|
         pg += create_wlpg_fact("photos", user, "Friend#{i}")
       end
-      write_xp_file(pg, program_file_name(__method__, user))
+      xp_pg_arr << write_xp_file(pg, program_file_name(__method__, user))
     end
+    create_run_xp_file xp_pg_arr, XPFILE
   end
 end # module XP4
 
@@ -294,11 +300,14 @@ module WLXP5
   FACTS_PER_RELATIONS = 1000
   RANGE_VALUE_IN_FACTS = 10000
   RELATION_DEGREE_CONNECTION = 1000
+  XPFILE = "XP5"
 
   # Size of the provenance graph
   #
-  # Generate base facts: this quite long due too large among of text to write
+  # Generate base facts: this is quite long due too large among of text to write
   def data_gen_xp5_base
+
+    xp_pg_arr = []
 
     # declare peers
     peer_str=''
@@ -321,8 +330,9 @@ module WLXP5
           pg << create_wlpg_fact("rel#{rel_ind}", "#{WLXP_BASEPEERNAME}#{peer_ind}", rand(RANGE_VALUE_IN_FACTS))
         end
       end
-      write_xp_file(pg, program_file_name(__method__, "user#{peer_ind}"))
+      xp_pg_arr << write_xp_file(pg, program_file_name(__method__, "user#{peer_ind}"))
     end
+    create_run_xp_file xp_pg_arr, XPFILE
   end
 
   # Size of the provenance graph
@@ -349,7 +359,7 @@ module WLXP5
           end
         end
       end
-      write_xp_file(pg, program_file_name(__method__, "user#{peer_ind}"))
+      append_xp_file(pg, program_file_name(__method__, "user#{peer_ind}"))
     end
   end
 end # module XP5
