@@ -19,50 +19,13 @@ require 'wlbud'
 #stdlib
 require 'test/unit'
 #lib
-#if RUBY_VERSION < "1.9"
-#  require 'ruby2ruby'
-#  gem 'ParseTree'
-#  require 'parse_tree_extensions'
-#else
-#  gem 'ruby_parser'
-#  gem 'file-tail'
-#  gem 'sourcify'
-#  require 'sourcify'
-#end
 require 'pp'
 require 'yaml'
 #custom
 require 'wlbud/wlextendsbud'
 
-#begin
-#  require 'debugger'
-#  puts 'debugger loaded'
-#rescue LoadError => e
-#  begin
-#    require 'ruby-debug'
-#    puts 'ruby-debug loaded'
-#  rescue LoadError => e
-#    puts "debugger disabled"
-#  end
-#end
-
 # Mixin with some code common to most of my tc_wl_* tests
-#
 module MixinTcWlTest
-
-  #  # Callback method triggered when this module is invoked
-  #  #
-  #  def self.included(klass)
-  #    # Override the initializer to add instance variable
-  #    #
-  #    klass.class_eval{
-  #      attr_accessor :first_test
-  #      def initialize(*a,&b)
-  #        super(*a,&b)
-  #        @@first_test=true
-  #      end
-  #    }
-  #  end
 
   # self.included is a callback method triggered when this module is included.
   #
