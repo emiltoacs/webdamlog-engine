@@ -60,16 +60,13 @@ module WLBud
       # * @peername
       # * 'localhost'
       # * 'me'
-      #
       @localpeername = Set.new([@peername,'local','me'])
       # List of known peers
-      #
       @wlpeers={}
       @wlpeers[@peername]="#{@ip}:#{@port}"
       # List of bootstrap facts ie. the facts given in the program file
       # === data struct
       # Array:(WLBud:WLFact)
-      #
       @wlfacts=[]
       # The original rules before the rewriting used for evaluation. It gives
       # the original semantic of the program.
@@ -82,7 +79,6 @@ module WLBud
       # translation)
       # === data struct
       # Array:(WLBud:WLRule)
-      #
       @localrules=[]
       # Nonlocal rules in WL are never converted into Bloom rules directly (as
       # opposed to previous types of rules). They are split in two part one
@@ -92,14 +88,12 @@ module WLBud
       # only the head was not local.
       # === data struct
       # Array:(WLBud:WLRule)
-      #
       @nonlocalrules=[]
       # The list of delegation needed to send after having processed the
       # wlprogram at initialization. Ie. the non-local part of rules should
       # start with an intermediary relation that control it triggering.
       #
       # Array:(WLBud:WLRule)
-      #
       @delegations = Hash.new{ |h,k| h[k]=Array.new }
       # This is the list of rules which contains the local rules after a
       # non-local rule of the wlprogram at initialization has been rewritten.
@@ -107,28 +101,24 @@ module WLBud
       # control the corresponding delegated part of the rule on the remote peer.
       # === data struct
       # Array:(WLBud:WLRule)
-      #
       @rewrittenlocal=[]
       # Keep the new relation to declare on remote peer (typically intermediary
       # relation created when rewrite) due to processing of of a wlgrammar line
       # in rewrite_non_local.
       # === data struct
       # Hash:(peer address, Set:(string wlgrammar collection declaration) )
-      #
       @new_relations_to_declare_on_remote_peer = Hash.new{|h,k| h[k]=Set.new }
       # The list of all the new delegations to be send due to processing of a
       # wlgrammar line in rewrite_non_local. It contains the non-local part of
       # the rule that have been splitted.
       # === data struct
       # Hash:(peer address, Set:(string wlgrammar rule) )
-      #
       @new_delegations_to_send = Hash.new{|h,k| h[k]=Set.new }
       # The list of all the new local collection to create due to processing of
       # a wlgrammar line in rewrite_non_local. It contains the intermediary
       # relation declaration.
       # === data struct
       # Array:(string wlgrammar collection)
-      #
       @new_local_declaration = []
       # The list of all the new local rule to create due to processing of a
       # wlgrammar line in rewrite_non_local. It contains the local part of the
@@ -154,7 +144,7 @@ module WLBud
       parse_lines(IO.readlines(@programfile, ';'), true)
       # process non-local rules
       @nonlocalrules.each do |rule|
-        rewrite_non_local rule
+        rewrite_rule rule
       end
     end
 
@@ -260,15 +250,12 @@ In the string: #{line}
     # The whole rewrite process to compile webdamlog into bud + delegation and
     # seeds Delegation and seeds are handled latter in tick internal
     def rewrite_rule wlrule
-
       split_rule wlrule
-
       if wlrule.seed?
         rewrite_unbound_rules(wlrule)
       elsif wlrule.split
         rewrite_non_local(wlrule)
       end
-      
     end
 
     private
@@ -335,9 +322,8 @@ In the string: #{line}
           # FIXME hacky substitute of _at_ by @ to be parsed correctly by the
           # receiver
           delegation.gsub!(/_at_/, '@')
-          
-        else # if the rule must be cut in two part
-          
+
+        else # if the rule must be cut in two part          
           interm_relname = generate_intermediary_relation_name(wlrule.rule_id)
           interm_rel_decla, local_rule_delegate_facts, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_relname, destination_peer)
           interm_rel_declaration_for_remote_peer = "collection inter persistent #{interm_rel_decla};"
