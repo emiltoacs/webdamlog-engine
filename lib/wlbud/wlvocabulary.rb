@@ -4,7 +4,6 @@ module WLBud
   # all inherit the Treetop::Runtime::SyntaxNode class. When a .wl file is
   # parsed, a tree of nodes is created, with each node (not only the leaves) are
   # assigned a proper subclass of WLVocabulary.
-  #
   class WLVocabulary < Treetop::Runtime::SyntaxNode
     public
     def to_s
@@ -19,12 +18,11 @@ module WLBud
     end
   end
 
-  # A webdamlog sentence with a peer name in it.
+  # A Webdamlog sentence with a peer name in it.
   #
   # It could be a WLPeerDec, WLColletion, WLFact, or a WLAtom in this case it
   # returns a String which is the peer name. Or it could be WLRule, in this case
-  # it returns an array with the list of peername.
-  #
+  # it returns an array with the list of peer name.
   module NamedSentence
 
     attr_accessor :peername
@@ -50,7 +48,7 @@ module WLBud
 
     attr_accessor :has_self_join
     attr_reader :dic_made, :dic_relation_name, :dic_invert_relation_name, :dic_wlvar, :dic_wlconst
-    attr_accessor :split, :bound, :unbound
+    attr_accessor :split, :seed, :seed_pos, :bound, :unbound
 
     # Creates a new WLRule and instantiate empty dictionaries for that rule.
     #
@@ -59,7 +57,6 @@ module WLBud
     # * input
     # * interval
     # * elements
-    #
     def initialize (a1,a2,a3)
       @dic_made = false
       # unique id of the rule for this peer
@@ -87,11 +84,20 @@ module WLBud
       # !@attribute [Hash] list of constants name of variable =>
       # ["relpos.atompos", ... ]
       @dic_wlconst = {}
-      # false until WLProgram.split_rule has been called which populate @bound,
-      # @unbound
-      @split = false
+      # nil until WLProgram.split_rule has been called which populate @bound,
+      # @unbound and set split to true if unbound atoms has been found
+      @split = nil      
+      # nil until WLProgram.split_rule has been called, set to true if seeds
+      # variables in relation or peer names
+      @seed = nil
+      # nil until WLProgram.split_rule has been called, receive the position of
+      # the last bound atom if there are unbound.
+      @seed_pos = nil
+      # atom to use for local rule
       @bound = []
+      # atom left to further processing
       @unbound = []
+      
       super(a1,a2,a3)
     end
 
@@ -129,26 +135,42 @@ module WLBud
       return @body
     end
 
-    # Seeds are intermediary relation used when relation or peer name are
-    # variables in a rule.
-    #
-    # @return true if this rule may be rewritten with seeds
+    # @deprecated use the generic wlprogram.split_rule
     def seed?
       if @seed.nil?
-        if head.variable?
-          @seed = true
-        else
-          body.each do |atom|
-            if atom.variable?
-              return @seed = true
-            end            
+        @bound = []
+        @unbound = []
+        @seed = false
+        # find seed in the body
+        body.each_with_index do |atom,index|
+          unless @seed
+            unless atom.variable?
+              @bound << atom
+            else
+              @seed_pos = index
+              @seed = true
+            end
+          else
+            @unbound << atom
           end
-          @seed = false
+        end
+        # if no seeds appears in the body check in the head
+        unless @seed
+          if head.variable?
+            @seed_pos = -1
+            @seed = true
+          else
+            @seed_poes = nil
+            @seed = false
+          end
         end
       end
       @seed
     end
 
+    # The logical peer name ie. disambiguated according to the local program
+    # knowledge.
+    #
     # @return [Array] the list of name of peers appearing in atoms, it could be
     # different from self.peer_name.text_value when called by {WLProgram} since
     # disambiguation could have modified this field.
@@ -230,6 +252,36 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str.slice!(-2..-1)
       str << ";"
     end
+
+    # Create a new rule with a new relation in the head that receive the
+    # valuations of all the useful variable in the bound part of a wlrule
+    def create_intermediary_relation_from_bound_atoms interm_relname, interm_peername
+      localbody = ""
+      local_vars=[]
+      @bound.each do |atom|
+        local_vars += atom.variables.flatten
+        localbody << "#{atom},"
+      end
+      local_vars = local_vars.flatten.compact.uniq
+      localbody.slice!(-1)
+      # build the list of attributes for relation declaration (dec_fields)
+      # removing the '$' of variable and create attributes names
+      dec_fields=''
+      var_fields=''
+      local_vars.each_index do |i|
+        local_var=local_vars[i]
+        dec_fields << local_var.gsub( /(^\$)(.*)/ , interm_relname+"_\\2_"+i.to_s+"\*," )
+        var_fields << local_var << ","
+      end ; dec_fields.slice!(-1); var_fields.slice!(-1);
+
+      # new collection declaration
+      interm_rel_declaration = "#{interm_relname}@#{interm_peername}(#{dec_fields})"
+      # new rule to install
+      interm_rel_in_rule = "#{interm_relname}@#{interm_peername}(#{var_fields})"
+      new_rule = "rule #{interm_rel_in_rule}:-#{localbody};"
+
+      return interm_rel_declaration, new_rule, interm_rel_in_rule
+    end # def create_intermediary_relation_from_bound_atoms
 
     private
 
@@ -600,9 +652,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       super(a1,a2,a3)
     end
 
-    # Return the name of the peer, it could be different from
-    # self.peer_name.text_value when called by {WLProgram} since disambiguation
-    # could have modified this field
+    #   Return the name of the peer, it could be different from
+    #   self.peer_name.text_value when called by {WLProgram} since
+    #   disambiguation could have modified this field
     #
     def peername
       unless @peername
@@ -611,7 +663,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @peername
     end
 
-    # @return [String] relationname without the peer name
+    #   @return [String] relationname without the peer name
     def relname
       unless @relname
         @relname = self.rrelation.text_value
@@ -624,7 +676,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     # @return [Array] the variables included in the atom in an array format e.g.
-    # : [relation_var,peer_var,[field_var1,field_var2,...]]
+    # :
+    # [relation_var,peer_var,[field_var1,field_var2,...]]
     def variables
       if @variables.nil?
         vars = []
@@ -637,7 +690,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @variables
     end
 
-    # return [Boolean] true if relation or peername is a variable
+    # return [Boolean] true if relation or peer name is a variable
     def variable?
       rrelation.variable? or rpeer.variable? ? true : false
     end

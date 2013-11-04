@@ -116,12 +116,19 @@ EOF
     assert_equal [["3"],["4"],["5"],["6"]], wl_peer[2].delegated_at_p2.to_a.sort
     assert_equal [["4"],["5"],["6"],["7"]], wl_peer[3].delegated_at_p3.to_a.sort
     p "check message sent from p0 to p1" if $test_verbose
+    assert_equal [
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["1"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["2"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["3"]},
+      {:dst=>"localhost:11111", :rel_name=>"deleg_from_p0_1_1_at_p1", :fact=>["4"]}],
+      wl_peer[0].tables[:sbuffer].sort.map { |t| Hash[t.each_pair.to_a] },
+      "content of sbuffer: facts sent from p0 looks incorrect"
     assert_equal 4, wl_peer[0].sbuffer.length
     assert_equal [["1"], ["2"], ["3"], ["4"]], wl_peer[0].sbuffer.to_a.sort.map{ |obj| obj.fact }, "p0 send its local relation content to p1"
-
-    assert_equal 1, wl_peer[0].test_send_on_chan[0][1][2]['rules'].length
-    assert_equal 1, wl_peer[0].test_send_on_chan[0][1][2]['declarations'].length
-    new_declaration = wl_peer[0].test_send_on_chan[0][1][2]['declarations'].first.to_s
+    assert_equal 1, wl_peer[0].rules_to_delegate.length
+    assert_equal 1, wl_peer[0].relation_to_declare.length
+    assert_equal 1, wl_peer[0].relation_to_declare.values.length    
+    new_declaration = wl_peer[0].relation_to_declare.values.first.to_s
     /(deleg.*)\(/ =~ new_declaration
     new_rel_at_p1 = Regexp.last_match(1).gsub('@', '_at_')
     assert_kind_of Bud::BudScratch, wl_peer[0].tables[new_rel_at_p1.to_sym], "check the type of the newly created relation Table or Scratch"
@@ -167,7 +174,7 @@ EOF
             "facts"=>{"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
             "declarations"=>[]}]]],
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
-      "p0 should have sent again the list of facts but not the declaratiosn or rules"
+      "p0 should have sent again the list of facts but not the declarations or rules"
 
     assert(wait_inbound(wl_peer[1]), "TIMEOUT it seems that #{wl_peer[1].peername} is not receiving any message")
     assert_equal 2, wl_peer[1].inbound[:chan].first.length, "two packets pending to be processed"
@@ -314,7 +321,8 @@ EOF
     wl_peer = []
     (0..NUMBER_OF_TEST_PG-1).each do |i|
       wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
-    end    
+    end
+    
 
     # start p2 with nothing to do
     wl_peer[2].tick
@@ -530,9 +538,8 @@ EOF
       }
     )
 
-    # check that the fully non-local rule from p0: rule extcopy@p2($X) :-
-    # local@p1($X);
-    #
+    # check that the fully non-local rule from p0:
+    # rule extcopy@p2($X) :- local@p1($X);
     # has been installed on p1
     assert_equal(["rule copy2_at_p1($X) :- local_at_p2($X);",
         "rule copy2@p1($X) :- local@p2($X);",

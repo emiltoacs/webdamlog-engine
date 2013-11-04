@@ -93,12 +93,6 @@ module WLTools
   end  
 
   module Print_Tables
-    
-    def self.print_arg_tab(target,prefix)
-      string=""
-      target.each {|r| string << "#{r}\n"}
-      puts "#{prefix} :{\n#{string}}"
-    end
 
     # format Distrib messages with timestamp on the right of the screen
     # print_table[0] = ip_port : not used.
