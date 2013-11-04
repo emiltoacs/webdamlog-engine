@@ -758,7 +758,7 @@ module WLBud
       if @wl_program.local?(wlrule) # skip this if the rule is fully local
         local_rule = wlrule
       else
-        @wl_program.rewrite_non_local(wlrule)
+        @wl_program.rewrite_rule(wlrule)
         localcolls = @wl_program.flush_new_local_declaration
         if localcolls.empty? # if a fully non-local rule has been parsed
           local_rule = nil
@@ -813,7 +813,7 @@ module WLBud
       # add rules already parsed
       @wl_program.localrules.each {|wlrule| install_rule wlrule }
       @wl_program.nonlocalrules.each {|wlrule| install_rule wlrule}
-      # #create_rule_blocks
+      # create_rule_blocks
     end
 
     # The generate_bootstrap method creates an array containing all extensional
