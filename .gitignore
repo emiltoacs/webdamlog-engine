@@ -1,3 +1,4 @@
+*~
 /lib/wlrule_to_bud/
 /nbproject/
 /nbproject/**
@@ -7,3 +8,4 @@
 /doc/
 /.yardoc/
 /bin/xp_files/
+/bin/bench_files/
