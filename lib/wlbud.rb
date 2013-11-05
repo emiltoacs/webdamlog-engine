@@ -294,10 +294,8 @@ module WLBud
         @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv<<newv}
         @first_tick_after_make_program=false
         @first_tick_after_make_program.freeze
-      else
-        @relation_to_declare.clear
-        @rules_to_delegate.clear
       end
+      
       # already in bud but I moved receive_inbound before all the stuff about
       # app_tables, push_sorted_elements, ...
       receive_inbound
@@ -807,12 +805,13 @@ module WLBud
         @program_loaded = true
       end
       # XXX hacky way to remove the new declaration, since everything is new
-      # here the delta with previous program as no sense
-      localcolls = @wl_program.flush_new_local_declaration
-      localrules = @wl_program.flush_new_rewritten_local_rule_to_install
+      # here the delta with previous program has no sense
+      # FIXME this should be useless now check hack fix
+      # localcolls = @wl_program.flush_new_local_declaration
+      # localrules = @wl_program.flush_new_rewritten_local_rule_to_install
       # add rules already parsed
-      @wl_program.localrules.each {|wlrule| install_rule wlrule }
-      @wl_program.nonlocalrules.each {|wlrule| install_rule wlrule}
+      @wl_program.wlrules.each {|wlrule| install_rule wlrule }
+      #@wl_program.nonlocalrules.each {|wlrule| install_rule wlrule}
       # create_rule_blocks
     end
 
@@ -985,9 +984,6 @@ module WLBud
             data = packet[1]
             wlpacketdata = WLPacketData.new data[0], data[1], data[2]
             wlpacketdata.pretty_print
-            # puts "Sample of ten first keys #{chan.pending.keys[0..9].inspect}"
-            # puts "chan.pending.inspect: " puts chan.pending.inspect puts "chan
-            # in yaml" #y chan.pending
           end
         end
         puts "END"
