@@ -125,9 +125,6 @@ EOF
       "content of sbuffer: facts sent from p0 looks incorrect"
     assert_equal 4, wl_peer[0].sbuffer.length
     assert_equal [["1"], ["2"], ["3"], ["4"]], wl_peer[0].sbuffer.to_a.sort.map{ |obj| obj.fact }, "p0 send its local relation content to p1"
-    assert_equal 1, wl_peer[0].rules_to_delegate.length
-    assert_equal 1, wl_peer[0].relation_to_declare.length
-    assert_equal 1, wl_peer[0].relation_to_declare.values.length    
     new_declaration = wl_peer[0].relation_to_declare.values.first.to_s
     /(deleg.*)\(/ =~ new_declaration
     new_rel_at_p1 = Regexp.last_match(1).gsub('@', '_at_')

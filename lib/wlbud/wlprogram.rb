@@ -16,7 +16,7 @@ module WLBud
   #
   class WLProgram
     attr_reader :wlcollections, :peername, :wlpeers, :wlfacts
-    attr_accessor :localrules, :nonlocalrules, :delegations, :rewrittenlocal, :rule_mapping
+    attr_accessor :wlrules, :rule_mapping
 
     # The initializer for the WLBud program takes in a filename corresponding to
     # a WebdamLog file (.wl) and parses each line in the file either as a
@@ -54,7 +54,7 @@ module WLBud
       @make_binary_rules=make_binary_rules #Use binary rule format (use Bloom pairs keyword instead of combos).
       my_address = "#{ip}:#{port}"
       # @!attribute [Hash] !{name => WLCollection} List of the webdamlog
-      # relation inserted in that peer
+      #   relation inserted in that peer
       @wlcollections={}
       # Define here some std alias for local peer
       # * @peername
@@ -68,6 +68,12 @@ module WLBud
       # === data struct
       # Array:(WLBud:WLFact)
       @wlfacts=[]
+      # FIXME maybe redundant with the following @rule_mapping attribute
+      # The rules parsed and added into wlprogram. They still have to be
+      # installed in wlbud and compiled in bud.
+      # === data struct
+      # Array:(WLBud:WLRule)
+      @wlrules=[]
       # The original rules before the rewriting used for evaluation. It gives
       # the original semantic of the program.
       #
@@ -79,7 +85,7 @@ module WLBud
       # translation)
       # === data struct
       # Array:(WLBud:WLRule)
-      @localrules=[]
+      #@localrules=[]
       # Nonlocal rules in WL are never converted into Bloom rules directly (as
       # opposed to previous types of rules). They are split in two part one
       # stored in delegation that must be send to a remote peer and another part
@@ -88,13 +94,13 @@ module WLBud
       # only the head was not local.
       # === data struct
       # Array:(WLBud:WLRule)
-      @nonlocalrules=[]
+      #@nonlocalrules=[]
       # The list of delegation needed to send after having processed the
       # wlprogram at initialization. Ie. the non-local part of rules should
       # start with an intermediary relation that control it triggering.
       #
       # Array:(WLBud:WLRule)
-      @delegations = Hash.new{ |h,k| h[k]=Array.new }
+      # @delegations = Hash.new{ |h,k| h[k]=Array.new }
       # This is the list of rules which contains the local rules after a
       # non-local rule of the wlprogram at initialization has been rewritten.
       # This kind of rule have a intermediary relation in their head that
@@ -121,8 +127,8 @@ module WLBud
       # Array:(string wlgrammar collection)
       @new_local_declaration = []
       # The list of all the new local rule to create due to processing of a
-      # wlgrammar line in rewrite_non_local. It contains the local part of the
-      # rule that have been splitted.
+      #   wlgrammar line in rewrite_non_local. It contains the local part of the
+      #   rule that have been splitted.
       # === data struct
       # Array:(WLBud::WLRule)
       @new_rewritten_local_rule_to_install = []
@@ -140,12 +146,12 @@ module WLBud
       options[:debug] ||= false
       @options=options.clone
 
-      # Parse lines to be read
+      # Parse lines to be read and add them to wlprogram
       parse_lines(IO.readlines(@programfile, ';'), true)
       # process non-local rules
-      @nonlocalrules.each do |rule|
-        rewrite_rule rule
-      end
+      # @nonlocalrules.each do |rule|
+      #   rewrite_rule rule
+      # end
     end
 
     public  
@@ -225,11 +231,7 @@ In the string: #{line}
           when WLBud::WLRule
             result.rule_id = rule_id_generator
             @rule_mapping[result.rule_id] << result
-            if local?(result)
-              @localrules << result
-            else
-              @nonlocalrules << result
-            end
+            @wlrules << result
           end
         end
       end
@@ -250,6 +252,8 @@ In the string: #{line}
     # The whole rewrite process to compile webdamlog into bud + delegation and
     # seeds Delegation and seeds are handled latter in tick internal
     def rewrite_rule wlrule
+      raise WLErrorTyping, "rewrite_rule accepts only WLBud::WLRule but received #{wlrule.class}" unless wlrule.kind_of?(WLBud::WLRule)
+      raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       split_rule wlrule
       if wlrule.seed?
         rewrite_unbound_rules(wlrule)
@@ -261,17 +265,16 @@ In the string: #{line}
     private
 
     # This methods extract the local part without variables and generate the
-    # seed to evaluate the rest of the rule
+    # seed to evaluate the rest of the rule.
+    # This method should be called by rewrite_rule only
     def rewrite_unbound_rules(wlrule)
-      raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
-
       split_rule wlrule
       interm_seed_name = generate_intermediary_seed_name(wlrule.rule_id)
       interm_rel_decla, local_seed_rule, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_seed_name, @peername)
       interm_rel_declaration_for_local_peer = "collection inter #{interm_rel_decla};"
       # Declare the new intermediary seed for the local peer and add it to the
       # program
-      @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true,true)    
+      @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true,true)
       # Add local rule to the program and register into the set of seed
       # generator
       seeder = parse(local_seed_rule, true, true)
@@ -289,6 +292,8 @@ In the string: #{line}
     # The intermediary relation created to link the delegated rule with the
     # rewritten local is automatically added
     #
+    # This method should be called by rewrite_rule only
+    #
     # RULE REWRITING If local atoms are present at the beginning of the non
     # local rule, then we have to add a local rule to the program. Otherwise,
     # the nonlocal rule can be sent as is to its destination. Create a relation
@@ -301,7 +306,6 @@ In the string: #{line}
     # declaration that should be created into bud to store intermediary local
     # results of non-local rules rewritten
     def rewrite_non_local(wlrule)
-      raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed?
       
       split_rule wlrule
@@ -323,7 +327,7 @@ In the string: #{line}
           # receiver
           delegation.gsub!(/_at_/, '@')
 
-        else # if the rule must be cut in two part          
+        else # if the rule must be cut in two part
           interm_relname = generate_intermediary_relation_name(wlrule.rule_id)
           interm_rel_decla, local_rule_delegate_facts, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_relname, destination_peer)
           interm_rel_declaration_for_remote_peer = "collection inter persistent #{interm_rel_decla};"
@@ -861,7 +865,7 @@ In the string: #{line}
       puts "\n\n------------------------FACTS---------------------------"
       @wlfacts.each {|wl| wl.show}
       puts "\n\n------------------------RULES---------------------------"
-      @localrules.each {|wl| wl.show}
+      @wlrules.each {|wl| wl.show}
       puts "\n\n--------------------------------------------------------"
     end
 
