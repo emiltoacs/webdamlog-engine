@@ -79,7 +79,8 @@ module WLBud
       #
       # Original rules id are stored as key and value is an array with first the
       # original rule as a WLBud::WLRule then the id of rules rewritten or
-      # string representing the rewriting.
+      # string representing the rewriting if the rewriting is non-local since
+      # rule id are given by the peer which install the rule.
       @rule_mapping = Hash.new{ |h,k| h[k]=Array.new }
       # The local rules straightforward to convert into bud (simple syntax
       # translation)

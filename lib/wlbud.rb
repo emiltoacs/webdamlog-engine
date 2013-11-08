@@ -147,6 +147,7 @@ module WLBud
       # It represents the list of new relation declarations to send at this
       # tick.
       #
+      # !@attributes [Hash] peer address => Set:(string wlgrammar collection declaration)
       # ===Details
       # New relations to declare on remote peers, these are the intermediary
       # ones appearing in one of the delegations in rules_to_delegate.
@@ -290,8 +291,8 @@ module WLBud
       # emptied only when a ack message is received from remote peers to be sure
       # that rules and relations have been correctly installed.
       if @first_tick_after_make_program
-        @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){|key,oldv,newv| oldv<<newv}
-        @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv<<newv}
+        @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){|key,oldv,newv| oldv += newv}
+        @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv += newv}
         @first_tick_after_make_program=false
         @first_tick_after_make_program.freeze
       end
@@ -767,9 +768,9 @@ module WLBud
           localrules = @wl_program.flush_new_rewritten_local_rule_to_install
           raise WLError, "exactly one local rule should have been generated while splitting a non-local rule instead of #{localrules.length}" unless localrules.length == 1
           rule = localrules.first
-          @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){ |key,oldv,newv| oldv<<newv }
+          @relation_to_declare.merge!(@wl_program.flush_new_relations_to_declare_on_remote_peer){ |key,oldv,newv| oldv += newv }
         end
-        @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv<<newv}
+        @rules_to_delegate.merge!(@wl_program.flush_new_delegations_to_send){|key,oldv,newv| oldv += newv}
       end
 
       if local_rule.nil? # if a fully non-local rule is parsed a empty local rule is the result
