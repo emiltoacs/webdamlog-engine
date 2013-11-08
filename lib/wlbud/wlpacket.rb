@@ -88,17 +88,17 @@ module WLBud
       # or nil
       raise WLErrorTyping, "Lacking facts entry in packet " unless payload.key?('facts')
       raise WLErrorTyping, "Incorret data type for facts : #{payload['facts'].class}" unless (payload['facts'].is_a?(Hash) or payload['facts'].nil?)
-      # Should follow the given structure !{name of relation => [[tuple],
-      # [tuple], [tuple]]} TODO add flag for add or remove
-      @facts = payload['facts']
+      # Should follow the given structure !{name of relation => [[tuple], [tuple], [tuple]]}
+      # TODO add flag for add or remove
+      @facts = payload['facts'] || {}
       raise WLErrorTyping, "Lacking rules entry in packet " unless payload.key?('rules')
       raise WLErrorTyping, "Incorret data type for rules : #{payload['rules'].class}" unless (payload['rules'].is_a?(Array) or payload['rules'].nil?)
       # !@attribute [Array] of rules
-      @rules = payload['rules']
+      @rules = payload['rules'] || []
       raise WLErrorTyping, "Lacking declarations entry in packet " unless payload.key?('declarations')
       raise WLErrorTyping, "Incorret data type for declaration of new collection : #{payload['declarations'].class}" unless (payload['declarations'].is_a?(Array) or payload['declarations'].nil?)      
       # !@attributes [Array] of collection declarations
-      @declarations = payload['declarations']
+      @declarations = payload['declarations'] || []
     end
 
     public
