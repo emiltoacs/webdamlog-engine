@@ -68,14 +68,18 @@ def run_xp_peers
     p "#{runners.last.peername} created"
   end
   runners.reverse_each do |runner|
-    runner.run_engine
-    p "#{runner.peername} started"
-  end
-  runners.reverse_each do |runner|
-    runner.sync_do do
+    runner.on_shutdown do
       p "Final tick step of #{runner.peername} : #{runner.budtime}"
     end
   end
-end
+  runners.reverse_each do |runner|
+    runner.run_engine
+    p "#{runner.peername} started"
+  end
+  sleep 3  
+  runners.each do |runner|
+    runner.stop
+  end
+end # def run_xp_peers
 
 run_xp! if __FILE__==$0
