@@ -8,6 +8,14 @@ require 'test/unit'
 class TcWl1Runner < Test::Unit::TestCase
   include MixinTcWlTest
 
+  def teardown
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
+    ObjectSpace.garbage_collect
+  end
+
   @pg = <<-EOF
 peer test_create_user=localhost:11110;
 peer p1=localhost:11111;
@@ -71,8 +79,11 @@ end
     File.open(@pg_file,"w"){ |file| file.write @pg }
   end
 
-  def teardown    
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+  def teardown
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 
@@ -92,8 +103,8 @@ end
 
       # original rule in position 0
       assert_kind_of WLBud::WLRule, wl_obj.wl_program.rule_mapping[1][0]
-      assert_equal "rule join_delegated@p0($x):- local@test_create_user($x),delegated@p1($x),delegated@p2($x),delegated@p3($x)",
-        wl_obj.wl_program.rule_mapping[1][0].text_value
+      assert_equal "rule join_delegated_at_p0($x) :- local_at_test_create_user($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x);",
+        wl_obj.wl_program.rule_mapping[1][0].show_wdl_format
 
       # id of local rule
       assert_equal 3, wl_obj.wl_program.rule_mapping[1][1]
@@ -167,7 +178,10 @@ end
   end
 
   def teardown
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 
@@ -184,6 +198,7 @@ end
       wl_obj.snapshot_collections
   ensure
     File.delete(@pg_file) if File.exists?(@pg_file)
+    wl_obj.stop true
   end
 
   def test_snapshot_peers
@@ -199,6 +214,7 @@ end
       wl_obj.snapshot_peers
   ensure
     File.delete(@pg_file) if File.exists?(@pg_file)
+    wl_obj.stop true
   end
 
   def test_snapshot_rules
@@ -207,9 +223,12 @@ end
       wl_obj = WLRunner.create(@username, @pg_file, @port)
     end
     wl_obj.run_engine
-    assert_equal({1=> "rule join_delegated_at_p0($x) :- local_at_test_snapshot_collection($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x);",
-        2=> "rule local2_at_test_snapshot_collection($x) :- local_at_test_snapshot_collection($x);",
-        3=> "rule deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x);"},
+    assert_equal({1=>
+          "rule join_delegated_at_p0($x) :- local_at_test_snapshot_collection($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x);",
+        2=>
+          "rule local2_at_test_snapshot_collection($x) :- local_at_test_snapshot_collection($x);",
+        3=>
+          "rule deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x);"},
       wl_obj.snapshot_rules)
   ensure
     File.delete(@pg_file) if File.exists?(@pg_file)

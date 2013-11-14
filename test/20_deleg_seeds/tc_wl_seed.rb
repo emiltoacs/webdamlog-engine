@@ -1,11 +1,12 @@
 $:.unshift File.dirname(__FILE__)
-require 'header_test'
+require_relative '../header_test'
 require_relative '../../lib/webdamlog_runner'
 
 require 'test/unit'
 
 # Test program with seeds ie. relation or peer name variables
 class TcWlSeed < Test::Unit::TestCase
+  include MixinTcWlTest
 
   def setup
     @pg = <<-EOF
@@ -25,12 +26,16 @@ end
     EOF
     @username = "test_pending_delegation_content"
     @port = "11110"
-    @pg_file = "test_pending_delegation_content_program"
+    @pg_file = "test_seed_install_local"
     File.open(@pg_file,"w"){ |file| file.write @pg }
   end
 
   def teardown
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    File.delete(@pg_file) if File.exists?(@pg_file)
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 

@@ -35,6 +35,7 @@ end
 
 # test projection of several relations atoms without any join in webdamlog
 class TcWlWlbudLocalProjection < Test::Unit::TestCase
+  include MixinTcWlTest
 
   def setup
     @pg1 = <<-EOF
@@ -55,7 +56,10 @@ end
   end
 
   def teardown
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 
@@ -81,6 +85,7 @@ end # class TcWlWlbudDelegationProjection
 
 # test projection of several relations atoms without any join in webdamlog
 class TcWlWlbudDelegationProjection < Test::Unit::TestCase
+  include MixinTcWlTest
 
   def setup
     @pg1 = <<-EOF
@@ -112,7 +117,10 @@ end
   end
 
   def teardown
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 

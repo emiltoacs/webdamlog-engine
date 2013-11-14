@@ -368,7 +368,6 @@ end
         {:debug => true})
       assert_equal 5, program.wlcollections.length
       assert_equal 4, program.wlfacts.length
-      assert_equal 1, program.wlrules.size
       assert_equal 1, program.rule_mapping.size
     ensure
       File.delete('test_program_2') if File.exists?('test_program_2')

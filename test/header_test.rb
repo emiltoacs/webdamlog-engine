@@ -18,6 +18,7 @@ require 'wlbud'
 
 #stdlib
 require 'test/unit'
+require 'fileutils'
 #lib
 require 'pp'
 require 'yaml'
@@ -26,6 +27,11 @@ require 'wlbud/wlextendsbud'
 
 # Mixin with some code common to most of my tc_wl_* tests
 module MixinTcWlTest
+
+  # Empty the default rule_dir where the engine write its bloom blocks
+  def clean_rule_dir rule_dir
+    FileUtils.rm_rf(rule_dir, secure: true)
+  end
 
   # self.included is a callback method triggered when this module is included.
   #
@@ -62,7 +68,7 @@ module MixinTcWlTest
       klass = Class.new(WLBud::WL)
       self.class.class_eval "Inter#{class_peer_name}#{i} = klass"
       klass.send(:define_method, :initialize) do |peername,program,filetowrite,options|
-        File.open(filetowrite,"w"){ |file| file.write program}
+        File.open(filetowrite,"w"){ |file| file.write program }
         super(peername, filetowrite, options)
       end
       # Create new anonymous subklass

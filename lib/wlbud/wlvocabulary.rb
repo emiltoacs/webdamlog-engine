@@ -231,7 +231,7 @@ module WLBud
     # Set a unique id for this rule for the peer which has parsed this rule
     def rule_id= int
       @rule_id = int
-      # #@rule_id.freeze
+      @rule_id.freeze
     end
 
     # Get the unique id for this rule
