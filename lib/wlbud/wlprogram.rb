@@ -16,7 +16,7 @@ module WLBud
   #
   class WLProgram
     attr_reader :wlcollections, :peername, :wlpeers, :wlfacts
-    attr_accessor :wlrules, :rule_mapping
+    attr_accessor :rule_mapping
 
     # The initializer for the WLBud program takes in a filename corresponding to
     # a WebdamLog file (.wl) and parses each line in the file either as a
@@ -50,9 +50,8 @@ module WLBud
       @port.freeze
       # A counter for this program to name rule with a uniq ID
       #
-      @next=1
+      @rule_id_seed=0
       @make_binary_rules=make_binary_rules #Use binary rule format (use Bloom pairs keyword instead of combos).
-      my_address = "#{ip}:#{port}"
       # @!attribute [Hash] !{name => WLCollection} List of the webdamlog
       #   relation inserted in that peer
       @wlcollections={}
@@ -68,12 +67,6 @@ module WLBud
       # === data struct
       # Array:(WLBud:WLFact)
       @wlfacts=[]
-      # FIXME maybe redundant with the following @rule_mapping attribute
-      # The rules parsed and added into wlprogram. They still have to be
-      # installed in wlbud and compiled in bud.
-      # === data struct
-      # Array:(WLBud:WLRule)
-      @wlrules=[]
       # The original rules before the rewriting used for evaluation. It gives
       # the original semantic of the program.
       #
@@ -148,11 +141,8 @@ module WLBud
       @options=options.clone
 
       # Parse lines to be read and add them to wlprogram
-      parse_lines(IO.readlines(@programfile, ';'), true)
-      # process non-local rules
-      # @nonlocalrules.each do |rule|
-      #   rewrite_rule rule
-      # end
+      io_pg = IO.readlines @programfile, ';'
+      parse_lines io_pg, true
     end
 
     public  
@@ -178,7 +168,7 @@ module WLBud
           current << splitted[0] << ';'
           rest = ""
           splitted[(1..-1)].each{ |r| rest << r }
-          ans << parse(current, add_to_program, false, {:line_nb=>i+1})
+          ans << parse(current, add_to_program, {:line_nb=>i+1})
           current = rest || "" # reset current line after parsing
         else
           current << line
@@ -200,7 +190,8 @@ module WLBud
     # been declared. The atoms in the head that are not local should also be
     # declared but I can also make my parser declare them automatically since
     # the type is not important.
-    def parse(line, add_to_program=false, rewritten=false, options={})
+    # FIXME: remove rewritten is useless now
+    def parse(line, add_to_program=false, options={})
       raise WLErrorTyping, "I could only parse string not #{line.class}" unless line.is_a?(String)
       unless (output=@parser.parse(line))
         line_nb = options[:line_nb] ||= "unknown"
@@ -232,7 +223,6 @@ In the string: #{line}
           when WLBud::WLRule
             result.rule_id = rule_id_generator
             @rule_mapping[result.rule_id] << result
-            @wlrules << result
           end
         end
       end
@@ -275,10 +265,10 @@ In the string: #{line}
       interm_rel_declaration_for_local_peer = "collection inter #{interm_rel_decla};"
       # Declare the new intermediary seed for the local peer and add it to the
       # program
-      @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true,true)
+      @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true)
       # Add local rule to the program and register into the set of seed
       # generator
-      seeder = parse(local_seed_rule, true, true)
+      seeder = parse(local_seed_rule, true)
       @new_seed_rule_to_install << [seeder,interm_rel_in_rule,wlrule]
       @rule_mapping[wlrule.rule_id] << seeder.rule_id
       @rule_mapping[seeder.rule_id] << seeder
@@ -336,10 +326,10 @@ In the string: #{line}
           
           # Declare the new remote relation as a scratch for the local peer and
           # add it to the program
-          @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true,true)
+          @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true)
           @new_relations_to_declare_on_remote_peer[addr_destination_peer] << interm_rel_declaration_for_remote_peer
           # Add local rule to the set of rewritten local rules
-          @new_rewritten_local_rule_to_install << ru = parse(local_rule_delegate_facts, true, true)
+          @new_rewritten_local_rule_to_install << ru = parse(local_rule_delegate_facts, true)
           @rule_mapping[wlrule.rule_id] << ru.rule_id
           @rule_mapping[ru.rule_id] << ru
           # Create the delegation rule string
@@ -425,7 +415,6 @@ In the string: #{line}
           "In #{wlrule.text_value} the peer name: #{head_atom_peername} cannot be found in the list of known peer: #{@wlpeers.inspect}"
       end
       str_res = ""
-      str_self_join = ""
       body = wlrule.body
 
       # Generate rule head Send fact buffer if non-local head
@@ -449,28 +438,15 @@ In the string: #{line}
         if body.length==1
           str_res << body.first.fullrelname
         else
-          # #Generate rule collection names using pairs and combos keywords.
-          #          if @make_binary_rules
-          #            s , str_self_join = make_pairs(wlrule)
-          #          else
-          s , str_self_join = make_combos(wlrule)
-          #          end
+          s = make_combos(wlrule)
           str_res << s
         end
         str_res << " {|";
         wlrule.dic_invert_relation_name.keys.sort.each {|v| str_res << "#{WLProgram.atom_iterator_by_pos(v)}, "}
         str_res.slice!(-2..-1) #remove last and before last
-        str_res << "| "
-        
+        str_res << "| "        
         str_res << projection_bud_string(wlrule)
         str_res << condition_bud_string(wlrule)
-        
-        #        unless wlrule.dic_wlconst.empty?
-        #          str_res << str_self_join.sub(/&&/,'if')
-        #        else
-        #          str_res << str_self_join
-        #        end
-
         str_res << "};"
       end
     end
@@ -850,10 +826,11 @@ In the string: #{line}
     # Simple successor function useful to create id for rules in this WLprogram.
     #
     def rule_id_generator
-      while @rule_mapping.has_key? @next
-        @next+=1
+      @rule_id_seed += 1
+      while @rule_mapping.has_key? @rule_id_seed
+        @rule_id_seed += 1
       end
-      return @next
+      return @rule_id_seed
     end
 
     public
@@ -862,11 +839,11 @@ In the string: #{line}
     # extensional facts and rules of the program to the screen.
     def print_content
       puts "-----------------------RELATIONS------------------------"
-      @wlcollections.each_value {|wl| wl.show}
+      @wlcollections.each_value { |wl| wl.show }
       puts "\n\n------------------------FACTS---------------------------"
-      @wlfacts.each {|wl| wl.show}
+      @wlfacts.each { |wl| wl.show }
       puts "\n\n------------------------RULES---------------------------"
-      @wlrules.each {|wl| wl.show}
+      @rule_mapping.each { |id,rules| rules.first.show }
       puts "\n\n--------------------------------------------------------"
     end
 

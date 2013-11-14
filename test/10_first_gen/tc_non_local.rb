@@ -43,7 +43,10 @@ end
   end
 
   def teardown
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 
@@ -52,8 +55,8 @@ end
       runner1 = nil
       runner2 = nil
       assert_nothing_raised do
-        runner1 = WLRunner.create(@username1, @pg_file1, @port1, {:accessc => false, :debug => DEBUG })
-        runner2 = WLRunner.create(@username2, @pg_file2, @port2, {:accessc => false, :debug => DEBUG })
+        runner1 = WLRunner.create(@username1, @pg_file1, @port1, { :accessc => false, :debug => DEBUG })
+        runner2 = WLRunner.create(@username2, @pg_file2, @port2, { :accessc => false, :debug => DEBUG })
       end
 
       runner2.tick
@@ -69,7 +72,6 @@ end
       runner1.tick
       assert_equal [{:atom1=>"1",:atom2=>"3"},{:atom1=>"2",:atom2=>"3"}], runner1.tables[:local3_at_p1].map{ |t| Hash[t.each_pair.to_a] }
       assert_equal [{:atom1=>"1",:atom2=>"3"},{:atom1=>"2",:atom2=>"3"}], runner2.tables[:delegated_join_at_p2].map{ |t| Hash[t.each_pair.to_a] }
-
     ensure
       File.delete(@pg_file1) if File.exists?(@pg_file1)
       File.delete(@pg_file2) if File.exists?(@pg_file2)
@@ -78,6 +80,5 @@ end
         runner2.stop true
       end
     end
-
   end
 end

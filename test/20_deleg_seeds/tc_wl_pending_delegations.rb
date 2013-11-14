@@ -58,7 +58,7 @@ end
             }]]]
     }
     # force another tick to flush chan
-    runner.sync_do { }
+    runner.sync_do {  }
     # two pending delegations
     assert_equal({:p0=>
           {0=>
@@ -78,5 +78,5 @@ end
   ensure
     runner.stop
     File.delete(@pg_file) if File.exists?(@pg_file)
-  end  
+  end
 end
