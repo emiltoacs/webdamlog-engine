@@ -9,6 +9,7 @@ DEBUG = false unless defined?(DEBUG)
 
 # test projection of several relations atoms without any join in bud
 class TcWlMeasure < Test::Unit::TestCase
+  include MixinTcWlTest
   
   def setup
     @pg1 = <<-EOF
@@ -29,7 +30,10 @@ end
   end
 
   def teardown
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 

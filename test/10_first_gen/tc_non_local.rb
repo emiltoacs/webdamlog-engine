@@ -63,12 +63,14 @@ end
       runner1.tick
       assert_equal [{:atom1=>"1"}, {:atom1=>"2"}], runner1.tables[:local2_at_p1].map{ |t| Hash[t.each_pair.to_a] }
 
+      assert(wait_inbound(runner2), "You have lost message")
       runner2.tick
       assert_equal [{:deleg_from_p1_2_1_x_0=>"1"}, {:deleg_from_p1_2_1_x_0=>"2"}],
         runner2.tables[:deleg_from_p1_2_1_at_p2].map{ |t| Hash[t.each_pair.to_a] }
       assert_equal [{:atom1=>"3"}], runner2.tables[:local1_at_p2].map{ |t| Hash[t.each_pair.to_a] }
       assert_equal [{:atom1=>"1",:atom2=>"3"},{:atom1=>"2",:atom2=>"3"}], runner2.tables[:delegated_join_at_p2].map{ |t| Hash[t.each_pair.to_a] }
-      
+
+      assert(wait_inbound(runner1), "You have lost message")
       runner1.tick
       assert_equal [{:atom1=>"1",:atom2=>"3"},{:atom1=>"2",:atom2=>"3"}], runner1.tables[:local3_at_p1].map{ |t| Hash[t.each_pair.to_a] }
       assert_equal [{:atom1=>"1",:atom2=>"3"},{:atom1=>"2",:atom2=>"3"}], runner2.tables[:delegated_join_at_p2].map{ |t| Hash[t.each_pair.to_a] }

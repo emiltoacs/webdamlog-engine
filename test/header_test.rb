@@ -95,7 +95,7 @@ module MixinTcWlTest
   def wait_inbound(wlpeer)
     cpt = 0
     while wlpeer.inbound.empty?
-      sleep 0.4
+      sleep 0.3
       cpt += 1
       if cpt>5
         return false

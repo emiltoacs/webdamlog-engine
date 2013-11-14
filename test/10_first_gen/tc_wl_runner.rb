@@ -33,7 +33,7 @@ end
   EOF
   @username = "test_create_user"
   @port = "11110"
-  @pg_file = "test_create_user_program"
+  @pg_file = "test_parse_program"
   File.open(@pg_file,"w"){ |file| file.write @pg }
 
   def test_parse
