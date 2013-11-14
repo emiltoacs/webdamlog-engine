@@ -6,6 +6,7 @@ require 'test/unit'
 
 # Test pending delegations attribute when options[:filter_delegations]
 class TcWl1PendingDelegations < Test::Unit::TestCase
+  include MixinTcWlTest
 
   def setup
     @pg = <<-EOF
@@ -29,8 +30,12 @@ end
     File.open(@pg_file,"w"){ |file| file.write @pg }
   end
 
-  def teardown    
-    ObjectSpace.each_object(WLRunner){ |obj| obj.delete }
+  def teardown
+    File.delete(@pg_file) if File.exists?(@pg_file)
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
     ObjectSpace.garbage_collect
   end
 

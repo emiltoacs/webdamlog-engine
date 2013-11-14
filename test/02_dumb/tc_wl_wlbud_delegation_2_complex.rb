@@ -440,13 +440,10 @@ EOF
           h
         }
         Hash[at, tab]
-      }
-    )
-
+      })
 
     # fire p0 to send the complex 2 hops delegation
     wl_peer[0].tick
-    #
     assert_equal(["WLRULE: rule join_delegated_at_p0($x) :- local_at_p0($x), local_at_p1($x), local_at_p2($x);",
         "WLRULE: rule extcopylocalatp1_at_p2($X) :- local_at_p1($X);",
         "WLRULE: rule deleg_from_p0_1_1_at_p1($x) :- local_at_p0($x);",
@@ -461,6 +458,7 @@ EOF
       end)
 
     # fire p1 to process the delegation
+    assert(wait_inbound(wl_peer[1]), "You have lost message")
     wl_peer[1].tick
     assert_equal(["WLRULE: rule copylocalatp2_at_p1($X) :- local_at_p2($X);",
         "String: rule copylocalatp2@p1($X) :- local@p2($X);",
@@ -500,6 +498,7 @@ EOF
       end)
 
     # fire p2 to process the following of the delegation
+    assert(wait_inbound(wl_peer[2]), "You have lost message")
     wl_peer[2].tick
     assert_equal(["WLRULE: rule copylocalatp2_at_p1($X) :- local_at_p2($X);",
         "WLRULE: rule join_delegated_at_p0($x) :- deleg_from_p1_2_1_at_p2($x), local_at_p2($x);"],
@@ -517,6 +516,7 @@ EOF
       end)
 
     # check the status of p0
+    assert(wait_inbound(wl_peer[0]), "You have lost message")
     wl_peer[0].tick
     # there is no new rules only the remember that we made a delegation
     assert_equal(["WLRULE: rule join_delegated_at_p0($x) :- local_at_p0($x), local_at_p1($x), local_at_p2($x);",
