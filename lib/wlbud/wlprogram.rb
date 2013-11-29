@@ -134,6 +134,8 @@ module WLBud
       # * seeder is the new rule to install
       # * interm_rel_in_rule is the string with the atom where the seed appear
       #   in the rule with the correct variables assignation
+      # * seedtemplate is the string of the rule used as a template to generate
+      #   new rules once tuple will be added in interm_rel_in_rule
       # * wlrule is the original rule before rewriting that leads to create this
       #   rewriting
       @new_seed_rule_to_install = []
@@ -241,12 +243,17 @@ In the string: #{line}
     end
 
     # The whole rewrite process to compile webdamlog into bud + delegation and
-    # seeds Delegation and seeds are handled latter in tick internal
+    # seeds. If the rule needs to be split it will create a new intermediary
+    # relation that is accessible with flush_new_local_declaration. Then the
+    # rule could be a simple rewriting or a seed. According to the case it will
+    # populate array accessible respectively by
+    # flush_new_rewritten_local_rule_to_install and
+    # flush_new_seed_rule_to_install
     def rewrite_rule wlrule
       raise WLErrorTyping, "rewrite_rule accepts only WLBud::WLRule but received #{wlrule.class}" unless wlrule.kind_of?(WLBud::WLRule)
       raise WLErrorProgram, "local peername:#{@peername} is not defined yet while rewrite rule:#{wlrule}" if @peername.nil?
       split_rule wlrule
-      if wlrule.seed?
+      if wlrule.seed
         rewrite_unbound_rules(wlrule)
       elsif wlrule.split
         rewrite_non_local(wlrule)
@@ -256,25 +263,30 @@ In the string: #{line}
     private
 
     # This methods extract the local part without variables and generate the
-    # seed to evaluate the rest of the rule.
-    # This method should be called by rewrite_rule only
-    def rewrite_unbound_rules(wlrule)
+    # seed to evaluate the rest of the rule.  This method should be called by
+    # rewrite_rule only.
+    def rewrite_unbound_rules wlrule
       split_rule wlrule
+      raise WLErrorProgram, "trying to rewrite a seed that is not one" unless wlrule.seed
+      
       interm_seed_name = generate_intermediary_seed_name(wlrule.rule_id)
       interm_rel_decla, local_seed_rule, interm_rel_in_rule = wlrule.create_intermediary_relation_from_bound_atoms(interm_seed_name, @peername)
       interm_rel_declaration_for_local_peer = "collection inter #{interm_rel_decla};"
+      
       # Declare the new intermediary seed for the local peer and add it to the
       # program
       @new_local_declaration << parse(interm_rel_declaration_for_local_peer,true)
       # Add local rule to the program and register into the set of seed
       # generator
       seeder = parse(local_seed_rule, true)
-      @new_seed_rule_to_install << [seeder,interm_rel_in_rule,wlrule]
+      seedtemplate = wlrule.build_seed_template(interm_rel_in_rule)
+      @new_seed_rule_to_install << [seeder,interm_rel_in_rule,seedtemplate,wlrule]
       @rule_mapping[wlrule.rule_id] << seeder.rule_id
       @rule_mapping[seeder.rule_id] << seeder
       # TODO install the content of new_seed_rule_to_install and create the
       # offshoot when new facts are inserted in in seed_rule in tick_internal
-    end
+    end # rewrite_unbound_rules
+    
 
     # This method creates a body-local rule with destination peer p and a fully
     # non-local rule that should be delegated to p.
@@ -296,8 +308,8 @@ In the string: #{line}
     # when splitting the rule has been necessary. That is the relation
     # declaration that should be created into bud to store intermediary local
     # results of non-local rules rewritten
-    def rewrite_non_local(wlrule)
-      raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed?
+    def rewrite_non_local wlrule
+      raise WLErrorProgram, "trying to rewrite a seed instead of a static rule" if wlrule.seed
       
       split_rule wlrule
       if wlrule.unbound.empty?
@@ -369,7 +381,7 @@ In the string: #{line}
               wlrule.seed_pos = index
               wlrule.seed = true
               wlrule.split = true
-            elsif not local?(atom)
+            elsif not bound_n_local?(atom)
               wlrule.unbound << atom
               wlrule.seed = false
               wlrule.split = true
@@ -418,7 +430,7 @@ In the string: #{line}
       body = wlrule.body
 
       # Generate rule head Send fact buffer if non-local head
-      unless local?(wlrule.head)
+      unless bound_n_local?(wlrule.head)
         str_res << "sbuffer <= "
       else if is_tmp?(wlrule.head)
           str_res << "temp :#{wlrule.head.fullrelname} <= "
@@ -521,7 +533,8 @@ In the string: #{line}
       return flush
     end
 
-    # @return
+    # @return an array of array of 4 elements containing the
+    # new_seed_rule_to_install content
     def flush_new_seed_rule_to_install
       unless @new_seed_rule_to_install.empty?
         flush = @new_seed_rule_to_install.dup
@@ -533,27 +546,34 @@ In the string: #{line}
     end
 
     # According to the type of wlword which should be a wlvocabulary object or a
-    # string of the peer name, it test if the given argument is local ie. match
-    # one of the alias name specified in @localpeername
+    # string of the peer name, it test if the given argument is bound(no
+    # variables) and local (match one of the alias name specified in
+    # @localpeername)
     #
     # Note that a rule is local if the body is local whatever the state of the
-    # head
+    # head, but the head must be bounded
     #
     # @return true if the given wlword is local
-    def local? (wlword)
+    def bound_n_local? (wlword)
       if wlword.is_a? WLBud::WLCollection or wlword.is_a? WLBud::WLAtom
-        if @localpeername.include?(wlword.peername)
+        if wlword.is_a? WLBud::WLAtom and wlword.variable?
+          return false
+        elsif @localpeername.include?(wlword.peername)
           return true
         else
           return false
         end
       elsif wlword.is_a? WLBud::WLRule
         wlword.body.each { |atom|
-          unless local?(atom.peername)
+          unless bound_n_local?(atom.peername)
             return false
           end
         }
-        return true
+        if wlword.head.variable?
+          return false
+        else
+          return true
+        end       
       elsif wlword.is_a? String
         if @localpeername.include?(wlword)
           true
@@ -635,7 +655,7 @@ In the string: #{line}
 
       # add the remote peer and relation name which should receive the fact.
       #   conform to facts to be sent via sbuffer
-      unless local?(wlrule.head)
+      unless bound_n_local?(wlrule.head)
         destination = "#{@wlpeers[wlrule.head.peername]}"
         # #add location specifier
         raise WLErrorPeerId, "impossible to define the peer that should receive a message" if destination.nil? or destination.empty?
@@ -669,7 +689,7 @@ In the string: #{line}
       end
       str.slice!(-2..-1) unless fields.empty?
 
-      unless local?(wlrule.head)
+      unless bound_n_local?(wlrule.head)
         str << "]"
       end
 
