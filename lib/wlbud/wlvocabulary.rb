@@ -136,37 +136,37 @@ module WLBud
     end
 
     # @deprecated use the generic wlprogram.split_rule
-    def seed?
-      if @seed.nil?
-        @bound = []
-        @unbound = []
-        @seed = false
-        # find seed in the body
-        body.each_with_index do |atom,index|
-          unless @seed
-            unless atom.variable?
-              @bound << atom
-            else
-              @seed_pos = index
-              @seed = true
-            end
-          else
-            @unbound << atom
-          end
-        end
-        # if no seeds appears in the body check in the head
-        unless @seed
-          if head.variable?
-            @seed_pos = -1
-            @seed = true
-          else
-            @seed_poes = nil
-            @seed = false
-          end
-        end
-      end
-      @seed
-    end
+#    def seed?
+#      if @seed.nil?
+#        @bound = []
+#        @unbound = []
+#        @seed = false
+#        # find seed in the body
+#        body.each_with_index do |atom,index|
+#          unless @seed
+#            unless atom.variable?
+#              @bound << atom
+#            else
+#              @seed_pos = index
+#              @seed = true
+#            end
+#          else
+#            @unbound << atom
+#          end
+#        end
+#        # if no seeds appears in the body check in the head
+#        unless @seed
+#          if head.variable?
+#            @seed_pos = -1
+#            @seed = true
+#          else
+#            @seed_poes = nil
+#            @seed = false
+#          end
+#        end
+#      end
+#      @seed
+#    end
 
     # The logical peer name ie. disambiguated according to the local program
     # knowledge.
@@ -255,23 +255,40 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
 
     # Create a new rule with a new relation in the head that receive the
     # valuations of all the useful variable in the bound part of a wlrule
+    #
+    # Useful variable are the one appearing in the local part AND (in the
+    # remote part OFR in the head)
     def create_intermediary_relation_from_bound_atoms interm_relname, interm_peername
+      #select atom in the local part
       localbody = ""
-      local_vars=[]
+      local_vars = []
       @bound.each do |atom|
         local_vars += atom.variables.flatten
         localbody << "#{atom},"
       end
       local_vars = local_vars.flatten.compact.uniq
       localbody.slice!(-1)
+      #select atom in the remote part and in the head
+      remote_vars = []
+      @unbound.each do |atom|
+        remote_vars += atom.variables.flatten
+      end
+      remote_vars += head.variables.flatten
+      # select the intersection of local_vars and remote_vars
+      useful_vars = []
+      local_vars.each do |var|
+        if remote_vars.include? var
+          useful_vars << var
+        end
+      end
       # build the list of attributes for relation declaration (dec_fields)
       # removing the '$' of variable and create attributes names
       dec_fields=''
       var_fields=''
-      local_vars.each_index do |i|
-        local_var=local_vars[i]
-        dec_fields << local_var.gsub( /(^\$)(.*)/ , interm_relname+"_\\2_"+i.to_s+"\*," )
-        var_fields << local_var << ","
+      useful_vars.each_index do |ind|
+        useful_var = useful_vars[ind]
+        dec_fields << useful_var.gsub( /(^\$)(.*)/ , interm_relname+"_\\2_"+ind.to_s+"\*," )
+        var_fields << useful_var << ","
       end ; dec_fields.slice!(-1); var_fields.slice!(-1);
 
       # new collection declaration
@@ -282,6 +299,18 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
 
       return interm_rel_declaration, new_rule, interm_rel_in_rule
     end # def create_intermediary_relation_from_bound_atoms
+
+    def build_seed_template seedatom
+      raise "cannot build seed template from non seed rule" unless @seed
+      raise "building a seed template from seed without unbound atoms does not make sense" if unbound.nil? or unbound.empty?
+      
+      template = "#{head.show_wdl_format}:-#{seedatom},"
+      unbound.each do |ato|
+        template << "#{ato},"
+      end ; template.slice!(-1);
+      template = "rule #{template};"
+      return template
+    end # build_seed_template
 
     private
 
