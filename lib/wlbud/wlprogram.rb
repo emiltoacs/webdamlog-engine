@@ -699,8 +699,8 @@ In the string: #{line}
       return str
     end
 
-    # define the if condition for each constant it assign its value return
-    # [String] the string to append to make the wdl rule
+    # define the if condition for each constant it assign its value.
+    # @return [String] the string to append to make the wdl rule
     def condition_bud_string wlrule
       str = ""
       wlrule.dic_wlconst.each do |key,value|

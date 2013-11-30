@@ -22,18 +22,14 @@ collection ext persistent local1@test_seed(atom1*,atom2*,atom3*);
 collection ext per local2@test_seed(atom1*,atom2*);
 collection ext per local3@test_seed(atom1*,atom2*);
 collection ext per local4@test_seed(atom1*,atom2*);
-collection ext persistent relname@test_seed(atom1*);
-collection ext persistent peername@test_seed(atom1*);
-fact local@test_seed(1);
-fact local@test_seed(2);
-fact local@test_seed(3);
-fact local@test_seed(4);
-fact relname@test_seed(local1);
-fact relname@test_seed(local2);
-fact peername@test_seed(p1);
-fact peername@test_seed(p2);
-fact peername@test_seed(p3);
-fact peername@test_seed(p4);
+collection ext persistent relname1@test_seed(atom1*,atom2*);
+collection ext persistent relname2@test_seed(atom1*,atom2*);
+fact local2@test_seed("flocal1","flocalhead1");
+fact local2@test_seed("flocal2","flocalhead2");
+fact local3@test_seed("flocal1","relname1");
+fact local3@test_seed("flocal1","relname2");
+fact local4@test_seed("flocal3","useless1");
+fact local4@test_seed("flocal3","useless2");
 end
     EOF
     @username = "test_seed"
@@ -51,7 +47,7 @@ end
     ObjectSpace.garbage_collect
   end
 
-  # test the rewrite_unbound_rules method in wl_program 
+  # test the rewrite_unbound_rules method in wl_program
   def test_seed_rewrite_unbound_rules
     pg = WLBud::WLProgram.new(@username, @pg_file, 'localhost', @ip)
 
@@ -99,22 +95,46 @@ end
 
   # test the install method when seeds are passed to it
   def test_seed_install_rule_with_seed
-    runner = WLRunner.create @username, @pg_file, @port
-    test_string =
-      "rule local1@test_seed($h1,$h2,$h3) :- local2@test_seed($l1,$h1),local3@test_seed($l1,$s1),local4@test_seed($s2,$l3),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);"
-    runner.tick    
-    runner.update_add_rule(test_string)
+    begin
+      runner = WLRunner.create @username, @pg_file, @port
+      test_string =
+        "rule local1@test_seed($h1,$h2,$h3) :- local2@test_seed($l1,$h1),local3@test_seed($l1,$s1),local4@test_seed($s2,$l3),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);"
+      runner.tick
+      runner.update_add_rule(test_string)
 
-    assert_equal 1, runner.seed_to_sprout.size
-    seed_arr = runner.seed_to_sprout.first
-    assert_equal 5, seed_arr.size
-    assert_equal "rule seed_from_test_seed_1_1@test_seed($h1, $s1, $s2) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3);",
-      seed_arr[0].show_wdl_format, "expected a local rule to use as a seeder"
-    assert_equal "seed_from_test_seed_1_1@test_seed($h1,$s1,$s2)", seed_arr[1], "intermediatry relation expected"
-    assert_equal "rule local1@test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
-      seed_arr[2], "seed template expected"
-    assert_equal "rule local1@test_seed($h1, $h2, $h3) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3), $s1@test_seed($h2, $h3), local4@test_seed($_, $s2);",
-      seed_arr[3].show_wdl_format, "original rule expected"
-    assert_equal "seed_from_test_seed_1_1_at_test_seed", seed_arr[4], "bud relation name of intermediary table"
+      assert_equal 1, runner.seed_to_sprout.size
+      seed_arr = runner.seed_to_sprout.first
+      assert_equal 5, seed_arr.size
+      assert_equal "rule seed_from_test_seed_1_1@test_seed($h1, $s1, $s2) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3);",
+        seed_arr[0].show_wdl_format, "expected a local rule to use as a seeder"
+      assert_equal "seed_from_test_seed_1_1@test_seed($h1,$s1,$s2)", seed_arr[1], "intermediatry relation expected"
+      assert_equal "rule local1@test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
+        seed_arr[2], "seed template expected"
+      assert_equal "rule local1@test_seed($h1, $h2, $h3) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3), $s1@test_seed($h2, $h3), local4@test_seed($_, $s2);",
+        seed_arr[3].show_wdl_format, "original rule expected"
+      assert_equal "seed_from_test_seed_1_1_at_test_seed", seed_arr[4], "bud relation name of intermediary table"
+    ensure
+      runner.stop
+    end
+  end
+
+  # test the method seed_sprout
+  def test_seed_sprout
+    begin
+      runner = WLRunner.create @username, @pg_file, @port
+      test_string = "rule local1@test_seed($h1,$h2,$h3) :- local2@test_seed($l1,$h1),local3@test_seed($l1,$s1),local4@test_seed($s2,$l3),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);"
+      runner.tick
+      assert runner.new_sprout_rules.empty?
+      runner.update_add_rule(test_string)
+      assert_equal [
+"rule local1@test_seed(flocalhead1, $h2, $h3) :- seed_from_test_seed_1_1@test_seed(flocalhead1, relname1, flocal3), relname1@test_seed($h2, $h3), local4@test_seed($_, flocal3);",
+"rule local1@test_seed(flocalhead1, $h2, $h3) :- seed_from_test_seed_1_1@test_seed(flocalhead1, relname2, flocal3), relname2@test_seed($h2, $h3), local4@test_seed($_, flocal3);"],
+        runner.new_sprout_rules.keys
+      assert_equal 1,runner.t_rules.length, "only the original rule is installed"
+      runner.tick
+      assert_equal 3,runner.t_rules.length, "2 rules srpout from seeds must be installed"      
+    ensure
+      runner.stop
+    end
   end
 end
