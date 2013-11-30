@@ -911,13 +911,23 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
 
     # generate the new rules from seed that have been bounded
     def seed_sprout
+      new_rules = []
       # for each seeds entry
       @seed_to_sprout.each do |sts|
         bud_coll_name = sts[4]
         coll = @tables[bud_coll_name.to_sym]
+        template = @wl_program.parse sts[2]
+        new_rule = String.new template.show_wdl_format
+        var_to_bound = template.head.variables[2]
         # for each tuple in intermediary relation
-        
+        coll.pro do |tuple|
+          var_to_bound.each_index do |ind_var|
+            new_rule = template.gsub var_to_bound[ind_var], tuple[ind_var]
+          end
+        end
+        new_rules << new_rule
       end
+      return new_rules
     end
 
     # This method aggregates all the fact, rules and declarations of each peer

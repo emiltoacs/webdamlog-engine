@@ -282,19 +282,19 @@ EOF
     def test_40_disambiguate
       wlpeer = []
       wlpeer[0] = Test40ParseRuleAndDisambuguiate.new('thisismyname')
-      assert_equal ["family_at_thisismyname( 0, 0 ) ;",
-        "friend_at_thisismyname( 1, 1 ) ;",
-        "person_at_thisismyname( 1, 1 ) ;",
-        "family_at_thisismyname( 5, 5 ) ;",
-        "family_at_thisismyname( 6, 6 ) ;"], wlpeer[0].wl_program.wlfacts.map { |fact| fact.show_wdl_format }
+      assert_equal ["family@thisismyname( 0, 0 ) ;",
+        "friend@thisismyname( 1, 1 ) ;",
+        "person@thisismyname( 1, 1 ) ;",
+        "family@thisismyname( 5, 5 ) ;",
+        "family@thisismyname( 6, 6 ) ;"], wlpeer[0].wl_program.wlfacts.map { |fact| fact.show_wdl_format }
 
       assert_equal [1, 2, 3, "rule person@thisismyname($id, $name) :- family@otherguy($id, $name);"],
         wlpeer[0].wl_program.rule_mapping.keys
       ar = wlpeer[0].wl_program.rule_mapping.values.first
-      assert_equal "rule person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name);", ar.first.show_wdl_format
-      assert_equal ["rule person_at_thisismyname($id, $name) :- friend_at_thisismyname($id, $name);",
-        "rule person_at_thisismyname($id, $name) :- family_at_thisismyname($id, $name);",
-        "rule person_at_thisismyname($id, $name) :- family_at_otherguy($id, $name);",
+      assert_equal "rule person@thisismyname($id, $name) :- friend@thisismyname($id, $name);", ar.first.show_wdl_format
+      assert_equal ["rule person@thisismyname($id, $name) :- friend@thisismyname($id, $name);",
+        "rule person@thisismyname($id, $name) :- family@thisismyname($id, $name);",
+        "rule person@thisismyname($id, $name) :- family@otherguy($id, $name);",
         nil],
         wlpeer[0].wl_program.rule_mapping.values.map{ |rules| rules.first.show_wdl_format if rules.first.is_a? WLBud::WLRule }
     
@@ -337,19 +337,19 @@ EOF
     def test_50_anonymous_variable
       wlpeer = []
       wlpeer[0] = Test50ParseRuleAnonymousVariable.new('thisismyname')
-      assert_equal ["family_at_thisismyname( 0, 0 ) ;",
-        "friend_at_thisismyname( 1, 1 ) ;",
-        "person_at_thisismyname( 1, 1 ) ;",
-        "family_at_thisismyname( 5, 5 ) ;",
-        "family_at_thisismyname( 6, 6 ) ;"], wlpeer[0].wl_program.wlfacts.map { |fact| fact.show_wdl_format }
+      assert_equal ["family@thisismyname( 0, 0 ) ;",
+        "friend@thisismyname( 1, 1 ) ;",
+        "person@thisismyname( 1, 1 ) ;",
+        "family@thisismyname( 5, 5 ) ;",
+        "family@thisismyname( 6, 6 ) ;"], wlpeer[0].wl_program.wlfacts.map { |fact| fact.show_wdl_format }
 
       assert_equal [1, 2, 3],
         wlpeer[0].wl_program.rule_mapping.keys
       ar = wlpeer[0].wl_program.rule_mapping.values.first
-      assert_equal "rule person_at_thisismyname($id, \" \") :- friend_at_thisismyname($id, $_);", ar.first.show_wdl_format
-      assert_equal ["rule person_at_thisismyname($id, \" \") :- friend_at_thisismyname($id, $_);",
-        "rule person_at_thisismyname(\" \", $name) :- family_at_thisismyname($_, $name);",
-        "rule rating_at_thisismyname($id, 3, $owner) :- picture_at_thisismyname(title, $owner, $id, url2);"],
+      assert_equal "rule person@thisismyname($id, \" \") :- friend@thisismyname($id, $_);", ar.first.show_wdl_format
+      assert_equal ["rule person@thisismyname($id, \" \") :- friend@thisismyname($id, $_);",
+        "rule person@thisismyname(\" \", $name) :- family@thisismyname($_, $name);",
+        "rule rating@thisismyname($id, 3, $owner) :- picture@thisismyname(title, $owner, $id, url2);"],
         wlpeer[0].wl_program.rule_mapping.values.map{ |rules| rules.first.show_wdl_format if rules.first.is_a? WLBud::WLRule }
 
     ensure

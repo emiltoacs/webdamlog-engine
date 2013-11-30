@@ -71,7 +71,7 @@ end
             ["rule local2@test_pending_delegation_content('15') :- local@test_pending_delegation_content('4');"]]}},
       runner.pending_delegations)
 
-    assert_equal(["rule local2_at_test_pending_delegation_content($x) :- local_at_test_pending_delegation_content($x);"],
+    assert_equal(["rule local2@test_pending_delegation_content($x) :- local@test_pending_delegation_content($x);"],
       runner.wl_program.rule_mapping.values.map{ |ar| ar.first.show_wdl_format} )
 
     assert_equal({:p0=>

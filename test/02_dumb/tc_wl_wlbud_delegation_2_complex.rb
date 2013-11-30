@@ -125,14 +125,13 @@ EOF
     
     assert_equal 1, wl_peer[0].test_send_on_chan.length, "should have sent 1 packet"
     assert_equal [["localhost:11111",
-        ["p0", "0",
-          {"rules"=>
+        ["p0",
+          "0",
+          {"facts"=>{"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
+            "rules"=>
               ["rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"],
-            "facts"=>
-              {"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
             "declarations"=>
-              ["collection inter persistent deleg_from_p0_1_1@p1(deleg_from_p0_1_1_x_0*);"]
-          }]]],
+              ["collection inter persistent deleg_from_p0_1_1@p1(deleg_from_p0_1_1_x_0*);"]}]]],
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
       "p0 must have sent a packet with new rule declaration and facts"
     p "check inbound queue at p1" if $test_verbose
@@ -350,7 +349,7 @@ EOF
     wl_peer[1].tick
     # check that there is no local rules
     assert_equal([
-        "rule copylocalatp2_at_p1($X) :- local_at_p2($X);",
+        "rule copylocalatp2@p1($X) :- local@p2($X);",
         "rule copylocalatp2@p1($X) :- local@p2($X);"],
       wl_peer[1].wl_program.rule_mapping.values.map do |ar|
         if ar.first.is_a? WLBud::WLRule
@@ -379,7 +378,7 @@ EOF
     # fire p2 to install the delegation
     wl_peer[2].tick
     # check that there is one new rule installed
-    assert_equal(["WLRULE: rule copylocalatp2_at_p1($X) :- local_at_p2($X);"],
+    assert_equal(["WLRULE: rule copylocalatp2@p1($X) :- local@p2($X);"],
       wl_peer[2].wl_program.rule_mapping.values.map do |ar|
         if ar.first.is_a? WLBud::WLRule
           "WLRULE: " + ar.first.show_wdl_format
@@ -417,7 +416,7 @@ EOF
     # and sent to p1
     wl_peer[1].tick
     # there is no new rules only the remember that we made a delegation
-    assert_equal(["WLRULE: rule copylocalatp2_at_p1($X) :- local_at_p2($X);",
+    assert_equal(["WLRULE: rule copylocalatp2@p1($X) :- local@p2($X);",
         "String: rule copylocalatp2@p1($X) :- local@p2($X);"],
       wl_peer[1].wl_program.rule_mapping.values.map do |ar|
         if ar.first.is_a? WLBud::WLRule
@@ -444,9 +443,9 @@ EOF
 
     # fire p0 to send the complex 2 hops delegation
     wl_peer[0].tick
-    assert_equal(["WLRULE: rule join_delegated_at_p0($x) :- local_at_p0($x), local_at_p1($x), local_at_p2($x);",
-        "WLRULE: rule extcopylocalatp1_at_p2($X) :- local_at_p1($X);",
-        "WLRULE: rule deleg_from_p0_1_1_at_p1($x) :- local_at_p0($x);",
+    assert_equal(["WLRULE: rule join_delegated@p0($x) :- local@p0($x), local@p1($x), local@p2($x);",
+        "WLRULE: rule extcopylocalatp1@p2($X) :- local@p1($X);",
+        "WLRULE: rule deleg_from_p0_1_1@p1($x) :- local@p0($x);",
         "String: rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),local@p1($x),local@p2($x);",
         "String: rule extcopylocalatp1@p2($X) :- local@p1($X);"],
       wl_peer[0].wl_program.rule_mapping.values.map do |ar|
@@ -460,12 +459,12 @@ EOF
     # fire p1 to process the delegation
     assert(wait_inbound(wl_peer[1]), "You have lost message")
     wl_peer[1].tick
-    assert_equal(["WLRULE: rule copylocalatp2_at_p1($X) :- local_at_p2($X);",
+    assert_equal(["WLRULE: rule copylocalatp2@p1($X) :- local@p2($X);",
         "String: rule copylocalatp2@p1($X) :- local@p2($X);",
-        "WLRULE: rule join_delegated_at_p0($x) :- deleg_from_p0_1_1_at_p1($x), local_at_p1($x), local_at_p2($x);",
-        "WLRULE: rule deleg_from_p1_2_1_at_p2($x) :- deleg_from_p0_1_1_at_p1($x), local_at_p1($x);",
+        "WLRULE: rule join_delegated@p0($x) :- deleg_from_p0_1_1@p1($x), local@p1($x), local@p2($x);",
+        "WLRULE: rule deleg_from_p1_2_1@p2($x) :- deleg_from_p0_1_1@p1($x), local@p1($x);",
         "String: rule join_delegated@p0($x):-deleg_from_p1_2_1@p2($x),local@p2($x);",
-        "WLRULE: rule extcopylocalatp1_at_p2($X) :- local_at_p1($X);"],
+        "WLRULE: rule extcopylocalatp1@p2($X) :- local@p1($X);"],
       wl_peer[1].wl_program.rule_mapping.values.map do |ar|
         if ar.first.is_a? WLBud::WLRule
           "WLRULE: " + ar.first.show_wdl_format
@@ -500,8 +499,8 @@ EOF
     # fire p2 to process the following of the delegation
     assert(wait_inbound(wl_peer[2]), "You have lost message")
     wl_peer[2].tick
-    assert_equal(["WLRULE: rule copylocalatp2_at_p1($X) :- local_at_p2($X);",
-        "WLRULE: rule join_delegated_at_p0($x) :- deleg_from_p1_2_1_at_p2($x), local_at_p2($x);"],
+    assert_equal(["WLRULE: rule copylocalatp2@p1($X) :- local@p2($X);",
+        "WLRULE: rule join_delegated@p0($x) :- deleg_from_p1_2_1@p2($x), local@p2($x);"],
       wl_peer[2].wl_program.rule_mapping.values.map do |ar|
         if ar.first.is_a? WLBud::WLRule
           "WLRULE: " + ar.first.show_wdl_format
@@ -519,9 +518,9 @@ EOF
     assert(wait_inbound(wl_peer[0]), "You have lost message")
     wl_peer[0].tick
     # there is no new rules only the remember that we made a delegation
-    assert_equal(["WLRULE: rule join_delegated_at_p0($x) :- local_at_p0($x), local_at_p1($x), local_at_p2($x);",
-        "WLRULE: rule extcopylocalatp1_at_p2($X) :- local_at_p1($X);",
-        "WLRULE: rule deleg_from_p0_1_1_at_p1($x) :- local_at_p0($x);",
+    assert_equal(["WLRULE: rule join_delegated@p0($x) :- local@p0($x), local@p1($x), local@p2($x);",
+        "WLRULE: rule extcopylocalatp1@p2($X) :- local@p1($X);",
+        "WLRULE: rule deleg_from_p0_1_1@p1($x) :- local@p0($x);",
         "String: rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),local@p1($x),local@p2($x);",
         "String: rule extcopylocalatp1@p2($X) :- local@p1($X);"],
       wl_peer[0].wl_program.rule_mapping.values.map do |ar|
@@ -560,12 +559,12 @@ EOF
 
     # check that the fully non-local rule from p0: rule extcopy@p2($X) :-
     # local@p1($X); has been installed on p1
-    assert_equal(["rule copylocalatp2_at_p1($X) :- local_at_p2($X);",
+    assert_equal(["rule copylocalatp2@p1($X) :- local@p2($X);",
         "rule copylocalatp2@p1($X) :- local@p2($X);",
-        "rule join_delegated_at_p0($x) :- deleg_from_p0_1_1_at_p1($x), local_at_p1($x), local_at_p2($x);",
-        "rule deleg_from_p1_2_1_at_p2($x) :- deleg_from_p0_1_1_at_p1($x), local_at_p1($x);",
+        "rule join_delegated@p0($x) :- deleg_from_p0_1_1@p1($x), local@p1($x), local@p2($x);",
+        "rule deleg_from_p1_2_1@p2($x) :- deleg_from_p0_1_1@p1($x), local@p1($x);",
         "rule join_delegated@p0($x):-deleg_from_p1_2_1@p2($x),local@p2($x);",
-        "rule extcopylocalatp1_at_p2($X) :- local_at_p1($X);"],
+        "rule extcopylocalatp1@p2($X) :- local@p1($X);"],
       wl_peer[1].wl_program.rule_mapping.values.map do |ar|
         if ar.first.is_a? WLBud::WLRule
           ar.first.show_wdl_format
