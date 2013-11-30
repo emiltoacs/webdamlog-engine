@@ -127,10 +127,11 @@ module WLBud
       # Array:(WLBud::WLRule)
       @new_rewritten_local_rule_to_install = []
       # The list of all the new local seeds to create due to processing of a
-      #   wlgrammar line in rewrite_unbound_rules. It contains the bound part of
-      #   the rule that have been split.
+      # wlgrammar line in rewrite_unbound_rules. It contains the bound part of
+      # the rule that have been split.
+      #
       # === data struct
-      # Array:[[WRule:seeder,String:interm_rel_in_rule,WLRule:wlrule],...]
+      # Array:[[WRule:seeder,String:interm_rel_in_rule,String:seedtemplate,WLRule:wlrule],...]
       # * seeder is the new rule to install
       # * interm_rel_in_rule is the string with the atom where the seed appear
       #   in the rule with the correct variables assignation
@@ -360,7 +361,7 @@ In the string: #{line}
     # Split the rule by reading atoms from left to right until non local atom or
     # variable in relation name or peer name has been found.
     #
-    # Set the attributes @seed and @seed_pos respectively to true if there is an
+    # Set the attributes @seed and @split_pos respectively to true if there is an
     # atom with variable in relation or peer name ; and @seedpos with the
     # position of this atom in the body starting from 0 or -1 if the variable is
     # in the head.
@@ -378,11 +379,12 @@ In the string: #{line}
           unless wlrule.split
             if atom.variable?
               wlrule.unbound << atom
-              wlrule.seed_pos = index
+              wlrule.split_pos = index
               wlrule.seed = true
               wlrule.split = true
             elsif not bound_n_local?(atom)
               wlrule.unbound << atom
+              wlrule.split_pos = index
               wlrule.seed = false
               wlrule.split = true
             else
@@ -395,11 +397,11 @@ In the string: #{line}
         # if the body has not been split
         unless wlrule.split
           if wlrule.head.variable?
-            wlrule.seed_pos = -1
+            wlrule.split_pos = -1
             wlrule.seed = true
             wlrule.split = true
           else
-            wlrule.seed_pos = nil
+            wlrule.split_pos = nil
             wlrule.seed = false
             wlrule.split = false
           end
@@ -565,7 +567,7 @@ In the string: #{line}
         end
       elsif wlword.is_a? WLBud::WLRule
         wlword.body.each { |atom|
-          unless bound_n_local?(atom.peername)
+          unless bound_n_local?(atom)
             return false
           end
         }
@@ -839,8 +841,12 @@ In the string: #{line}
       return "deleg_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
     end
 
+    # Generate a new unique relation name for intermediary seed relation
+    #
+    # @param [Fixnum] the rule id used in @rule_mapping usually given by
+    # WLRule.rule_id
     def generate_intermediary_seed_name(orig_rule_id)
-      return "seed_rule_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
+      return "seed_from_#{@peername}_#{orig_rule_id}_#{@rule_mapping[orig_rule_id].size}"
     end
 
     # Simple successor function useful to create id for rules in this WLprogram.

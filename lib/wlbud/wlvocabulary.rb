@@ -48,7 +48,7 @@ module WLBud
 
     attr_accessor :has_self_join
     attr_reader :dic_made, :dic_relation_name, :dic_invert_relation_name, :dic_wlvar, :dic_wlconst
-    attr_accessor :split, :seed, :seed_pos, :bound, :unbound
+    attr_accessor :split, :seed, :split_pos, :bound, :unbound
 
     # Creates a new WLRule and instantiate empty dictionaries for that rule.
     #
@@ -92,7 +92,7 @@ module WLBud
       @seed = nil
       # nil until WLProgram.split_rule has been called, receive the position of
       # the last bound atom if there are unbound.
-      @seed_pos = nil
+      @split_pos = nil
       # atom to use for local rule
       @bound = []
       # atom left to further processing
@@ -133,40 +133,7 @@ module WLBud
         @body = array
       end
       return @body
-    end
-
-    # @deprecated use the generic wlprogram.split_rule
-#    def seed?
-#      if @seed.nil?
-#        @bound = []
-#        @unbound = []
-#        @seed = false
-#        # find seed in the body
-#        body.each_with_index do |atom,index|
-#          unless @seed
-#            unless atom.variable?
-#              @bound << atom
-#            else
-#              @seed_pos = index
-#              @seed = true
-#            end
-#          else
-#            @unbound << atom
-#          end
-#        end
-#        # if no seeds appears in the body check in the head
-#        unless @seed
-#          if head.variable?
-#            @seed_pos = -1
-#            @seed = true
-#          else
-#            @seed_poes = nil
-#            @seed = false
-#          end
-#        end
-#      end
-#      @seed
-#    end
+    end    
 
     # The logical peer name ie. disambiguated according to the local program
     # knowledge.
@@ -257,7 +224,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     # valuations of all the useful variable in the bound part of a wlrule
     #
     # Useful variable are the one appearing in the local part AND (in the
-    # remote part OFR in the head)
+    # unbound part OR in the head)
     def create_intermediary_relation_from_bound_atoms interm_relname, interm_peername
       #select atom in the local part
       localbody = ""

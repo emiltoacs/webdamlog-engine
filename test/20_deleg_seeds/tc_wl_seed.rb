@@ -51,12 +51,15 @@ end
     ObjectSpace.garbage_collect
   end
 
+  # test the rewrite_unbound_rules method in wl_program 
   def test_seed_rewrite_unbound_rules
     pg = WLBud::WLProgram.new(@username, @pg_file, 'localhost', @ip)
 
     test_string = 
       "rule local1@test_seed($h1,$h2,$h3) :- local2@test_seed($l1,$h1),local3@test_seed($l1,$s1),local4@test_seed($s2,$l3),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);"
     result = pg.parse test_string, true
+
+    assert( ! pg.bound_n_local?(result), "this rule is not bounded")
 
     assert_equal(
       "rule local1_at_test_seed($h1, $h2, $h3) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3), $s1_at_test_seed($h2, $h3), local4_at_test_seed($_, $s2);",
@@ -75,7 +78,7 @@ end
     new_dec = pg.flush_new_local_declaration
     
     # test the new seed relation to declare
-    assert_equal "intermediary seed_rule_1_1_at_test_seed( seed_rule_1_1_h1_0*,seed_rule_1_1_s1_1*,seed_rule_1_1_s2_2* ) ;",
+    assert_equal "intermediary seed_from_test_seed_1_1_at_test_seed( seed_from_test_seed_1_1_h1_0*,seed_from_test_seed_1_1_s1_1*,seed_from_test_seed_1_1_s2_2* ) ;",
       new_dec.first.show_wdl_format
 
     arr_new_rul = pg.flush_new_seed_rule_to_install
@@ -84,12 +87,34 @@ end
     new_ste = arr_new_rul.first[2]
 
     # test the new seed rule installed locally
-    assert_equal "rule seed_rule_1_1_at_test_seed($h1, $s1, $s2) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3);",
+    assert_equal "rule seed_from_test_seed_1_1_at_test_seed($h1, $s1, $s2) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3);",
       new_rul.show_wdl_format
 
-    assert_equal "seed_rule_1_1@test_seed($h1,$s1,$s2)", new_ato
+    assert_equal "seed_from_test_seed_1_1@test_seed($h1,$s1,$s2)", new_ato
 
-    assert_equal "rule local1_at_test_seed($h1, $h2, $h3):-seed_rule_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);", new_ste
+    assert_equal "rule local1_at_test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
+      new_ste
   end
-  
+
+
+  # test the install method when seeds are passed to it
+  def test_seed_install_rule_with_seed
+    runner = WLRunner.create @username, @pg_file, @port
+    test_string =
+      "rule local1@test_seed($h1,$h2,$h3) :- local2@test_seed($l1,$h1),local3@test_seed($l1,$s1),local4@test_seed($s2,$l3),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);"
+    runner.tick    
+    runner.update_add_rule(test_string)
+
+    assert_equal 1, runner.seed_to_sprout.size
+    seed_arr = runner.seed_to_sprout.first
+    assert_equal 5, seed_arr.size
+    assert_equal "rule seed_from_test_seed_1_1_at_test_seed($h1, $s1, $s2) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3);",
+      seed_arr[0].show_wdl_format, "expected a local rule to use as a seeder"
+    assert_equal "seed_from_test_seed_1_1@test_seed($h1,$s1,$s2)", seed_arr[1], "intermediatry relation expected"
+    assert_equal "rule local1_at_test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
+      seed_arr[2], "seed template expected"
+    assert_equal "rule local1_at_test_seed($h1, $h2, $h3) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3), $s1_at_test_seed($h2, $h3), local4_at_test_seed($_, $s2);",
+      seed_arr[3].show_wdl_format, "original rule expected"
+    assert_equal "seed_from_test_seed_1_1_at_test_seed", seed_arr[4], "bud relation name of intermediary table"
+  end
 end
