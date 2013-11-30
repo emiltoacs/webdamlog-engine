@@ -329,7 +329,7 @@ In the string: #{line}
           delegation = wlrule.show_wdl_format
           # FIXME hacky substitute of _at_ by @ to be parsed correctly by the
           # receiver
-          delegation.gsub!(/_at_/, '@')
+          # delegation.gsub!(/_at_/, '@')
 
         else # if the rule must be cut in two part
           interm_relname = generate_intermediary_relation_name(wlrule.rule_id)
@@ -716,7 +716,8 @@ In the string: #{line}
       end
       return str
     end
-    
+
+    # @deprecated
     def make_pairs (wlrule)
       str = "(#{wlrule.body.first.fullrelname} * #{wlrule.body.last.fullrelname}).pairs(" ;
       pairs=false

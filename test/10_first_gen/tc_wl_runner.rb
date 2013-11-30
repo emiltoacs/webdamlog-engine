@@ -41,13 +41,13 @@ end
     assert_nothing_raised do
       wl_obj = WLRunner.create(@username, @pg_file, @port)
     end
-    assert_equal "rule join_delegated_at_p0($x) :- local_at_test_create_user($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x);",
+    assert_equal "rule join_delegated@p0($x) :- local@test_create_user($x), delegated@p1($x), delegated@p2($x), delegated@p3($x);",
       wl_obj.parse("rule join_delegated@p0($x):- local@test_create_user($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);").first.show_wdl_format
     assert_equal 2,
       wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);").size
-    assert_equal "intensional query1_at_test_create_user( title* ) ;",
+    assert_equal "intensional query1@test_create_user( title* ) ;",
       wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[0].show_wdl_format
-    assert_equal "rule query1_at_test_create_user($title) :- pictures_at_test_create_user($title, $_, $_, $_);",
+    assert_equal "rule query1@test_create_user($title) :- pictures@test_create_user($title, $_, $_, $_);",
       wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[1].show_wdl_format    
   end # test_parse
 end # class TcWl1Runner
@@ -103,7 +103,7 @@ end
 
       # original rule in position 0
       assert_kind_of WLBud::WLRule, wl_obj.wl_program.rule_mapping[1][0]
-      assert_equal "rule join_delegated_at_p0($x) :- local_at_test_create_user($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x);",
+      assert_equal "rule join_delegated@p0($x) :- local@test_create_user($x), delegated@p1($x), delegated@p2($x), delegated@p3($x);",
         wl_obj.wl_program.rule_mapping[1][0].show_wdl_format
 
       # id of local rule
@@ -191,10 +191,10 @@ end
       wl_obj = WLRunner.create(@username, @pg_file, @port)
     end
     wl_obj.run_engine
-    assert_equal ["extensional persitent local_at_test_snapshot_collection( atom1* ) ;",
-      "extensional persitent join_delegated_at_test_snapshot_collection( atom1* ) ;",
-      "intensional local2_at_test_snapshot_collection( atom1* ) ;",
-      "intermediary deleg_from_test_snapshot_collection_1_1_at_p1( deleg_from_test_snapshot_collection_1_1_x_0* ) ;"],
+    assert_equal ["extensional persitent local@test_snapshot_collection( atom1* ) ;",
+      "extensional persitent join_delegated@test_snapshot_collection( atom1* ) ;",
+      "intensional local2@test_snapshot_collection( atom1* ) ;",
+      "intermediary deleg_from_test_snapshot_collection_1_1@p1( deleg_from_test_snapshot_collection_1_1_x_0* ) ;"],
       wl_obj.snapshot_collections
   ensure
     File.delete(@pg_file) if File.exists?(@pg_file)
@@ -224,11 +224,11 @@ end
     end
     wl_obj.run_engine
     assert_equal({1=>
-          "rule join_delegated_at_p0($x) :- local_at_test_snapshot_collection($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x);",
+          "rule join_delegated@p0($x) :- local@test_snapshot_collection($x), delegated@p1($x), delegated@p2($x), delegated@p3($x);",
         2=>
-          "rule local2_at_test_snapshot_collection($x) :- local_at_test_snapshot_collection($x);",
+          "rule local2@test_snapshot_collection($x) :- local@test_snapshot_collection($x);",
         3=>
-          "rule deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x);"},
+          "rule deleg_from_test_snapshot_collection_1_1@p1($x) :- local@test_snapshot_collection($x);"},
       wl_obj.snapshot_rules)
   ensure
     File.delete(@pg_file) if File.exists?(@pg_file)
@@ -244,16 +244,16 @@ end
           "p1 localhost:11111",
           "p2 localhost:11112",
           "p3 localhost:11113"],
-        ["extensional persitent local_at_test_snapshot_collection( atom1* ) ;",
-          "extensional persitent join_delegated_at_test_snapshot_collection( atom1* ) ;",
-          "intensional local2_at_test_snapshot_collection( atom1* ) ;",
-          "intermediary deleg_from_test_snapshot_collection_1_1_at_p1( deleg_from_test_snapshot_collection_1_1_x_0* ) ;"],
+        ["extensional persitent local@test_snapshot_collection( atom1* ) ;",
+          "extensional persitent join_delegated@test_snapshot_collection( atom1* ) ;",
+          "intensional local2@test_snapshot_collection( atom1* ) ;",
+          "intermediary deleg_from_test_snapshot_collection_1_1@p1( deleg_from_test_snapshot_collection_1_1_x_0* ) ;"],
         {1=>
-            "rule join_delegated_at_p0($x) :- local_at_test_snapshot_collection($x), delegated_at_p1($x), delegated_at_p2($x), delegated_at_p3($x);",
+            "rule join_delegated@p0($x) :- local@test_snapshot_collection($x), delegated@p1($x), delegated@p2($x), delegated@p3($x);",
           2=>
-            "rule local2_at_test_snapshot_collection($x) :- local_at_test_snapshot_collection($x);",
+            "rule local2@test_snapshot_collection($x) :- local@test_snapshot_collection($x);",
           3=>
-            "rule deleg_from_test_snapshot_collection_1_1_at_p1($x) :- local_at_test_snapshot_collection($x);"}],
+            "rule deleg_from_test_snapshot_collection_1_1@p1($x) :- local@test_snapshot_collection($x);"}],
       wl_obj.snapshot_full_state)
   ensure
     File.delete(@pg_file) if File.exists?(@pg_file)

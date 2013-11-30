@@ -249,10 +249,9 @@ rule local1@p1($X):-local2@p1($X);
       assert_kind_of WLBud::WLCollection, rel
       assert_equal "myself", rel.peername
       fact = program.wlfacts
-      assert_not_nil fact
-      # #assert_kind_of WLBud::WLFacts, fact
-      assert_equal ["picture_at_myself( sigmod, myself, 12347, http://www.seeklogo.com/images/A/Acm_Sigmod-logo-F12330F5BD-seeklogo.com.gif ) ;",
-        "picture_at_myself( webdam, myself, 12348, http://www.cs.tau.ac.il/workshop/modas/webdam3.png ) ;"],
+      assert_not_nil fact      
+      assert_equal ["picture@myself( sigmod, myself, 12347, http://www.seeklogo.com/images/A/Acm_Sigmod-logo-F12330F5BD-seeklogo.com.gif ) ;",
+        "picture@myself( webdam, myself, 12348, http://www.cs.tau.ac.il/workshop/modas/webdam3.png ) ;"],
         fact.map { |fact| fact.show_wdl_format }
       assert_equal [["sigmod",
           "myself",
@@ -262,7 +261,6 @@ rule local1@p1($X):-local2@p1($X);
           "myself",
           "12348",
           "http://www.cs.tau.ac.il/workshop/modas/webdam3.png"]], fact.map { |fact| fact.content }
-
     ensure
       File.delete('test_060_fact_disamb') if File.exists?('test_060_fact_disamb')
     end
@@ -466,7 +464,7 @@ end
       '11111',
       {:debug => true} )
     assert_equal 1, program.rule_mapping.size
-    local = "rule contact_at_the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact_at_sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
+    local = "rule contact@the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact@sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
     delegation = "rule contact@the_peername($username, $peerlocation, $online, \"asnwer@email.com\") :- contact@sigmod_peer($username, $peerlocation, $online, \"email@email.com\");"
     assert_equal 1, program.rule_mapping.first.first, "one rule with index 1 should have been added"
     assert_equal local, program.rule_mapping.first[1].first.show_wdl_format

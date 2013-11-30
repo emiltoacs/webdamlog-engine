@@ -38,28 +38,28 @@ peer other = localhost:10000;
     assert_equal [], rule.unbound
     # check basic local rules aren't split
     assert_equal false, @@program.send(:split_rule, rule)
-    assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@local($username)"], rule.bound.map { |item| item.show_wdl_format }
     assert_equal [], rule.unbound.map { |item| item.show_wdl_format }
 
     # check delegation are split
     output = @@parser.parse('rule contact@local($username):-friend@local($username),friend@other($username);')
     rule = output.get_inst
     assert_equal true, @@program.send(:split_rule, rule)
-    assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
-    assert_equal ["friend_at_other($username)"], rule.unbound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@local($username)"], rule.bound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@other($username)"], rule.unbound.map { |item| item.show_wdl_format }
 
     # check full delegation are split
     output = @@parser.parse('rule contact@local($username):-friend@other($username);')
     rule = output.get_inst
     assert_equal true, @@program.send(:split_rule, rule)
     assert_equal [], rule.bound.map { |item| item.show_wdl_format }
-    assert_equal ["friend_at_other($username)"], rule.unbound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@other($username)"], rule.unbound.map { |item| item.show_wdl_format }
 
     # check non-local head are not split
     output = @@parser.parse('rule contact@other($username):-friend@local($username),family@local($username);')
     rule = output.get_inst
     assert_equal false, @@program.send(:split_rule, rule)
-    assert_equal ["friend_at_local($username)", "family_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@local($username)", "family@local($username)"], rule.bound.map { |item| item.show_wdl_format }
     assert_equal [], rule.unbound.map { |item| item.show_wdl_format }
 
     # each case of variable
@@ -70,8 +70,8 @@ peer other = localhost:10000;
     assert_equal true, @@program.send(:split_rule, rule)
     assert_equal true, rule.seed
     assert_equal 1, rule.split_pos
-    assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
-    assert_equal ["family_at_$username($family)"], rule.unbound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@local($username)"], rule.bound.map { |item| item.show_wdl_format }
+    assert_equal ["family@$username($family)"], rule.unbound.map { |item| item.show_wdl_format }
 
     # multiple variable in the body detect the first one
     output = @@parser.parse('rule contact@other($family):-friend@$username($username),family@$username($family);')
@@ -80,7 +80,7 @@ peer other = localhost:10000;
     assert_equal true, rule.seed
     assert_equal 0, rule.split_pos
     assert_equal [], rule.bound.map { |item| item.show_wdl_format }
-    assert_equal ["friend_at_$username($username)", "family_at_$username($family)"], rule.unbound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@$username($username)", "family@$username($family)"], rule.unbound.map { |item| item.show_wdl_format }
 
     # variable in the head
     output = @@parser.parse('rule contact@$username($family):-friend@local($username),family@local($family);')
@@ -88,7 +88,7 @@ peer other = localhost:10000;
     assert_equal true, @@program.send(:split_rule, rule)
     assert_equal true, rule.seed
     assert_equal -1, rule.split_pos
-    assert_equal ["friend_at_local($username)", "family_at_local($family)"], rule.bound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@local($username)", "family@local($family)"], rule.bound.map { |item| item.show_wdl_format }
     assert_equal [], rule.unbound.map { |item| item.show_wdl_format }
 
     # mix of seed and non-local
@@ -99,8 +99,8 @@ peer other = localhost:10000;
     assert_equal true, @@program.send(:split_rule, rule)
     assert_equal false, rule.seed
     assert_equal 1, rule.split_pos
-    assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
-    assert_equal ["family_at_other($family)"], rule.unbound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@local($username)"], rule.bound.map { |item| item.show_wdl_format }
+    assert_equal ["family@other($family)"], rule.unbound.map { |item| item.show_wdl_format }
 
     # with seed first non-local should not be detected
     output = @@parser.parse('rule contact@$username($family):-friend@local($username),family@$username($family),friend@local($username);')
@@ -108,8 +108,8 @@ peer other = localhost:10000;
     assert @@program.send(:split_rule, rule)
     assert rule.seed
     assert_equal 1, rule.split_pos
-    assert_equal ["friend_at_local($username)"], rule.bound.map { |item| item.show_wdl_format }
-    assert_equal ["family_at_$username($family)", "friend_at_local($username)"], rule.unbound.map { |item| item.show_wdl_format }
+    assert_equal ["friend@local($username)"], rule.bound.map { |item| item.show_wdl_format }
+    assert_equal ["family@$username($family)", "friend@local($username)"], rule.unbound.map { |item| item.show_wdl_format }
     
   ensure
     File.delete('test_split_rules') if File.exists?('test_split_rules')

@@ -365,7 +365,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
 
     def show_wdl_format
       str = ""
-      str << fullrelname
+      str << "#{self.relname}@#{self.peername}"
       str << "( "
       items.get_items.each { |i| str << "#{i.item_text_value}, " }
       str.slice!(-2..-1)
@@ -523,7 +523,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       str = ""
       str << get_type.to_s.downcase + " "
       str << "persitent" + " " if self.persistent?
-      str << fullrelname
+      str << "#{relname}@#{peername}"
       str << "( #{col_fields.text_value} ) ;"
     end
   end
@@ -671,8 +671,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       @peername = yield peername if block_given?
     end
 
-    # @return [Array] the variables included in the atom in an array format e.g.
-    # :
+    # @return [Array] the variables included in the atom in an array format 
     # [relation_var,peer_var,[field_var1,field_var2,...]]
     def variables
       if @variables.nil?
@@ -729,7 +728,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     def show_wdl_format
-      return "#{fullrelname}(#{self.rfields.show_wdl_format})"
+      return "#{self.relname}@#{self.peername}(#{self.rfields.show_wdl_format})"
     end
   end
 
@@ -768,15 +767,12 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def variables
       if @variables.nil?
         f = []
-        # self.rtokens.elements.each {|t| f <<
-        # t.elements.first.text_value.split(',').first unless
-        # !t.text_value.include?('$')} f << self.rtoken.text_value unless
-        # !self.rtoken.text_value.include?('$')
         get_rtokens.each { |t| f << t.text_value if t.variable? }
         @variables=f
       end
       return @variables
     end
+    
     # @return [Array] list of WLRToken
     def fields
       if @fields.nil?

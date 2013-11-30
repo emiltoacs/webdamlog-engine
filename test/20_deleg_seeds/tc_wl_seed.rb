@@ -62,23 +62,23 @@ end
     assert( ! pg.bound_n_local?(result), "this rule is not bounded")
 
     assert_equal(
-      "rule local1_at_test_seed($h1, $h2, $h3) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3), $s1_at_test_seed($h2, $h3), local4_at_test_seed($_, $s2);",
+      "rule local1@test_seed($h1, $h2, $h3) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3), $s1@test_seed($h2, $h3), local4@test_seed($_, $s2);",
       result.show_wdl_format)
 
     # the method we want to test
     pg.rewrite_rule result
 
     # test the split in two parts
-    assert_equal ["local2_at_test_seed($l1, $h1)","local3_at_test_seed($l1, $s1)","local4_at_test_seed($s2, $l3)"],
+    assert_equal ["local2@test_seed($l1, $h1)","local3@test_seed($l1, $s1)","local4@test_seed($s2, $l3)"],
       result.bound.map { |e| e.show_wdl_format }
-    assert_equal ["$s1_at_test_seed($h2, $h3)", "local4_at_test_seed($_, $s2)"],
+    assert_equal ["$s1@test_seed($h2, $h3)", "local4@test_seed($_, $s2)"],
       result.unbound.map { |e| e.show_wdl_format }
-    assert_equal "local1_at_test_seed($h1, $h2, $h3)", result.head.show_wdl_format
+    assert_equal "local1@test_seed($h1, $h2, $h3)", result.head.show_wdl_format
 
     new_dec = pg.flush_new_local_declaration
     
     # test the new seed relation to declare
-    assert_equal "intermediary seed_from_test_seed_1_1_at_test_seed( seed_from_test_seed_1_1_h1_0*,seed_from_test_seed_1_1_s1_1*,seed_from_test_seed_1_1_s2_2* ) ;",
+    assert_equal "intermediary seed_from_test_seed_1_1@test_seed( seed_from_test_seed_1_1_h1_0*,seed_from_test_seed_1_1_s1_1*,seed_from_test_seed_1_1_s2_2* ) ;",
       new_dec.first.show_wdl_format
 
     arr_new_rul = pg.flush_new_seed_rule_to_install
@@ -87,12 +87,12 @@ end
     new_ste = arr_new_rul.first[2]
 
     # test the new seed rule installed locally
-    assert_equal "rule seed_from_test_seed_1_1_at_test_seed($h1, $s1, $s2) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3);",
+    assert_equal "rule seed_from_test_seed_1_1@test_seed($h1, $s1, $s2) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3);",
       new_rul.show_wdl_format
 
     assert_equal "seed_from_test_seed_1_1@test_seed($h1,$s1,$s2)", new_ato
 
-    assert_equal "rule local1_at_test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
+    assert_equal "rule local1@test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
       new_ste
   end
 
@@ -108,12 +108,12 @@ end
     assert_equal 1, runner.seed_to_sprout.size
     seed_arr = runner.seed_to_sprout.first
     assert_equal 5, seed_arr.size
-    assert_equal "rule seed_from_test_seed_1_1_at_test_seed($h1, $s1, $s2) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3);",
+    assert_equal "rule seed_from_test_seed_1_1@test_seed($h1, $s1, $s2) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3);",
       seed_arr[0].show_wdl_format, "expected a local rule to use as a seeder"
     assert_equal "seed_from_test_seed_1_1@test_seed($h1,$s1,$s2)", seed_arr[1], "intermediatry relation expected"
-    assert_equal "rule local1_at_test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
+    assert_equal "rule local1@test_seed($h1, $h2, $h3):-seed_from_test_seed_1_1@test_seed($h1,$s1,$s2),$s1@test_seed($h2,$h3),local4@test_seed($_,$s2);",
       seed_arr[2], "seed template expected"
-    assert_equal "rule local1_at_test_seed($h1, $h2, $h3) :- local2_at_test_seed($l1, $h1), local3_at_test_seed($l1, $s1), local4_at_test_seed($s2, $l3), $s1_at_test_seed($h2, $h3), local4_at_test_seed($_, $s2);",
+    assert_equal "rule local1@test_seed($h1, $h2, $h3) :- local2@test_seed($l1, $h1), local3@test_seed($l1, $s1), local4@test_seed($s2, $l3), $s1@test_seed($h2, $h3), local4@test_seed($_, $s2);",
       seed_arr[3].show_wdl_format, "original rule expected"
     assert_equal "seed_from_test_seed_1_1_at_test_seed", seed_arr[4], "bud relation name of intermediary table"
   end
