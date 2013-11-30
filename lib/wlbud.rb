@@ -71,7 +71,7 @@ module WLBud
     attr_reader :peername
     # The name of the file to read with the program
     attr_reader :filename
-    attr_reader :options, :wl_program, :rules_to_delegate, :relation_to_declare, :program_loaded, :seed_to_sprout
+    attr_reader :options, :wl_program, :rules_to_delegate, :relation_to_declare, :program_loaded, :seed_to_sprout, :new_sprout_rules, :sprout_rules
     # the directory where the peer write its rules
     attr_reader :rule_dir
     attr_reader :filter_delegations, :pending_delegations
@@ -164,7 +164,11 @@ module WLBud
       # content comes from wl_program.new_seed_rule_to_install with a new fifth
       # field that is the name of the intermediary relation in bud
       # array [seeder, interm_rel_in_rule, seedtemplate, wlrule, rel_name_in_bud]
-      @seed_to_sprout = []
+      @seed_to_sprout = []      
+      # New rules generated from a seed to install
+      @new_sprout_rules = {}
+      # Rules generated from a seed
+      @sprout_rules = {}
 
       if options[:wl_test]
         @test_received_on_chan = []
@@ -366,6 +370,7 @@ module WLBud
             end
           end
         end
+        # add updates of facts and rules
         read_packet_channel.each do |packet_value|
           if @options[:debug]
             puts "Process packets received from #{packet_value.print_meta_data}"
@@ -380,6 +385,8 @@ module WLBud
             add_facts(packet_value.facts) unless packet_value.facts.nil?
           end
         end
+        # add new rules from seeds
+        @new_sprout_rules.each_key { |key| add_rule(key) }
         
         if @options[:measure]
           @measure_obj.append_measure @budtime
@@ -483,7 +490,7 @@ module WLBud
         if @options[:measure]
           @measure_obj.append_measure @budtime
         end
-        # diplay the content of dbm
+        # display the content of dbm
         if @options[:debug] and @options[:trace]
           puts "-----see viz logtab dbm-----"
           # #logtab = @viz.class.send(:logtab) #dbm = logtab.class.send(:dbm)
@@ -495,8 +502,7 @@ module WLBud
           # }.each{|s| puts s} # same result as above
           puts "----end of viz logtab-----"
         end
-        # A
-        seed_sprout
+        @new_sprout_rules.merge! make_seed_sprout
         # There is the moment in the tick where I should fill the channel with
         # my own structure that is the facts, the delegated rules along with the
         # newly created relations (declaration of new collections)
@@ -910,22 +916,27 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     end
 
     # generate the new rules from seed that have been bounded
-    def seed_sprout
-      new_rules = []
+    def make_seed_sprout
+      new_rules = {}
       # for each seeds entry
       @seed_to_sprout.each do |sts|
         bud_coll_name = sts[4]
         coll = @tables[bud_coll_name.to_sym]
         template = @wl_program.parse sts[2]
-        new_rule = String.new template.show_wdl_format
-        var_to_bound = template.head.variables[2]
+        new_rule = nil
+        var_to_bound = template.body.first.variables[2]
         # for each tuple in intermediary relation
         coll.pro do |tuple|
+          new_rule = String.new template.show_wdl_format
           var_to_bound.each_index do |ind_var|
-            new_rule = template.gsub var_to_bound[ind_var], tuple[ind_var]
+            # FIXME take care if tuple value requires quotes
+            new_rule = new_rule.gsub var_to_bound[ind_var], tuple[ind_var]
+          end
+          # add new rules only if it has not already been derived
+          unless @sprout_rules.has_key?(new_rule)
+            new_rules[new_rule]=new_rule
           end
         end
-        new_rules << new_rule
       end
       return new_rules
     end

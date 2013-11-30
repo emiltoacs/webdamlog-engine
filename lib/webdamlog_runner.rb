@@ -32,7 +32,7 @@ module WLRunner
 
   # Stop and delete the webdamlog engine
   def delete
-    self.stop if self.running_async
+    self.stop
     WLEnginePool.delete self.class
   end
 
