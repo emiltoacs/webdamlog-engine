@@ -1,6 +1,4 @@
 * Webdamlog engine
 
-Implementation of an engine for webdamlog evaluation. Webdamlog is
-distributed datalog language.
-
-
+An engine to evaluate Webdamlog programs.  Webdamlog is a distributed
+datalog style langage, supporting updates.  In addition it supports delegation i.e. datalog rules with non-local atoms in the body.
