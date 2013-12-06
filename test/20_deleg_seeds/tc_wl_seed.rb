@@ -119,6 +119,7 @@ end
   end
 
   # test the method seed_sprout
+  # test the method seed_sprout
   def test_seed_sprout
     begin
       runner = WLRunner.create @username, @pg_file, @port
@@ -132,9 +133,55 @@ end
         runner.new_sprout_rules.keys
       assert_equal 1,runner.t_rules.length, "only the original rule is installed"
       runner.tick
-      assert_equal 3,runner.t_rules.length, "2 rules srpout from seeds must be installed"      
+      assert_equal 3,runner.t_rules.length, "2 rules srpout from seeds must be installed"
+      assert_equal [], runner.t_rules.inspect, "the bud program running is wrong"
     ensure
       runner.stop
     end
+  end
+end
+
+# test the rule with variable with the rule given by vera in emails
+# rule album_i@sue3($img,$id) :- all_friends_i@sue3($id), photos@$id($img), tags@$id($img,1), tags@$id($img,2);
+class TcWlVeraRule < Test::Unit::TestCase
+  include MixinTcWlTest
+
+  def setup
+    @pg = <<-EOF
+peer test_seed=localhost:11110;
+peer p1=localhost:11111;
+peer p2=localhost:11112;
+peer p3=localhost:11113;
+collection ext persistent local1@test_seed(atom1*,atom2*,atom3*);
+collection ext per local2@test_seed(atom1*,atom2*);
+collection ext per local3@test_seed(atom1*,atom2*);
+collection ext per local4@test_seed(atom1*,atom2*);
+collection ext persistent relname1@test_seed(atom1*,atom2*);
+collection ext persistent relname2@test_seed(atom1*,atom2*);
+fact local2@test_seed("flocal1","flocalhead1");
+fact local2@test_seed("flocal2","flocalhead2");
+fact local3@test_seed("flocal1","relname1");
+fact local3@test_seed("flocal1","relname2");
+fact local4@test_seed("flocal3","useless1");
+fact local4@test_seed("flocal3","useless2");
+end
+    EOF
+    @username = "test_seed"
+    @port = "11110"
+    @pg_file = "test_seed_vera_variable_rule"
+    File.open(@pg_file,"w"){ |file| file.write @pg }
+  end
+
+  def teardown
+    File.delete(@pg_file) if File.exists?(@pg_file)
+    ObjectSpace.each_object(WLRunner) do |obj|
+      clean_rule_dir obj.rule_dir
+      obj.delete
+    end
+    ObjectSpace.garbage_collect
+  end
+
+  def test_vera_rule_with_variable
+
   end
 end
