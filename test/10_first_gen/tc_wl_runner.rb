@@ -39,7 +39,7 @@ end
   end
 
   def test_parse
-    wl_obj = nil    
+    wl_obj = nil
     assert_nothing_raised do
       wl_obj = WLRunner.create(@username, @pg_file, @port)
     end

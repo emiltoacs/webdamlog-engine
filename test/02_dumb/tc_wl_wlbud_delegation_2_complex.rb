@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ####License####
 #  File name tc_wl_delegation_2_complex.rb
 #  Copyright © by INRIA
