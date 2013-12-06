@@ -146,6 +146,15 @@ Exemple for a table declared with
 The easiest way to iterate on them is to use the method .pro (as
 projection).
 
+**** Tuples in bud collection
+
+Each tuple of a bud table is a class Bud::TupleStruct < Struct
+
+Basically it is a struct with column name given by the method
+BudCollection#schema
+
+
+
 **** Operator
 
 ***** bud style
