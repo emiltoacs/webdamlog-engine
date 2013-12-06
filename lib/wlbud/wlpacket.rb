@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #  File name wlpacket.rb
 #  Copyright © by INRIA
 #
@@ -179,16 +180,18 @@ module WLBud
 
     def pretty_print
       # collection added
-      puts "#{self.declarations.size} collections to add:"
+      puts "#{self.declarations.size} collections to add:" unless self.declarations.nil?
       puts "#{self.declarations}"
       # facts added
-      puts "#{self.facts.size} relations to update:"
-      self.facts.each do |rel|
-        puts "#{rel.first} updated with"
-        puts "#{rel[1]}"
+      unless self.facts.nil?
+        puts "#{self.facts.size} relations to update:" 
+        self.facts.each do |rel|
+          puts "#{rel.first} updated with"
+          puts "#{rel[1]}"
+        end
       end
       # rules added
-      puts "#{self.rules.size} rules to add:"
+      puts "#{self.rules.size} rules to add:" unless self.rules.nil?
       puts "#{self.rules.inspect}"
     end
 
