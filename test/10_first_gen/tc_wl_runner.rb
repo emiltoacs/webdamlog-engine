@@ -16,7 +16,8 @@ class TcWl1Runner < Test::Unit::TestCase
     ObjectSpace.garbage_collect
   end
 
-  @pg = <<-EOF
+  def setup
+    @pg = <<-EOF
 peer test_create_user=localhost:11110;
 peer p1=localhost:11111;
 peer p2=localhost:11112;
@@ -30,14 +31,15 @@ fact local@test_create_user(3);
 fact local@test_create_user(4);
 rule local2@test_create_user($x) :- local@test_create_user($x);
 end
-  EOF
-  @username = "test_create_user"
-  @port = "11110"
-  @pg_file = "test_parse_program"
-  File.open(@pg_file,"w"){ |file| file.write @pg }
+    EOF
+    @username = "test_create_user"
+    @port = "11110"
+    @pg_file = "test_parse_program"
+    File.open(@pg_file,"w"){ |file| file.write @pg }
+  end
 
   def test_parse
-    wl_obj = nil
+    wl_obj = nil    
     assert_nothing_raised do
       wl_obj = WLRunner.create(@username, @pg_file, @port)
     end
@@ -48,7 +50,9 @@ end
     assert_equal "intensional query1@test_create_user( title* ) ;",
       wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[0].show_wdl_format
     assert_equal "rule query1@test_create_user($title) :- pictures@test_create_user($title, $_, $_, $_);",
-      wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[1].show_wdl_format    
+      wl_obj.parse("collection int query1@local(title*);\nrule query1@local($title):-pictures@local($title,$_,$_,$_);")[1].show_wdl_format
+  ensure
+    File.delete(@pg_file) if File.exists?(@pg_file)
   end # test_parse
 end # class TcWl1Runner
 
@@ -147,7 +151,7 @@ end
       runner.stop
       File.delete(@pg_file) if File.exists?(@pg_file)
     end
-  end # test_run  
+  end # test_run
 end # class TcWlRunner
 
 
@@ -191,8 +195,8 @@ end
       wl_obj = WLRunner.create(@username, @pg_file, @port)
     end
     wl_obj.run_engine
-    assert_equal ["extensional persitent local@test_snapshot_collection( atom1* ) ;",
-      "extensional persitent join_delegated@test_snapshot_collection( atom1* ) ;",
+    assert_equal ["extensional persistent local@test_snapshot_collection( atom1* ) ;",
+      "extensional persistent join_delegated@test_snapshot_collection( atom1* ) ;",
       "intensional local2@test_snapshot_collection( atom1* ) ;",
       "intermediary deleg_from_test_snapshot_collection_1_1@p1( deleg_from_test_snapshot_collection_1_1_x_0* ) ;"],
       wl_obj.snapshot_collections
@@ -244,8 +248,8 @@ end
           "p1 localhost:11111",
           "p2 localhost:11112",
           "p3 localhost:11113"],
-        ["extensional persitent local@test_snapshot_collection( atom1* ) ;",
-          "extensional persitent join_delegated@test_snapshot_collection( atom1* ) ;",
+        ["extensional persistent local@test_snapshot_collection( atom1* ) ;",
+          "extensional persistent join_delegated@test_snapshot_collection( atom1* ) ;",
           "intensional local2@test_snapshot_collection( atom1* ) ;",
           "intermediary deleg_from_test_snapshot_collection_1_1@p1( deleg_from_test_snapshot_collection_1_1_x_0* ) ;"],
         {1=>
