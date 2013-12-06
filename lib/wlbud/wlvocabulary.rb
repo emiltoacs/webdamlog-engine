@@ -416,7 +416,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       @schema=nil
       @fields=nil
       @type=nil
-      @persitent=false
+      @persistent=false
       super(a1,a2,a3)
     end
 
@@ -522,7 +522,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     def show_wdl_format
       str = ""
       str << get_type.to_s.downcase + " "
-      str << "persitent" + " " if self.persistent?
+      str << "persistent" + " " if self.persistent?
       str << "#{relname}@#{peername}"
       str << "( #{col_fields.text_value} ) ;"
     end
