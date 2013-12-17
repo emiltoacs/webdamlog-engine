@@ -243,7 +243,7 @@ In the string: #{line}
       return peername, address
     end
 
-    # The whole rewrite process to compile webdamlog into bud + delegation and
+    # The whole rewrite process to compile Webdamlog into bud + delegation and
     # seeds. If the rule needs to be split it will create a new intermediary
     # relation that is accessible with flush_new_local_declaration. Then the
     # rule could be a simple rewriting or a seed. According to the case it will

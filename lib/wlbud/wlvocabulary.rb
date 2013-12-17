@@ -221,12 +221,12 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
 
     # Create a new rule with a new relation in the head that receive the
-    # valuations of all the useful variable in the bound part of a wlrule
+    # valuations of all the useful variables in the bound part of a wlrule
     #
     # Useful variable are the one appearing in the local part AND (in the
     # unbound part OR in the head)
     def create_intermediary_relation_from_bound_atoms interm_relname, interm_peername
-      #select atom in the local part
+      # select atom in the local part
       localbody = ""
       local_vars = []
       @bound.each do |atom|
@@ -235,7 +235,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       end
       local_vars = local_vars.flatten.compact.uniq
       localbody.slice!(-1)
-      #select atom in the remote part and in the head
+      # #select atom in the remote part and in the head
       remote_vars = []
       @unbound.each do |atom|
         remote_vars += atom.variables.flatten
@@ -248,16 +248,25 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
           useful_vars << var
         end
       end
-      # build the list of attributes for relation declaration (dec_fields)
-      # removing the '$' of variable and create attributes names
-      dec_fields=''
-      var_fields=''
-      useful_vars.each_index do |ind|
-        useful_var = useful_vars[ind]
-        dec_fields << useful_var.gsub( /(^\$)(.*)/ , interm_relname+"_\\2_"+ind.to_s+"\*," )
-        var_fields << useful_var << ","
-      end ; dec_fields.slice!(-1); var_fields.slice!(-1);
 
+      # FIXME if there is no useful variable the rule is syntactically correct
+      # but logically there is useless atoms. The problem is that it will
+      # generate a rewriting with a zero arity relation. I changed it here to
+      # add a boolean set to true.
+      if useful_vars.empty?
+        dec_fields='const_bool*'
+        var_fields='true'
+      else
+        # build the list of attributes for relation declaration (dec_fields)
+        # removing the '$' of variable and create attributes names
+        dec_fields=''
+        var_fields=''
+        useful_vars.each_index do |ind|
+          useful_var = useful_vars[ind]
+          dec_fields << useful_var.gsub( /(^\$)(.*)/ , interm_relname+"_\\2_"+ind.to_s+"\*," )
+          var_fields << useful_var << ","
+        end ; dec_fields.slice!(-1); var_fields.slice!(-1);
+      end
       # new collection declaration
       interm_rel_declaration = "#{interm_relname}@#{interm_peername}(#{dec_fields})"
       # new rule to install
@@ -450,7 +459,8 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       return @schema
     end # schema
 
-    # @return [Symbol] the relation type :Intensional :Extensional or :Intermediary
+    # @return [Symbol] the relation type :Intensional :Extensional or
+    # :Intermediary
     def get_type
       rel_type.type
     end
@@ -671,7 +681,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       @peername = yield peername if block_given?
     end
 
-    # @return [Array] the variables included in the atom in an array format 
+    # @return [Array] the variables included in the atom in an array format
     # [relation_var,peer_var,[field_var1,field_var2,...]]
     def variables
       if @variables.nil?
