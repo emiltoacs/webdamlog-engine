@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ####License####
 #  File name wlbud.rb
 #  Copyright © by INRIA
@@ -229,8 +230,8 @@ module WLBud
       # #### WLBud:Begin adding to Bud
       #
       if @options[:measure]
-        @measure_obj = WlMeasure.new @budtime, @options[:measure_file]
-      end      
+        @measure_obj = WlMeasure.new @budtime, @peername, @options[:measure_file]
+      end
       @need_rewrite_strata=false
       @done_rewrite={}
       @collection_added=false
