@@ -1,13 +1,10 @@
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
+# To change this template, choose Tools | Templates and open the template in the
+# editor.
 
 module WLTools
 
-  # Sanitize the string ie.
-  # + Remove leading and trailing whitespace
-  # + Downcase
-  # + Replace internal space by _
-  # + Remove " or '
+  # Sanitize the string ie. + Remove leading and trailing whitespace + Downcase
+  # + Replace internal space by _ + Remove " or '
   #
   def self.sanitize(string)
     str = string.strip.downcase
@@ -17,11 +14,8 @@ module WLTools
     return str.gsub(/\s+/, '_')
   end
 
-  # Sanitize the string ie.
-  # + Remove leading and trailing whitespace
-  # + Downcase
-  # + Replace internal space by _
-  # + Remove " or '
+  # Sanitize the string ie. + Remove leading and trailing whitespace + Downcase
+  # + Replace internal space by _ + Remove " or '
   #
   def self.sanitize!(string)
     string.strip!
@@ -33,6 +27,13 @@ module WLTools
     return string
   end
 
+  # Add quotes around s if it is a string
+  def self.quote_string(s)
+    res = ""
+    s.is_a?(String) ? res = "\'#{s}\'" : res = s.to_s
+    return res
+  end
+
   # Transform *filename* into a nice *NIX filename
   #
   # This regex will match all characters other than basic letters and digits:
@@ -41,8 +42,7 @@ module WLTools
   # This will remove any extra whitespace in between words
   # s/(^|\b\s)\s+($|\s?\b)/\\1\\2/g
   #
-  # And lastly, replace the remaining spaces with underscores:
-  # s/\s+/_/g
+  # And lastly, replace the remaining spaces with underscores: s/\s+/_/g
   #
   def self.friendly_filename(filename)
     filename.gsub(/[^\w\s_-]+/, '').gsub(/(^|\b\s)\s+($|\s?\b)/, '\\1\\2').gsub(/\s+/, '_')
@@ -51,13 +51,13 @@ module WLTools
   # The classic group by method that group a list of array by the field in
   # position key_pos.
   #
-  # Return a hash built from an array of array with key_pos fields of each
-  # array element as key of the hash and merge all the equals values
-  # constituted of all other fields of array elements into an array. Example:
-  # a = [["one", "value11"], ["one", "value12"], ["two", "value21"], ["two",
-  # "value22"]]
+  # Return a hash built from an array of array with key_pos fields of each array
+  # element as key of the hash and merge all the equals values constituted of
+  # all other fields of array elements into an array. Example: a = [["one",
+  # "value11"], ["one", "value12"], ["two", "value21"], ["two", "value22"]]
   #
-  # return !{"one" => [["value11"], ["value12"]], "two" => [["value21"], ["value22"]]}
+  # return !{"one" => [["value11"], ["value12"]], "two" => [["value21"],
+  # ["value22"]]}
   #
   # NB: un-nest the array in value if size is one after key extraction
   #
@@ -95,11 +95,9 @@ module WLTools
   module Print_Tables
 
     # format Distrib messages with timestamp on the right of the screen
-    # print_table[0] = ip_port : not used.
-    # print_table[1] = source of the message
-    # print_table[2] = source bud time
-    # print_table[3] = data content.
-    #.map{|t| [t.inspect]}
+    # print_table[0] = ip_port : not used. print_table[1] = source of the
+    # message print_table[2] = source bud time print_table[3] = data content.
+    # #.map{|t| [t.inspect]}
     def self.pretty_print(print_table)
       s =""
       s1 = print_table[0].to_s  + "\t"                              #Source location
@@ -115,7 +113,7 @@ module WLTools
       return s
     end
   
-    #Pretty print with id
+    # #Pretty print with id
     def self.p_print_id(print_table)
       s =""
       if print_table[3]!=nil
@@ -143,9 +141,8 @@ module WLTools
 
     public
 
-    # Insert level one title
-    # Return the string formated with the corresponding modifier
-    # "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
+    # Insert level one title Return the string formated with the corresponding
+    # modifier "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
     # "e", "end", "E", "End", "END" for a end comment output
     def self.h1(string, modifier=nil)
       puts <<-END
@@ -158,9 +155,8 @@ module WLTools
 ---------------------------------------------------\n
       END
     end
-    # Insert level two title
-    # Return the string formated with the corresponding modifier
-    # "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
+    # Insert level two title Return the string formated with the corresponding
+    # modifier "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
     # "e", "end", "E", "End", "END" for a end comment output
     def self.h2(string, modifier=nil)
       puts <<-END
@@ -171,9 +167,8 @@ module WLTools
 ---------------------------------------------------\n
       END
     end
-    # Insert level three title
-    # Return the string formated with the corresponding modifier
-    # "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
+    # Insert level three title Return the string formated with the corresponding
+    # modifier "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
     # "e", "end", "E", "End", "END" for a end comment output
     def self.h3(string, modifier=nil)
       puts <<-END
@@ -182,9 +177,8 @@ module WLTools
 ---------------------------------------------------\n
       END
     end
-    # Insert level four title
-    # Return the string formated with the corresponding modifier
-    # "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
+    # Insert level four title Return the string formated with the corresponding
+    # modifier "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
     # "e", "end", "E", "End", "END" for a end comment output
     def self.h4(string, modifier=nil)
       puts "\n - - - - #{format_with_modifier(string, modifier)} - - - -\n"
@@ -202,9 +196,9 @@ module WLTools
     def self.end_comment(string)
       "<<<<#{string}<<<<END"
     end
-    # Return the string formated with the corresponding modifier
-    # "b", "begin", "B", "Begin", "BEGIN" for a begin comment output
-    # "e", "end", "E", "End", "END" for a end comment output
+    # Return the string formated with the corresponding modifier "b", "begin",
+    # "B", "Begin", "BEGIN" for a begin comment output "e", "end", "E", "End",
+    # "END" for a end comment output
     def self.format_with_modifier(string, modifier)
       case modifier
       when "b", "begin", "B", "Begin", "BEGIN"
@@ -221,8 +215,7 @@ end
 # From http://www.lesismore.co.za/rubyenums.html
 #
 module Kernel
-  # simple (sequential) enumerated values
-  # enum Java style
+  # simple (sequential) enumerated values enum Java style
   #
   def enum(*syms)
     syms.each { |s| const_set(s, s.to_s) }

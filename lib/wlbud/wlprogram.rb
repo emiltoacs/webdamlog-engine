@@ -413,8 +413,7 @@ In the string: #{line}
     public
 
     # Generates the string representing the rule in the Bud format from a
-    # WLrule.
-    #
+    # WLRule.
     def translate_rule_str(wlrule)
       unless wlrule.is_a?(WLBud::WLRule)
         raise WLErrorTyping,
@@ -659,7 +658,7 @@ In the string: #{line}
       #   conform to facts to be sent via sbuffer
       unless bound_n_local?(wlrule.head)
         destination = "#{@wlpeers[wlrule.head.peername]}"
-        # #add location specifier
+        # add location specifier
         raise WLErrorPeerId, "impossible to define the peer that should receive a message" if destination.nil? or destination.empty?
         str << "\"#{destination}\", "
         relation = "#{wlrule.head.fullrelname}"
@@ -686,7 +685,7 @@ In the string: #{line}
             end
           end
         else
-          str << "#{quote_string(f.token_text_value)}, "
+          str << "#{WLTools::quote_string(f.token_text_value)}, "
         end
       end
       str.slice!(-2..-1) unless fields.empty?
@@ -709,9 +708,9 @@ In the string: #{line}
           if wlrule.dic_wlconst.keys.first == key
             str << " if "
           else
-            str << " && "
+            str << " and "
           end
-          str << "#{WLBud::WLProgram.atom_iterator_by_pos(relation_position)}[#{attribute_position}]==#{quote_string(key)}"
+          str << "#{WLBud::WLProgram.atom_iterator_by_pos(relation_position)}[#{attribute_position}]==#{WLTools::quote_string(key)}"
         end
       end
       return str
@@ -818,11 +817,6 @@ In the string: #{line}
       else
         raise WLErrorProgram, "in get_column_name_of_relation #{atom.relname}_at_#{atom.peername} not found in wlcollections"
       end
-    end
-
-    # Add quotes around s if it is a string
-    def quote_string(s)
-      s.is_a?(String) ? "\'#{s}\'" : s.to_s
     end
 
     # Tools for WLprogram This tool function checks if a table includes an
