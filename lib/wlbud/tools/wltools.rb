@@ -8,7 +8,7 @@ module WLTools
   #
   def self.sanitize(string)
     str = string.strip.downcase
-    ['"', "'", "."].each do |c|
+    ['"', "'"].each do |c|
       str.delete!(c)
     end
     return str.gsub(/\s+/, '_')
@@ -20,7 +20,7 @@ module WLTools
   def self.sanitize!(string)
     string.strip!
     string.downcase!
-    ['"', "'", "."].each do |c|
+    ['"', "'"].each do |c|
       string.delete!(c)
     end
     string.gsub!(/\s+/, '_')
