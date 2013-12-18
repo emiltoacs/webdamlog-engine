@@ -27,7 +27,8 @@ module WLTools
     return string
   end
 
-  # Add quotes around s if it is a string
+  # Add simple quotes around s if it is a string to prevent ruby interpretation
+  # of special symbols in strings
   def self.quote_string(s)
     res = ""
     s.is_a?(String) ? res = "\'#{s}\'" : res = s.to_s

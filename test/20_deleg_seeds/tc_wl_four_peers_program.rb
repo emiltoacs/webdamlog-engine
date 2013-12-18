@@ -5,7 +5,7 @@ require_relative '../../lib/webdamlog_runner'
 require 'test/unit'
 
 
-# Test Vera's program with four peers and variables in peer name
+# Test Vera's program with four peers and peer name variables in rules
 class TcWlFourPeersProgram < Test::Unit::TestCase
   include MixinTcWlTest
   

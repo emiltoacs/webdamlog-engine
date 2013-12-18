@@ -7,7 +7,6 @@ require 'test/unit'
 # Test program with seeds ie. relation or peer name variables
 
 
-
 # Test the method in program to rewrite unbound rules into seed rule
 #
 # The rule used here is a very long one to test many case of bounding variables
@@ -183,35 +182,5 @@ end
     ensure
       runner.stop
     end
-  end
-end
-
-# test the rule with variable with the rule given by vera in emails rule rule
-# album_i@sue3($img,$id) :- all_friends_i@sue3($id), photos@$id($img),
-# tags@$id($img,1), tags@$id($img,2);
-class TcWlVeraRule < Test::Unit::TestCase
-  include MixinTcWlTest
-
-  def setup
-    @pg = <<-EOF
-end
-    EOF
-    @username = "test_seed"
-    @port = "11110"
-    @pg_file = "test_seed_vera_variable_rule"
-    File.open(@pg_file,"w"){ |file| file.write @pg }
-  end
-
-  def teardown
-    File.delete(@pg_file) if File.exists?(@pg_file)
-    ObjectSpace.each_object(WLRunner) do |obj|
-      clean_rule_dir obj.rule_dir
-      obj.delete
-    end
-    ObjectSpace.garbage_collect
-  end
-
-  def test_vera_rule_with_variable
-
   end
 end
