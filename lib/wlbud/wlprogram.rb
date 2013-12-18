@@ -327,9 +327,6 @@ In the string: #{line}
 
         if wlrule.bound.empty? # the whole body is non-local, no rewriting are needed just delegate all the rule
           delegation = wlrule.show_wdl_format
-          # FIXME hacky substitute of _at_ by @ to be parsed correctly by the
-          # receiver
-          # delegation.gsub!(/_at_/, '@')
 
         else # if the rule must be cut in two part
           interm_relname = generate_intermediary_relation_name(wlrule.rule_id)
@@ -716,25 +713,6 @@ In the string: #{line}
       return str
     end
 
-    # @deprecated
-    def make_pairs (wlrule)
-      str = "(#{wlrule.body.first.fullrelname} * #{wlrule.body.last.fullrelname}).pairs(" ;
-      pairs=false
-      wlrule.dic_wlvar.each { |key,value| next unless value.length > 1
-        rel_first , attr_first =value.first.split('.')
-        rel_other , attr_other =value.last.split('.')
-        if wlrule.has_self_join
-          str << ":#{attr_first}" << ' => ' << ":#{attr_other}" << ',' ;
-        else
-          str << "#{rel_first}.#{attr_first}" << ' => ' << "#{rel_other}.#{attr_other}" << ',' ;
-        end
-        pairs=true
-      }
-      str.slice!(-1) if pairs
-      str << ')'
-      return str , ''
-    end
-
     # If the name of the atom start with tmp_ or temp_ it is a temporary
     # relation so return true.
     def is_tmp? (result)
@@ -745,7 +723,7 @@ In the string: #{line}
       end
     end
 
-    # FIXME error in the head of the rules aren't detected during parsing but
+    # PENDING error in the head of the rules aren't detected during parsing but
     # here it is too late.
     #
     # Make joins when there is more than two atoms in the body. Need to call
@@ -759,7 +737,6 @@ In the string: #{line}
     # sibling <= *(childOf*childOf).combos(:father => :father,:mother =>
     # :mother)* {|s1,s2| [s1[0],s2[0]] unless s1==s2}
     def make_combos (wlrule)
-
       # list all the useful relation in combo
       raise WLError, "The dictionary should have been created before calling this method" unless wlrule.dic_made
       str = '(';
