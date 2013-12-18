@@ -155,26 +155,26 @@ module WLBud
     # Make dictionary : creates hash dictionaries for WLvariables and constants.
     # These dictionaries takes as key the field value as it appears in the .wl
     # file along with their position in the rule to disambiguate in case of self
-    # joins. As value it's location in the following format :
+    # joins.  As value it's location in the following format :
     # 'relation_pos.field_pos'
     #
-    # Detect variable by checking field names starting with a '$' sign. This
+    # Detect variable by checking field names starting with a '$' sign.  This
     # populate the two dictionaries dic_wlconst and dic_wlvar and the relation
     # dictionary with its reverse.
-    def make_dictionaries ()
+    def make_dictionaries
       self.body.each_with_index do |atom,n|
         # field variable goes to dic_wlvar and constant to dic_wlconst
         atom.fields.each_with_index do |f,i|
           str = "#{n}.#{i}"
           if f.variable?
-            var = f.text_value
+            var = f.token_text_value
             if self.dic_wlvar.has_key?(var)
               self.dic_wlvar[var] << str
             else
               self.dic_wlvar[var]=[str]
             end
           else
-            const = f.text_value
+            const = f.token_text_value
             if self.dic_wlconst.has_key?(const)
               self.dic_wlconst[const] << str
             else
@@ -383,7 +383,6 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   end
 
   module WLItem
-
     attr_accessor :item_text_value
 
     def item_text_value
@@ -411,6 +410,9 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
   end
 
   class WLComplexString < WLVocabulary
+    def variable?
+      false
+    end
   end
 
   # The WLcollection class is used to store the content of parsed WL relation
@@ -762,13 +764,7 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
       super(a1,a2,a3)
     end
 
-    # remove the comma and return an array of items if defined here, it seems
-    # that list_rtokens doesn't override the list_rtokens defined by treetop
-    # while parsing
-    #
-    # def list_rtokens
-    #  super.elements.map{ |comma_and_item| comma_and_item.other_rtoken}
-    # end the list of rtokens in an array
+    # remove the comma and return an array of rtokens (rule tokens)
     def get_rtokens
       [first_rtoken] + list_rtokens.elements.map{ |comma_and_item| comma_and_item.other_rtoken }
     end

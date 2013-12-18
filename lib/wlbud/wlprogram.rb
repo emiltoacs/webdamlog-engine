@@ -413,7 +413,7 @@ In the string: #{line}
     public
 
     # Generates the string representing the rule in the Bud format from a
-    # WLRule.
+    # WLRule
     def translate_rule_str(wlrule)
       unless wlrule.is_a?(WLBud::WLRule)
         raise WLErrorTyping,
@@ -454,13 +454,13 @@ In the string: #{line}
           s = make_combos(wlrule)
           str_res << s
         end
-        str_res << " {|";
+        str_res << " do |";
         wlrule.dic_invert_relation_name.keys.sort.each {|v| str_res << "#{WLProgram.atom_iterator_by_pos(v)}, "}
         str_res.slice!(-2..-1) #remove last and before last
         str_res << "| "        
         str_res << projection_bud_string(wlrule)
         str_res << condition_bud_string(wlrule)
-        str_res << "};"
+        str_res << " end;"
       end
     end
 
@@ -669,23 +669,23 @@ In the string: #{line}
 
       # add the list of variable and constant that should be projected
       fields = wlrule.head.fields
-      fields.each do |f|
-        if f.variable?
-          var = f.token_text_value
-          if wlrule.dic_wlvar.has_key?(var)
-            relation , attribute = wlrule.dic_wlvar.fetch(var).first.split('.')
+      fields.each do |field|
+        textfield = field.token_text_value
+        if field.variable?
+          if wlrule.dic_wlvar.has_key?(textfield)
+            relation , attribute = wlrule.dic_wlvar.fetch(textfield).first.split('.')
             str << "#{WLBud::WLProgram.atom_iterator_by_pos(relation)}[#{attribute}], "
           else
-            if var.anonymous?
+            if field.anonymous?
               raise(WLErrorGrammarParsing,
                 "Anonymous variable in the head not allowed in " + wlrule.text_value)
             else
               raise(WLErrorGrammarParsing,
-                "In rule "+wlrule.text_value+" #{var} is present in the head but not in the body. This is not WebdamLog syntax.")
+                "In rule "+wlrule.text_value+" #{textfield} is present in the head but not in the body. This is not WebdamLog syntax.")
             end
           end
         else
-          str << "#{WLTools::quote_string(f.token_text_value)}, "
+          str << "#{WLTools::quote_string(textfield)}, "
         end
       end
       str.slice!(-2..-1) unless fields.empty?

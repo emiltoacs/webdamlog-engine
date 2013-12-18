@@ -167,7 +167,7 @@ module WLBud
         rule item
           ( word / ('"' complex_string '"') ) <WLItem>
         end
-        # Match anything but a unescaped quote
+        # Match anything but a non-escaped quote
         rule complex_string
             ('\"' / !'"' .)* <WLComplexString>
         end

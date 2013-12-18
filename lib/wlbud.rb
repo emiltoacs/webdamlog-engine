@@ -933,8 +933,10 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
         coll.pro do |tuple|
           new_rule = String.new template.show_wdl_format
           var_to_bound.each_index do |ind_var|
-            # FIXME take care if tuple value requires quotes
-            new_rule = new_rule.gsub var_to_bound[ind_var], WLTools::quote_string(tuple[ind_var])
+            # FIXME hard coded @ to add quotes around field value but not around relation name and peer name
+            new_rule = new_rule.gsub "#{var_to_bound[ind_var]}@", "#{tuple[ind_var]}@"
+            new_rule = new_rule.gsub "@#{var_to_bound[ind_var]}", "@#{tuple[ind_var]}"
+            new_rule = new_rule.gsub "#{var_to_bound[ind_var]}", "#{tuple[ind_var]}"
           end
           # add new rules only if it has not already been derived
           unless @sprout_rules.has_key?(new_rule)
