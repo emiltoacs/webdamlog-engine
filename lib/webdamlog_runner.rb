@@ -75,9 +75,9 @@ module WLRunner
     return fct, err
   end
 
-  # Async update of rules
-  # @raise [WLError] if something goes wrong
-  # @return [Array] rule_id, rule string of the local rule installed or nil if the rule is fully delegated.
+  # Async update of rules @raise [WLError] if something goes wrong @return
+  # [Array] rule_id, rule string of the local rule installed or nil if the rule
+  # is fully delegated.
   def update_add_rule rule
     rule_id, rule_string = nil
     sync_do do
@@ -127,7 +127,8 @@ module WLRunner
     return coll.map { |name,wlrule| wlrule.show_wdl_format }
   end
 
-  # @return [Array] list of facts in that relation relname is supposed to be the name in webdamlog
+  # @return [Array] list of facts in that relation relname is supposed to be the
+  # name in webdamlog
   def snapshot_facts relname
     coll = []
     sync_do do
@@ -139,7 +140,7 @@ module WLRunner
   # This method filter out the relation created by the webdamlog engine for bud
   # to display only relevant relation of the webdamlog program. E.g. internal
   # channel for communications will not be displayed.
-  # 
+  #
   # @return [Array] list of relevant relation name as declared in webdamlog
   def snapshot_relname
     list_rel = []
@@ -149,7 +150,8 @@ module WLRunner
     return list_rel
   end
 
-  # return [Hash] !{id=>rule} id is the wdl internal id for rules and rule is the string parsed and exectued by the wdl engine
+  # return [Hash] !{id=>rule} id is the wdl internal id for rules and rule is
+  # the string parsed and executed by the wdl engine
   def snapshot_rules
     res = {}
     rule_map = {}
@@ -161,14 +163,14 @@ module WLRunner
   end
 
   # @return [Hash] the hash of all the pending delegations and clear it
-    def flush_delegations
-      flush = {}
-      sync_do {
-        flush = @pending_delegations.dup
-        @pending_delegations.clear
-      }
-      flush
-    end
+  def flush_delegations
+    flush = {}
+    sync_do {
+      flush = @pending_delegations.dup
+      @pending_delegations.clear
+    }
+    flush
+  end
 
   private
 

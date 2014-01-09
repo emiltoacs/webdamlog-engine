@@ -91,16 +91,16 @@ fact photos@peer4(337);
 fact photos@peer4(334);
 fact photos@peer4(335);
 fact photos@peer4(748);
-fact tags@peer4(843,"alice1");
-fact tags@peer4(843,"bob2");
 fact tags@peer4(78,"alice1");
 fact tags@peer4(78,"bob2");
-fact tags@peer4(688,"alice1");
 fact tags@peer4(840,"alice1");
+fact tags@peer4(840,"peer4");
+fact tags@peer4(843,"alice1");
+fact tags@peer4(688,"alice1");
+fact tags@peer4(843,"bob2");
+fact tags@peer4(843,"peer4");
 fact tags@peer4(700,"bob2");
 fact tags@peer4(684,"bob2");
-fact tags@peer4(843,"peer4");
-fact tags@peer4(840,"peer4");
 fact tags@peer4(684,"peer4");
   EOF
 
@@ -121,7 +121,8 @@ fact tags@peer4(684,"peer4");
     ObjectSpace.garbage_collect
   end
 
-  # Simply test the results
+  # Simply test the results if it fails see test_four_peers_program_execution
+  # method which is a more detailed test
   def test_results
     peers = []
     peers << WLRunner.create(PEER1NAME, "PGFILE1", PEER1PORT)
