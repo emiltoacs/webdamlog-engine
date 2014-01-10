@@ -112,7 +112,9 @@ fact tags@peer4(684,"peer4");
   def teardown
     # delete all Webdamlog runners
     ObjectSpace.each_object(WLRunner) do |obj|
+      rule_dir = obj.rule_dir
       obj.delete
+      clean_rule_dir rule_dir
     end
     Bud::stop_em_loop
     EventMachine::reactor_thread.join

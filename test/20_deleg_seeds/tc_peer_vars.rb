@@ -307,10 +307,10 @@ end
       runner3 = nil
       runner4 = nil
       assert_nothing_raised do
-        runner1 = WLRunner.create(@username1, @pg_file1, @port1, {:debug => true })
-        runner2 = WLRunner.create(@username2, @pg_file2, @port2, {:debug => true })
-        runner3 = WLRunner.create(@username3, @pg_file3, @port3, {:debug => true })
-        runner4 = WLRunner.create(@username4, @pg_file4, @port4, {:debug => true })
+        runner1 = WLRunner.create(@username1, @pg_file1, @port1)
+        runner2 = WLRunner.create(@username2, @pg_file2, @port2)
+        runner3 = WLRunner.create(@username3, @pg_file3, @port3)
+        runner4 = WLRunner.create(@username4, @pg_file4, @port4)
       end
 
       runner1.tick

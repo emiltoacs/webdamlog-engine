@@ -74,7 +74,7 @@ rule album@testsf($img) :- photos@testsf($img), tags@testsf($img,"alice"), tags@
         end
       end
     end
-    assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0]] if atom1[1]=='alice' and atom2[1]=='bob' end",
+    assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0]] if atom1[1]=='alice' and atom2[1]=='bob' end;",
       bud_rule
   end
 
