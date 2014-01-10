@@ -400,10 +400,10 @@ end
         "unexpected content in album at sue"
 
       ensure
-#      runner1.clear_rule_dir
-#      runner2.clear_rule_dir
-#      runner3.clear_rule_dir
-#      runner4.clear_rule_dir
+      runner1.clear_rule_dir
+      runner2.clear_rule_dir
+      runner3.clear_rule_dir
+      runner4.clear_rule_dir
       if EventMachine::reactor_running?
         runner1.stop
         runner2.stop
