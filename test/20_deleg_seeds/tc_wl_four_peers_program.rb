@@ -144,32 +144,28 @@ fact tags@peer4(684,"peer4");
     
     peers[0].sync_do do
       assert_equal [["sbuffer <= (friends_at_alice1 do |atom0|\n  [\"localhost:10002\", \"all_friends_i_at_sue3\", [atom0[0]]]\nend)"],
-        ["sbuffer <= ((((deleg_from_sue3_10_1_at_alice1 * photos_at_alice1) * tags_at_alice1) * tags_at_alice1).combos(photos_at_alice1.img => (tags_at_alice1.img), photos_at_alice1.img => (tags_at_alice1.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"alice1\"]]\n  end\nend)"]],
+        ["sbuffer <= ((((deleg_from_sue3_10_1_at_alice1 * photos_at_alice1) * tags_at_alice1) * tags_at_alice1).combos(photos_at_alice1.img => (tags_at_alice1.img), photos_at_alice1.img => (tags_at_alice1.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"alice1\"]]\n  end\nend)"]],
         peers[0].t_rules.pro { |t| [t.src] }
     end
     peers[1].sync_do do
       assert_equal [["sbuffer <= (friends_at_bob2 do |atom0|\n  [\"localhost:10002\", \"all_friends_i_at_sue3\", [atom0[0]]]\nend)"],
-        ["sbuffer <= ((((deleg_from_sue3_8_1_at_bob2 * photos_at_bob2) * tags_at_bob2) * tags_at_bob2).combos(photos_at_bob2.img => (tags_at_bob2.img), photos_at_bob2.img => (tags_at_bob2.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"bob2\"]]\n  end\nend)"]],
+        ["sbuffer <= ((((deleg_from_sue3_8_1_at_bob2 * photos_at_bob2) * tags_at_bob2) * tags_at_bob2).combos(photos_at_bob2.img => (tags_at_bob2.img), photos_at_bob2.img => (tags_at_bob2.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"bob2\"]]\n  end\nend)"]],
         peers[1].t_rules.pro { |t| [t.src] }
     end
     peers[3].sync_do do
-      assert_equal [["sbuffer <= ((((deleg_from_sue3_5_1_at_peer4 * photos_at_peer4) * tags_at_peer4) * tags_at_peer4).combos(photos_at_peer4.img => (tags_at_peer4.img), photos_at_peer4.img => (tags_at_peer4.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"peer4\"]]\n  end\nend)"]],
+      assert_equal [["sbuffer <= ((((deleg_from_sue3_5_1_at_peer4 * photos_at_peer4) * tags_at_peer4) * tags_at_peer4).combos(photos_at_peer4.img => (tags_at_peer4.img), photos_at_peer4.img => (tags_at_peer4.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"peer4\"]]\n  end\nend)"]],
         peers[3].t_rules.pro { |t| [t.src] }
     end
     peers[2].sync_do do
       assert_equal [["seed_from_sue3_3_1_at_sue3 <= (all_friends_i_at_sue3 { |atom0| [atom0[0]] })"],
         ["sbuffer <= (seed_from_sue3_3_1_at_sue3 do |atom0|\n  if (atom0[0] == \"peer4\") then\n    [\"localhost:10003\", \"deleg_from_sue3_5_1_at_peer4\", [\"true\"]]\n  end\nend)"],
-        ["album_i_at_sue3 <= ((((seed_from_sue3_3_1_at_sue3 * photos_at_sue3) * tags_at_sue3) * tags_at_sue3).combos(photos_at_sue3.img => (tags_at_sue3.img), photos_at_sue3.img => (tags_at_sue3.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"sue3\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [atom1[0], \"sue3\"]\n  end\nend)"],
+        ["album_i_at_sue3 <= ((((seed_from_sue3_3_1_at_sue3 * photos_at_sue3) * tags_at_sue3) * tags_at_sue3).combos(photos_at_sue3.img => (tags_at_sue3.img), photos_at_sue3.img => (tags_at_sue3.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"sue3\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [atom1[0], \"sue3\"]\n  end\nend)"],
         ["sbuffer <= (seed_from_sue3_3_1_at_sue3 do |atom0|\n  if (atom0[0] == \"bob2\") then\n    [\"localhost:10001\", \"deleg_from_sue3_8_1_at_bob2\", [\"true\"]]\n  end\nend)"],
         ["sbuffer <= (seed_from_sue3_3_1_at_sue3 do |atom0|\n  if (atom0[0] == \"alice1\") then\n    [\"localhost:10000\", \"deleg_from_sue3_10_1_at_alice1\", [\"true\"]]\n  end\nend)"]],
         peers[2].t_rules.pro { |t| [t.src] }
     end
     peers[2].sync_do do
-      assert_equal [["688", "peer4"],
-        ["78", "alice1"],
-        ["78", "peer4"],
-        ["840", "peer4"],
-        ["843", "peer4"]],
+      assert_equal [["78", "alice1"], ["78", "peer4"], ["843", "peer4"]],
         peers[2].tables[:album_i_at_sue3].pro { |t| t.to_a }.sort
     end
   ensure
@@ -276,22 +272,22 @@ fact tags@peer4(684,"peer4");
     # check the program of everyone after deployment
     peers[0].sync_do do
       assert_equal [["sbuffer <= (friends_at_alice1 do |atom0|\n  [\"localhost:10002\", \"all_friends_i_at_sue3\", [atom0[0]]]\nend)"],
-        ["sbuffer <= ((((deleg_from_sue3_10_1_at_alice1 * photos_at_alice1) * tags_at_alice1) * tags_at_alice1).combos(photos_at_alice1.img => (tags_at_alice1.img), photos_at_alice1.img => (tags_at_alice1.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"alice1\"]]\n  end\nend)"]],
+        ["sbuffer <= ((((deleg_from_sue3_10_1_at_alice1 * photos_at_alice1) * tags_at_alice1) * tags_at_alice1).combos(photos_at_alice1.img => (tags_at_alice1.img), photos_at_alice1.img => (tags_at_alice1.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"alice1\"]]\n  end\nend)"]],
         peers[0].t_rules.pro { |t| [t.src] }
     end
     peers[1].sync_do do
       assert_equal [["sbuffer <= (friends_at_bob2 do |atom0|\n  [\"localhost:10002\", \"all_friends_i_at_sue3\", [atom0[0]]]\nend)"],
-        ["sbuffer <= ((((deleg_from_sue3_8_1_at_bob2 * photos_at_bob2) * tags_at_bob2) * tags_at_bob2).combos(photos_at_bob2.img => (tags_at_bob2.img), photos_at_bob2.img => (tags_at_bob2.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"bob2\"]]\n  end\nend)"]],
+        ["sbuffer <= ((((deleg_from_sue3_8_1_at_bob2 * photos_at_bob2) * tags_at_bob2) * tags_at_bob2).combos(photos_at_bob2.img => (tags_at_bob2.img), photos_at_bob2.img => (tags_at_bob2.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"bob2\"]]\n  end\nend)"]],
         peers[1].t_rules.pro { |t| [t.src] }
     end
     peers[3].sync_do do
-      assert_equal [["sbuffer <= ((((deleg_from_sue3_5_1_at_peer4 * photos_at_peer4) * tags_at_peer4) * tags_at_peer4).combos(photos_at_peer4.img => (tags_at_peer4.img), photos_at_peer4.img => (tags_at_peer4.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"peer4\"]]\n  end\nend)"]],
+      assert_equal [["sbuffer <= ((((deleg_from_sue3_5_1_at_peer4 * photos_at_peer4) * tags_at_peer4) * tags_at_peer4).combos(photos_at_peer4.img => (tags_at_peer4.img), photos_at_peer4.img => (tags_at_peer4.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"true\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"peer4\"]]\n  end\nend)"]],
         peers[3].t_rules.pro { |t| [t.src] }
     end
     peers[2].sync_do do
       assert_equal [["seed_from_sue3_3_1_at_sue3 <= (all_friends_i_at_sue3 { |atom0| [atom0[0]] })"],
         ["sbuffer <= (seed_from_sue3_3_1_at_sue3 do |atom0|\n  if (atom0[0] == \"peer4\") then\n    [\"localhost:10003\", \"deleg_from_sue3_5_1_at_peer4\", [\"true\"]]\n  end\nend)"],
-        ["album_i_at_sue3 <= ((((seed_from_sue3_3_1_at_sue3 * photos_at_sue3) * tags_at_sue3) * tags_at_sue3).combos(photos_at_sue3.img => (tags_at_sue3.img), photos_at_sue3.img => (tags_at_sue3.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"sue3\") and ((atom2[1] == \"alice1\") and (atom3[1] == \"bob2\")) then\n    [atom1[0], \"sue3\"]\n  end\nend)"],
+        ["album_i_at_sue3 <= ((((seed_from_sue3_3_1_at_sue3 * photos_at_sue3) * tags_at_sue3) * tags_at_sue3).combos(photos_at_sue3.img => (tags_at_sue3.img), photos_at_sue3.img => (tags_at_sue3.img)) do |atom0, atom1, atom2, atom3|\n  if (atom0[0] == \"sue3\") and ((atom2[1] == \"alice1\") and ((atom3[1] == \"bob2\") and (atom2[0] == atom3[0]))) then\n    [atom1[0], \"sue3\"]\n  end\nend)"],
         ["sbuffer <= (seed_from_sue3_3_1_at_sue3 do |atom0|\n  if (atom0[0] == \"bob2\") then\n    [\"localhost:10001\", \"deleg_from_sue3_8_1_at_bob2\", [\"true\"]]\n  end\nend)"],
         ["sbuffer <= (seed_from_sue3_3_1_at_sue3 do |atom0|\n  if (atom0[0] == \"alice1\") then\n    [\"localhost:10000\", \"deleg_from_sue3_10_1_at_alice1\", [\"true\"]]\n  end\nend)"]],
         peers[2].t_rules.pro { |t| [t.src] }
@@ -299,11 +295,7 @@ fact tags@peer4(684,"peer4");
       assert_equal [["peer4"], ["sue3"], ["bob2"], ["alice1"]],
         peers[2].tables[:seed_from_sue3_3_1_at_sue3].pro { |t| t.to_a }
 
-      assert_equal [["688", "peer4"],
-        ["78", "alice1"],
-        ["78", "peer4"],
-        ["840", "peer4"],
-        ["843", "peer4"]],
+      assert_equal [["78", "alice1"], ["78", "peer4"], ["843", "peer4"]],
         peers[2].tables[:album_i_at_sue3].pro { |t| t.to_a }.sort
     end
 

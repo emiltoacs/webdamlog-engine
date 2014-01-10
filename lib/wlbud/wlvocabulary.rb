@@ -162,35 +162,37 @@ module WLBud
     # populate the two dictionaries dic_wlconst and dic_wlvar and the relation
     # dictionary with its reverse.
     def make_dictionaries
-      self.body.each_with_index do |atom,n|
-        # field variable goes to dic_wlvar and constant to dic_wlconst
-        atom.fields.each_with_index do |f,i|
-          str = "#{n}.#{i}"
-          if f.variable?
-            var = f.token_text_value
-            if self.dic_wlvar.has_key?(var)
-              self.dic_wlvar[var] << str
+      unless @dic_made
+        self.body.each_with_index do |atom,n|
+          # field variable goes to dic_wlvar and constant to dic_wlconst
+          atom.fields.each_with_index do |f,i|
+            str = "#{n}.#{i}"
+            if f.variable?
+              var = f.token_text_value
+              if self.dic_wlvar.has_key?(var)
+                self.dic_wlvar[var] << str
+              else
+                self.dic_wlvar[var]=[str]
+              end
             else
-              self.dic_wlvar[var]=[str]
-            end
-          else
-            const = f.token_text_value
-            if self.dic_wlconst.has_key?(const)
-              self.dic_wlconst[const] << str
-            else
-              self.dic_wlconst[const]=[str]
+              const = f.token_text_value
+              if self.dic_wlconst.has_key?(const)
+                self.dic_wlconst[const] << str
+              else
+                self.dic_wlconst[const]=[str]
+              end
             end
           end
-        end
-        # PENDING list only the useful relation, a relation is useless if it's
-        # arity is more than zero and none variable and constant inside are used
-        # in other relation of this rule. Insert here the function
-        if self.dic_relation_name.has_key?(atom.fullrelname)
-          self.dic_relation_name[atom.fullrelname] << n
-        else
-          self.dic_relation_name[atom.fullrelname]=[n]
-        end
-        self.dic_invert_relation_name[n] = atom.fullrelname
+          # PENDING list only the useful relation, a relation is useless if it's
+          # arity is more than zero and none variable and constant inside are
+          # used in other relation of this rule. Insert here the function
+          if self.dic_relation_name.has_key?(atom.fullrelname)
+            self.dic_relation_name[atom.fullrelname] << n
+          else
+            self.dic_relation_name[atom.fullrelname]=[n]
+          end
+          self.dic_invert_relation_name[n] = atom.fullrelname
+        end        
       end
       @dic_made = true
     end

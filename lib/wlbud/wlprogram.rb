@@ -78,23 +78,19 @@ module WLBud
       # The local rules straightforward to convert into bud (simple syntax
       # translation)
       # === data struct
-      # Array:(WLBud:WLRule)
-      #@localrules=[]
-      # Nonlocal rules in WL are never converted into Bloom rules directly (as
-      # opposed to previous types of rules). They are split in two part one
-      # stored in delegation that must be send to a remote peer and another part
-      # stored in rewrittenlocal that correspond to the longest sequence
-      # possible to evaluate locally, that may be the whole original rule if
-      # only the head was not local.
+      # Array:(WLBud:WLRule) #@localrules=[] Nonlocal rules in WL are never
+      # converted into Bloom rules directly (as opposed to previous types of
+      # rules). They are split in two part one stored in delegation that must be
+      # send to a remote peer and another part stored in rewrittenlocal that
+      # correspond to the longest sequence possible to evaluate locally, that
+      # may be the whole original rule if only the head was not local.
       # === data struct
-      # Array:(WLBud:WLRule)
-      #@nonlocalrules=[]
-      # The list of delegation needed to send after having processed the
-      # wlprogram at initialization. Ie. the non-local part of rules should
-      # start with an intermediary relation that control it triggering.
+      # Array:(WLBud:WLRule) #@nonlocalrules=[] The list of delegation needed to
+      # send after having processed the wlprogram at initialization. Ie. the
+      # non-local part of rules should start with an intermediary relation that
+      # control it triggering.
       #
-      # Array:(WLBud:WLRule)
-      # @delegations = Hash.new{ |h,k| h[k]=Array.new }
+      # Array:(WLBud:WLRule) @delegations = Hash.new{ |h,k| h[k]=Array.new }
       # This is the list of rules which contains the local rules after a
       # non-local rule of the wlprogram at initialization has been rewritten.
       # This kind of rule have a intermediary relation in their head that
@@ -127,8 +123,8 @@ module WLBud
       # Array:(WLBud::WLRule)
       @new_rewritten_local_rule_to_install = []
       # The list of all the new local seeds to create due to processing of a
-      # wlgrammar line in rewrite_unbound_rules. It contains the bound part of
-      # the rule that have been split.
+      #   wlgrammar line in rewrite_unbound_rules. It contains the bound part of
+      #   the rule that have been split.
       #
       # === data struct
       # Array:[[WRule:seeder,String:interm_rel_in_rule,String:seedtemplate,WLRule:wlrule],...]
@@ -192,8 +188,7 @@ module WLBud
     # PENDING should check before adding rule that the all the local atoms have
     # been declared. The atoms in the head that are not local should also be
     # declared but I can also make my parser declare them automatically since
-    # the type is not important.
-    # FIXME: remove rewritten is useless now
+    # the type is not important. FIXME: remove rewritten is useless now
     def parse(line, add_to_program=false, options={})
       raise WLErrorTyping, "I could only parse string not #{line.class}" unless line.is_a?(String)
       unless (output=@parser.parse(line))
@@ -358,8 +353,8 @@ In the string: #{line}
     # Split the rule by reading atoms from left to right until non local atom or
     # variable in relation name or peer name has been found.
     #
-    # Set the attributes @seed and @split_pos respectively to true if there is an
-    # atom with variable in relation or peer name ; and @seedpos with the
+    # Set the attributes @seed and @split_pos respectively to true if there is
+    # an atom with variable in relation or peer name ; and @seedpos with the
     # position of this atom in the body starting from 0 or -1 if the variable is
     # in the head.
     #
@@ -409,8 +404,7 @@ In the string: #{line}
 
     public
 
-    # Generates the string representing the rule in the Bud format from a
-    # WLRule
+    # Generates the string representing the rule in the Bud format from a WLRule
     def translate_rule_str(wlrule)
       unless wlrule.is_a?(WLBud::WLRule)
         raise WLErrorTyping,
@@ -716,9 +710,26 @@ In the string: #{line}
         end
       end
 
-      # add the condition for each selfjoin to unfold
-      
-
+      # add the condition for each self join to unfold
+      wlrule.dic_wlvar.each_pair do |key,values|
+        (0..values.size-2).each_with_index do |iter1,index|
+          pos1 = values[iter1]
+          relation_position1 , attribute_position1 = pos1.split('.')
+          (index+1..values.size-1).each do |iter2|
+            pos2 = values[iter2]
+            relation_position2 , attribute_position2 = pos2.split('.')
+            if wlrule.dic_invert_relation_name[Integer(relation_position1)] == wlrule.dic_invert_relation_name[Integer(relation_position2)]
+              if first_condition
+                str << " if "
+                first_condition = false
+              else
+                str << " and "
+              end
+              str << "#{WLBud::WLProgram.atom_iterator_by_pos(relation_position1)}[#{attribute_position1}]==#{WLBud::WLProgram.atom_iterator_by_pos(relation_position2)}[#{attribute_position2}]"
+            end
+          end
+        end
+      end
       return str
     end
 
@@ -773,15 +784,10 @@ In the string: #{line}
           col_name_first = get_column_name_of_relation(first_atom, Integer(attr_first))
           col_name_other = get_column_name_of_relation(other_atom, Integer(attr_other))
           # If it is a self-join symbolic name should be used
-          if rel_first_name.eql?(rel_other_name)
-            # if_str << " && #{wlrule.dic_relation_name[rel_first]}.#{attr_first}==#{wlrule.dic_budvar[rel_other]}.#{attr_other}"
+          if rel_first_name.eql?(rel_other_name)            
             str << ":#{col_name_first}" << ' => ' << ":#{col_name_other}"
             combos=true
           else
-            # str << WLProgram.atom_iterator_by_pos(rel_first) << attr_first <<
-            # '
-            # => ' << WLProgram.atom_iterator_by_pos(rel_other) << attr_other <<
-            # ',' ;
             str << rel_first_name << '.' << col_name_first << ' => ' << rel_other_name << '.' << col_name_other
             combos=true
           end

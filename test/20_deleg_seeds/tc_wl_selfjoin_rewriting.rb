@@ -17,7 +17,7 @@ class TcWWlSelfjoinRewriting < Test::Unit::TestCase
 peer testsf = localhost:10000;
 collection ext per photos@testsf(photo*);
 collection ext per tags@testsf(img*,tag*);
-collection ext per album@testsf(pic*);
+collection ext per album@testsf(pict*);
 fact photos@testsf(1);
 fact photos@testsf(2);
 fact photos@testsf(3);
@@ -34,7 +34,7 @@ fact tags@testsf(5,"charlie");
 fact tags@testsf(6,"alice");
 fact tags@testsf(6,"bob");
 fact tags@testsf(6,"charlie");
-rule album@testsf($img) :- photos@testsf($img), tags@testsf($img,"alice"), tags@testsf($img,"bob");
+rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice"), tags@testsf($img,"bob");
     EOF
     @pg_file = "test_selfjoin_rewriting"
     @username = "testsf"
@@ -61,10 +61,9 @@ rule album@testsf($img) :- photos@testsf($img), tags@testsf($img,"alice"), tags@
   # Check that the rewriting of wdl rule into bud is eliminating self join
   # problem
   def test_self_join_rewriting
-    runner = WLRunner.create(@username, @pg_file, @port)  
+    runner = WLRunner.create(@username, @pg_file, @port)
+    #runner.tick
     rule_dir = runner.rule_dir
-    runner.tick
-
     assert File.directory?(rule_dir)
     bud_rule = ""
     Dir.chdir(rule_dir) do
@@ -76,7 +75,7 @@ rule album@testsf($img) :- photos@testsf($img), tags@testsf($img,"alice"), tags@
         end
       end
     end
-    assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0]] if atom1[1]=='alice' and atom2[1]=='bob' end;",
+    assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
       bud_rule
   end
 
@@ -84,7 +83,33 @@ rule album@testsf($img) :- photos@testsf($img), tags@testsf($img,"alice"), tags@
     runner = WLRunner.create(@username, @pg_file, @port)
     prog = runner.wl_program
     assert_equal 1, prog.rule_mapping.length
+    rule = prog.rule_mapping.first[1].first
+    assert_equal "rule album@testsf($img, $owner) :- photos@testsf($img, $owner), tags@testsf($img, \"alice\"), tags@testsf($img, \"bob\");",
+      rule.show_wdl_format
+    rule.make_dictionaries
+    assert_equal(
+      {"photos_at_testsf"=>[0], "tags_at_testsf"=>[1, 2]},
+      rule.dic_relation_name)
+    assert_equal(
+      {0=>"photos_at_testsf", 1=>"tags_at_testsf", 2=>"tags_at_testsf"},
+      rule.dic_invert_relation_name)
+    assert_equal(
+      {"$img"=>["0.0", "1.0", "2.0"], "$owner"=>["0.1"]},
+      rule.dic_wlvar)
 
+    rule_dir = runner.rule_dir
+    bud_rule = ""
+    Dir.chdir(rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 1, wlrule_files.length
+      File.open(wlrule_files.first) do |io|
+        io.readlines.each do |line|
+          bud_rule = line.strip if line.include? "album_at_testsf"
+        end
+      end
+    end
+    assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
+      bud_rule    
   end
 
 end

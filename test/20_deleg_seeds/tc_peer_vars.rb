@@ -338,68 +338,37 @@ end
       runner4.tick
       runner3.tick
 
-      puts "Snapshot: "
-      puts runner3.tables[:album_i_at_sue3].sort
-
-      # This shows that the content of album@sue is exactly the the one with the
+      # This shows that the content of album@sue is not the the one with the
       # tags alice1 without paying attention to tag bob2
-      assert_equal runner4.tables[:tags_at_peer4].pro{|t| t[0] if t[1]=="alice1"}.sort,
+      assert_not_equal runner4.tables[:tags_at_peer4].pro{|t| t[0] if t[1]=="alice1"}.sort,
         runner3.tables[:album_i_at_sue3].pro{|t| t[0]}.sort
 
-      # The content of album@sue is deterministic. The rules are well deployed
-      # and rewritten however the second joins in the self-join is silently
-      # ignored by bud
       assert_equal [["120", "peer4"],
-        ["2", "peer4"],
-        ["234", "peer4"],
-        ["242", "peer4"],
-        ["260", "peer4"],
         ["277", "peer4"],
         ["316", "peer4"],
         ["334", "peer4"],
-        ["335", "peer4"],
-        ["336", "peer4"],
         ["337", "peer4"],
-        ["34", "peer4"],
-        ["373", "peer4"],
         ["391", "peer4"],
         ["40", "peer4"],
-        ["442", "peer4"],
-        ["467", "peer4"],
-        ["496", "peer4"],
         ["499", "peer4"],
         ["516", "peer4"],
         ["529", "peer4"],
         ["538", "peer4"],
-        ["546", "peer4"],
         ["582", "peer4"],
         ["610", "peer4"],
         ["630", "peer4"],
-        ["647", "peer4"],
         ["660", "peer4"],
-        ["688", "peer4"],
-        ["700", "peer4"],
         ["712", "peer4"],
-        ["726", "peer4"],
         ["734", "peer4"],
-        ["748", "peer4"],
-        ["779", "peer4"],
         ["78", "peer4"],
-        ["8", "peer4"],
         ["817", "peer4"],
-        ["818", "peer4"],
-        ["820", "peer4"],
         ["833", "peer4"],
-        ["843", "peer4"],
         ["850", "peer4"],
-        ["889", "peer4"],
-        ["90", "peer4"],
-        ["910", "peer4"],
-        ["937", "peer4"]],
-        runner3.tables[:album_i_at_sue3].sort,
+        ["889", "peer4"]],
+        runner3.tables[:album_i_at_sue3].sort.map{|t|t.to_a},
         "unexpected content in album at sue"
 
-      ensure
+    ensure
       runner1.clear_rule_dir
       runner2.clear_rule_dir
       runner3.clear_rule_dir
