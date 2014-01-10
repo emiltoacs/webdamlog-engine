@@ -50,8 +50,10 @@ rule album@testsf($img) :- photos@testsf($img), tags@testsf($img,"alice"), tags@
       obj.delete
       clean_rule_dir rule_dir
     end
-    Bud::stop_em_loop
-    EventMachine::reactor_thread.join
+    if EventMachine::reactor_running?
+      Bud::stop_em_loop
+      EventMachine::reactor_thread.join
+    end
     ObjectSpace.garbage_collect
     File.delete(@pg_file) if File.exists?(@pg_file)
   end
@@ -78,6 +80,11 @@ rule album@testsf($img) :- photos@testsf($img), tags@testsf($img,"alice"), tags@
       bud_rule
   end
 
-  
+  def test_wlprogram_selfjoin_rewriting
+    runner = WLRunner.create(@username, @pg_file, @port)
+    prog = runner.wl_program
+    assert_equal 1, prog.rule_mapping.length
+
+  end
 
 end

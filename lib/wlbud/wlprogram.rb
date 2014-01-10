@@ -695,21 +695,30 @@ In the string: #{line}
       return str
     end
 
-    # define the if condition for each constant it assign its value.
+    # Define the if condition for each constant it assign its value.
+    #
     # @return [String] the string to append to make the wdl rule
     def condition_bud_string wlrule
       str = ""
+      first_condition = true
+
+      # add the condition for each constant
       wlrule.dic_wlconst.each do |key,value|
         value.each do |v|
           relation_position , attribute_position = v.split('.')
-          if wlrule.dic_wlconst.keys.first == key
+          if first_condition
             str << " if "
+            first_condition = false
           else
             str << " and "
           end
           str << "#{WLBud::WLProgram.atom_iterator_by_pos(relation_position)}[#{attribute_position}]==#{WLTools::quote_string(key)}"
         end
       end
+
+      # add the condition for each selfjoin to unfold
+      
+
       return str
     end
 
