@@ -452,8 +452,8 @@ module WLBud
         if @options[:measure]
           @measure_obj.append_measure @budtime
         end
-        # removed receive_inbound since it has been done earlier ### WLBud:End
-        # adding to Bud compute fixpoint for each stratum in order
+        # removed receive_inbound since it has been done earlier
+        #  ### WLBud:End adding to Bud compute fixpoint for each stratum in order
         @stratified_rules.each_with_index do |rules,stratum|
           fixpoint = false
           first_iter = true
