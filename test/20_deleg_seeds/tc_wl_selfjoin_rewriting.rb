@@ -15,15 +15,15 @@ class TcWWlSelfjoinRewriting < Test::Unit::TestCase
   def setup
     @pg = <<-EOF
 peer testsf = localhost:10000;
-collection ext per photos@testsf(photo*);
+collection ext per photos@testsf(photo*,owner*);
 collection ext per tags@testsf(img*,tag*);
-collection ext per album@testsf(pict*);
-fact photos@testsf(1);
-fact photos@testsf(2);
-fact photos@testsf(3);
-fact photos@testsf(4);
-fact photos@testsf(5);
-fact photos@testsf(6);
+collection ext per album@testsf(pict*,owner*);
+fact photos@testsf(1,"alice");
+fact photos@testsf(2,"alice");
+fact photos@testsf(3,"alice");
+fact photos@testsf(4,"alice");
+fact photos@testsf(5,"alice");
+fact photos@testsf(6,"bob");
 fact tags@testsf(1,"alice");
 fact tags@testsf(1,"bob");
 fact tags@testsf(2,"alice");
@@ -62,7 +62,7 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
   # problem
   def test_self_join_rewriting
     runner = WLRunner.create(@username, @pg_file, @port)
-    #runner.tick
+    runner.tick
     rule_dir = runner.rule_dir
     assert File.directory?(rule_dir)
     bud_rule = ""
