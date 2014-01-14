@@ -2,7 +2,11 @@
 module WLBud
   
   class WL
-    
+
+    # Hacky: attribute that store the rule_id currently evaluated while wiring
+    # to be added to push_elems
+    attr_reader :current_eval_rule_id
+
     # The initializer for WLBud directly overrides the initializer from Bud.
     #
     # Override bud method
@@ -521,6 +525,35 @@ module WLBud
       end
     end
 
-  end
 
-end
+    
+    # WLBud:Begin Override bud to add the rule id to inject when creating the
+    # push element
+    def eval_rule(__obj__, __src__, id)
+      __obj__.instance_eval "@current_eval_rule_id = #{id}"
+      super(__obj__, __src__)
+    end
+
+    # WLBud:Begin Override bud to pass the rule id to eval_rule
+    def eval_rules(rules, strat_num)
+      # This routine evals the rules in a given stratum, which results in a
+      # wiring of PushElements
+      @this_stratum = strat_num
+      rules.each_with_index do |rule, i|
+        @this_rule_context = rule.bud_obj # user-supplied code blocks will be evaluated in this context at run-time
+        begin
+          eval_rule(rule.bud_obj, rule.src, rule.rule_id)
+        rescue Exception => e
+          err_msg = "** Exception while wiring rule: #{rule.orig_src}\n ****** #{e}"
+          # Create a new exception for accomodating err_msg, but reuse original
+          # backtrace
+          new_e = (e.class <= Bud::Error) ? e.class.new(err_msg) : Bud::Error.new(err_msg)
+          new_e.set_backtrace(e.backtrace)
+          raise new_e
+        end
+      end
+    end
+
+  end # class WL
+
+end # module WLBud
