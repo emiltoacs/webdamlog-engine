@@ -5,7 +5,7 @@
 /bin/DBM*
 /bin/*rewritten.txt
 /bin/*test*
-/doc/
+/doc/graph/
 /.yardoc/
 /bin/xp_files/
 /bin/bench_files/

@@ -1,0 +1,54 @@
+* Install instruction on a brand new Amazon with Ubuntu server 12.04
+
+** Install rvm
+: \curl -L https://get.rvm.io | bash -s stable --rails
+
+Restart or
+: `source /home/ubuntu/.rvm/scripts/rvm`
+
+Install 2.0
+: rvm install 2.0
+And use it by default (this should be the case if it is the only ruby
+engine install)
+: rvm --default use 2.0
+
+
+** Set environment
+To set the language environment:
++ locale :: list your current locales
++ sudo locale-gen en_US.UTF-8 :: reconfigure locale to use en_US
++ sudo dpkg-reconfigure locales :: reconfigure the package
+Ref: http://askubuntu.com/questions/162391/how-do-i-fix-my-locale-issue
+
+
+** Set up package required
+Set language environment to avoid warning (in your bashrc) for
+the following
+: export LANG=en_US
+: sudo apt-get install language-pack-en
+: sudo apt-get install git
+: sudo apt-get install build-essential
+
+
+** install Webdamlog dependance
+
+launch bundle(should have been installed by rvm) at the root of the
+Webdamlog project (everything should succed otherwise report me any bug)
+: bundle install
+
+
+** Additional package
+
+*** Add ac2-api-tools from multiverse
+
+https://help.ubuntu.com/community/Repositories/CommandLine#Adding_the_Universe_and_Multiverse_Repositories
+
++ edit /etc/apt/source.list
++ uncomment:
+  #+begin_src
+  deb http://us.archive.ubuntu.com/ubuntu/ hardy multiverse
+  deb-src http://us.archive.ubuntu.com/ubuntu/ hardy multiverse
+  deb http://us.archive.ubuntu.com/ubuntu/ hardy-updates multiverse
+  deb-src http://us.archive.ubuntu.com/ubuntu/ hardy-updates multiverse
+  #+end_src
++ install: ec2-api-tool package
