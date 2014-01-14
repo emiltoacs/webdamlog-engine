@@ -99,9 +99,8 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
       {"$img"=>["0.0", "1.0", "2.0"], "$owner"=>["0.1"]},
       rule.dic_wlvar)
 
-    rule_dir = runner.rule_dir
     bud_rule = ""
-    Dir.chdir(rule_dir) do
+    Dir.chdir(runner.rule_dir) do
       wlrule_files = Dir.glob("webdamlog*")
       assert_equal 1, wlrule_files.length
       File.open(wlrule_files.first) do |io|
@@ -111,7 +110,7 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
       end
     end
     assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
-      bud_rule    
+      bud_rule
   end
 
 end
