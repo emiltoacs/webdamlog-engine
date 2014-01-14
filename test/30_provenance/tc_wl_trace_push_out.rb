@@ -64,8 +64,7 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
     assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
       bud_rule
 
-
-    
+    assert_equal(2, runner.push_elems.size)
 
   end
 
