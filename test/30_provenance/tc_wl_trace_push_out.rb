@@ -88,6 +88,8 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
           "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"]],
       runner.instance_variable_get(:@push_sorted_elems).map{|stratum| stratum.map {|pshelt| pshelt.elem_name.to_s.gsub(/:[0-9]*/,'')}})
     
+
+
   end
 
 
