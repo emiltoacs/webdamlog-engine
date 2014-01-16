@@ -66,6 +66,30 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
 
     assert_equal(2, runner.push_elems.size)
 
+    # Test the content of push_elems, push_sorted_elems and scanners attributes
+    # that stores elements for evaluation
+    assert_equal([[:photos_at_testsf, :tags_at_testsf], [nil, :tags_at_testsf]],
+      runner.push_elems.map { |struct,value| struct[2].map {|pshelt| pshelt.instance_variable_get(:@collection_name)}})
+    assert_equal([[:join, Classwlengineoftestsfon10000, nil],
+        [:join, Classwlengineoftestsfon10000, nil]],
+      runner.push_elems.map { |struct,value| [struct[1],struct[3].class,struct[4]]})
+    # @push_elems contains all the the non-collection push elements ie.
+    # operations such as join implemented as PushSHJoin
+    assert_equal(["(photos_at_testsf*tags_at_testsf)",
+        "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"],
+      runner.push_elems.values.map { |pshelt| pshelt.tabname.to_s.gsub(/:[0-9]*/,'')})
+    # @scanners contains all the the collection push elements ie. the ScannersElement
+    assert_equal([[:photos_at_testsf, :tags_at_testsf]],
+      runner.scanners.map{|stratum| stratum.keys.map{|key| key[1]}})
+    # @push_sorted_elems contains all the the PushElements order in a breadth-first order
+    assert_equal([["photos_at_testsf",
+          "tags_at_testsf",
+          "(photos_at_testsf*tags_at_testsf)",
+          "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"]],
+      runner.instance_variable_get(:@push_sorted_elems).map{|stratum| stratum.map {|pshelt| pshelt.elem_name.to_s.gsub(/:[0-9]*/,'')}})
+    
+
+
   end
 
 

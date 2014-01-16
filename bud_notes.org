@@ -11,8 +11,9 @@ History:
 + 0.0.3 :: starter
 + 0.0.5
 + 0.0.7
-+ [current] 0.9.1 :: working but annoying to rewrite rules in files
-+ 0.9.5 :: to test
++ 0.9.1 :: working but annoying to rewrite rules in files
++ 0.9.5
++ [current] 0.9.7
 
 
 ** Launch Bud
@@ -333,6 +334,63 @@ http://wiki.msgpack.org/display/MSGPACK/QuickStart+for+Ruby
 
 
 
+** Bud evaluation via PushElements
+
+To evaluate rules bud creates a set of PushElement for each operators
+interpreted in eval_rule in bud.rb. The type of the PushElement is
+decided by the method used to create the PushElement:
+
+*** Creation of PushElements
+
++ ScannerElements :: are created when evaluating rules via the
+     *to_push_elem* method in collections.rb
+
++ PushSHJoin :: are created when evaluating '*' in rules via the method
+                *join* of PushElement in elements.rb
+
+
+*** Storage of PushElements
+
+See do_wiring in bud.rb and README.rescan in bud/executor
+
++ @scanners :: ScannerElement are the collections to rescan in the rhs of the rules
++ @push_sources :: scanners created in to_push_elems
++ @push_elems :: an array of array with various fields about a
+                 PushElement. PushElements in this list are built from
+                 pro, each_with_index, join, notin, group, argagg,
+                 on_include?, inspected, flat_map but not from a
+                 collection#to_push_elem.
++ @push_sorted_elems :: the list of PushElements ordered in a breadth-first order
++ @merge_targets :: collections in lhs of rules
+
+
+*** About PushElements created while evaluating rules
+
++ PushSHJoin :: Creation from join in elements.rb in PushElement
+                #+begin_src ruby
+toplevel.push_elems[[self.object_id, :join, [self, elem2], toplevel, blk]]
+join = Bud::PushSHJoin.new([self, elem2], toplevel.this_rule_context, [])
+self.wire_to(join)
+elem2.wire_to(join)
+toplevel.push_elems[[self.object_id, :join, [self, elem2], toplevel, blk]] = join
+toplevel.push_joins[toplevel.this_stratum] << join
+                #+end_src
+                Then is is stored in @push_elems and @push_joins.
+
++ ScannerElement :: Creation from to_push_elem in collection.rb in
+                    BudCollection
+                    #+begin_src ruby
+scanner = Bud::ScannerElement.new(the_name, @bud_instance, self, the_schema)
+toplevel.scanners[this_stratum][[oid, the_name]] = scanner
+toplevel.push_sources[this_stratum][[oid, the_name]] = scanner
+                    #+end_src
+                    Then it is stored in @scanners and @push_sources.
+
+
+
+
+
+
 * Notes about webdamlog
 
 ** Overwrite bud with webdamlog
@@ -454,16 +512,3 @@ access to internal data of WLpeer.
 * Other Remark
 
 + implementation :: http://www.ccs.neu.edu/home/ramsdell/tools/datalog/datalog.html
-
-
-
-
-
-
-
-
-
-
-
-
-
