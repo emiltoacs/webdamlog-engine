@@ -158,6 +158,8 @@ module WLBud
       # Loads .wl file containing the setup(facts and rules) for the Webdamlog
       #   instance.
       @wl_program = WLBud::WLProgram.new(@peername, @filename, @ip, @options[:port], false, {:debug => @options[:debug]})
+      # By default provenance is used to spread deletion, use this tag for experimental comparisons
+      @options[:noprovenance] ? @provenance = false : @provenance = true
       # XXX : added comments on budlib (unofficial):
       # - wlbud => initialize
       # - bud.rb => rewrite_local_methods

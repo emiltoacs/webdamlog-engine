@@ -1,6 +1,5 @@
 # Bud methods overridden in Webdamlog
 module Bud
-
   # Add the rule from which the push element has been created
   class PushElement
 
@@ -18,10 +17,11 @@ module Bud
       @invalidated = true
       @rescan = true
       # ### WLBud:Begin adding to Bud
-      @orig_rule_id = bud_instance.current_eval_rule_id
-      raise WLBud::WLError, "a PushElement has not received its rule_id of provenance" unless @orig_rule_id
+      if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
+        @orig_rule_id = bud_instance.current_eval_rule_id
+        raise WLBud::WLError, "a PushElement has not received its rule_id of provenance" unless @orig_rule_id
+      end
     end
 
   end
-  
 end

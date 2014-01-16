@@ -50,7 +50,7 @@ module WLBud
   require "#{PATH_WLBUD}/tools/wl_measure"
 
   # Override bud methods
-  require "#{PATH_BUD}/budoverride"
+  require "budoverride"
 
   # :title:WLBud WLBud is a Ruby Module that simulates WebdamLog behavior using
   # Bud. :main:WLBud
@@ -75,6 +75,8 @@ module WLBud
     # the directory where the peer write its rules
     attr_reader :rule_dir
     attr_reader :filter_delegations, :pending_delegations
+    # provenance used for deletion if true
+    attr_reader :provenance
 
     # TODO: define the following attributes only if options[:wl_test] @return
     #   the content returned by read_packet_channel at the beginning of the tick
