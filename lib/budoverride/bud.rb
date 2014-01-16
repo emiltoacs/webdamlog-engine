@@ -4,7 +4,7 @@ module WLBud
   class WL
 
     # Hacky: attribute that store the rule_id currently evaluated while wiring
-    # to be added to push_elems
+    #   to be added to push_elems
     attr_reader :current_eval_rule_id
 
     # The initializer for WLBud directly overrides the initializer from Bud.
@@ -158,8 +158,11 @@ module WLBud
       # Loads .wl file containing the setup(facts and rules) for the Webdamlog
       #   instance.
       @wl_program = WLBud::WLProgram.new(@peername, @filename, @ip, @options[:port], false, {:debug => @options[:debug]})
-      # By default provenance is used to spread deletion, use this tag for experimental comparisons
+      # By default provenance is used to spread deletion, use this tag for
+      #   experimental comparisons
       @options[:noprovenance] ? @provenance = false : @provenance = true
+      @provenance_graph = ProvenanceGraph.new if @provenance
+      
       # XXX : added comments on budlib (unofficial):
       # - wlbud => initialize
       # - bud.rb => rewrite_local_methods
@@ -524,6 +527,13 @@ module WLBud
         stratum_targets.each {|tab|
           tab.accumulate_tick_deltas = true # if stratum_accessed[tab] and stratum_accessed[tab] > stratum # no condition
         }
+      end
+      if self.kind_of? WLBud::WL and @provenance
+        @push_sorted_elems.each do |stratum|
+          stratum.each do |pshelt|
+            @provenance_graph.add_new_push_elem(pshelt)
+          end
+        end
       end
     end
 

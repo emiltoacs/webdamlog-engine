@@ -3,6 +3,8 @@ module Bud
   # Add the rule from which the push element has been created
   class PushElement
 
+    attr_reader :orig_rule_id
+
     def initialize(name_in, bud_instance, collection_name=nil, given_schema=nil, defer_schema=false, &blk)
       super(name_in, bud_instance, given_schema, defer_schema)
       @blk = blk
@@ -22,6 +24,8 @@ module Bud
         raise WLBud::WLError, "a PushElement has not received its rule_id of provenance" unless @orig_rule_id
       end
     end
+
+    
 
   end
 end

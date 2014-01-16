@@ -4,13 +4,15 @@ require_relative '../../lib/webdamlog_runner'
 
 require 'test/unit'
 
+
 class TcWlTracePushOut < Test::Unit::TestCase
   include MixinTcWlTest
-  
+
   def setup
     @pg = <<-EOF
 peer testsf = localhost:10000;
 collection ext per photos@testsf(photo*,owner*);
+collection ext per images@testsf(photo*,owner*,useless*);
 collection ext per tags@testsf(img*,tag*);
 collection ext per album@testsf(pict*,owner*);
 fact photos@testsf(1,"alice");
@@ -20,9 +22,14 @@ fact tags@testsf(1,"alice");
 fact tags@testsf(1,"bob");
 fact tags@testsf(2,"alice");
 fact tags@testsf(3,"bob");
+fact tags@testsf(5,"alice");
+fact tags@testsf(5,"bob");
+fact images@testsf(4,"bob","uselessfield");
+fact images@testsf(5,"bob","uselessfield");
 rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice"), tags@testsf($img,"bob");
+rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
     EOF
-    @pg_file = "test_selfjoin_rewriting"
+    @pg_file = "test_do_wiring"
     @username = "testsf"
     @port = "10000"
     # create program files
@@ -45,12 +52,86 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
   end
 
   
-  def test_trace_simple_derivation
-
+  def test_build_proof_when_push_out
     runner = WLRunner.create(@username, @pg_file, @port)
-
     runner.tick
+    bud_rules = []
+    Dir.chdir(runner.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 2, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rules << line.strip if line.include? "photos_at_testsf"
+          end
+        end
+      end
+    end
+    # Check that we translated the rule as expected
+    assert_equal [
+      "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
+      "photos_at_testsf <= images_at_testsf do |atom0| [atom0[0], atom0[1]] end;"],
+      bud_rules
 
+    # Check the traces in the provenance graph
+    assert_equal([["photos_at_testsf",
+          "tags_at_testsf",
+          "(photos_at_testsf*tags_at_testsf)",
+          "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"],
+        ["images_at_testsf", "project[:photo, :owner, :useless]"]],
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.inspect})
+
+    
+  end
+end
+
+
+
+
+# Simple test mostly used during development. It has only one rule
+class TcWlTraceDoWiring < Test::Unit::TestCase
+  include MixinTcWlTest
+  
+  def setup
+    @pg = <<-EOF
+peer testsf = localhost:10000;
+collection ext per photos@testsf(photo*,owner*);
+collection ext per tags@testsf(img*,tag*);
+collection ext per album@testsf(pict*,owner*);
+fact photos@testsf(1,"alice");
+fact photos@testsf(2,"alice");
+fact photos@testsf(3,"alice");
+fact tags@testsf(1,"alice");
+fact tags@testsf(1,"bob");
+fact tags@testsf(2,"alice");
+fact tags@testsf(3,"bob");
+rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice"), tags@testsf($img,"bob");
+    EOF
+    @pg_file = "test_do_wiring"
+    @username = "testsf"
+    @port = "10000"
+    # create program files
+    File.open(@pg_file,"w"){ |file| file.write @pg }
+  end
+
+  def teardown
+    # delete all Webdamlog runners
+    ObjectSpace.each_object(WLRunner) do |obj|
+      rule_dir = obj.rule_dir
+      obj.delete
+      clean_rule_dir rule_dir
+    end
+    if EventMachine::reactor_running?
+      Bud::stop_em_loop
+      EventMachine::reactor_thread.join
+    end
+    ObjectSpace.garbage_collect
+    File.delete(@pg_file) if File.exists?(@pg_file)
+  end
+
+  # Simple test with a single rule
+  def test_trace_simple_derivation
+    runner = WLRunner.create(@username, @pg_file, @port)
+    runner.tick
     bud_rule = ""
     Dir.chdir(runner.rule_dir) do
       wlrule_files = Dir.glob("webdamlog*")
@@ -78,18 +159,23 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
     assert_equal(["(photos_at_testsf*tags_at_testsf)",
         "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"],
       runner.push_elems.values.map { |pshelt| pshelt.tabname.to_s.gsub(/:[0-9]*/,'')})
-    # @scanners contains all the the collection push elements ie. the ScannersElement
+    # @scanners contains all the the collection push elements ie. the
+    # ScannersElement
     assert_equal([[:photos_at_testsf, :tags_at_testsf]],
       runner.scanners.map{|stratum| stratum.keys.map{|key| key[1]}})
-    # @push_sorted_elems contains all the the PushElements order in a breadth-first order
+    # @push_sorted_elems contains all the the PushElements order in a
+    # breadth-first order
     assert_equal([["photos_at_testsf",
           "tags_at_testsf",
           "(photos_at_testsf*tags_at_testsf)",
           "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"]],
       runner.instance_variable_get(:@push_sorted_elems).map{|stratum| stratum.map {|pshelt| pshelt.elem_name.to_s.gsub(/:[0-9]*/,'')}})
-    
-
-
+    # provenance-graph has received the right list of push elements
+    assert_equal([["photos_at_testsf",
+          "tags_at_testsf",
+          "(photos_at_testsf*tags_at_testsf)",
+          "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"]],
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.inspect})
   end
 
 

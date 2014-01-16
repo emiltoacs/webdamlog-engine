@@ -360,7 +360,8 @@ See do_wiring in bud.rb and README.rescan in bud/executor
                  pro, each_with_index, join, notin, group, argagg,
                  on_include?, inspected, flat_map but not from a
                  collection#to_push_elem.
-+ @push_sorted_elems :: the list of PushElements ordered in a breadth-first order
++ @push_sorted_elems :: the list of PushElements ordered in a
+     breadth-first order. Initialized in the do_wiring method in bud.rb.
 + @merge_targets :: collections in lhs of rules
 
 
