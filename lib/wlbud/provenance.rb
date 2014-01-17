@@ -18,17 +18,7 @@ module WLBud
       end
     end
 
-    # PENDING a possible optimization would be to get the reference of the
-    # objects in source and destination stored in collections instead of the
-    # reference here that are the temporary objects used in push_elements. The
-    # solution for now is to deep-copy the object to keep them in the provenance
-    # graph.
     def add_new_pushed_out orig_rule_id, source, derivated
-      #      src = source.to_a
-      #      src = source.map{|budstruct| budstruct.to_a if budstruct.kind_of? Bud::TupleStruct }
-      #      dst = derivated.to_a
-      #      src = Marshal.load(Marshal.dump(src))
-      #      dst = Marshal.load(Marshal.dump(dst))
       @traces[orig_rule_id].add_new_proof source, derivated
     end
   end
