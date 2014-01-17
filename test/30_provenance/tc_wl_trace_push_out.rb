@@ -78,9 +78,18 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
           "(photos_at_testsf*tags_at_testsf)",
           "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"],
         ["images_at_testsf", "project[:photo, :owner, :useless]"]],
-      runner.provenance_graph.traces.values.map{|rtrace| rtrace.inspect})
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.print_push_elems})
 
-    
+    assert_equal(
+      [[0,
+          [{[["1", "alice"], ["1", "alice"], ["1", "bob"]]=>["1", "alice"]},
+            {[["5", "bob"], ["5", "alice"], ["5", "bob"]]=>["5", "bob"]}]],
+        [1,
+          [{["4", "bob", "uselessfield"]=>["4", "bob"]},
+            {["5", "bob", "uselessfield"]=>["5", "bob"]}]]],
+      runner.provenance_graph.traces.map do |rid,rtrace|
+        [rid,rtrace.pushed_out_facts.map{|ptree| ptree.to_a_budstruct}]
+      end)
   end
 end
 
@@ -175,7 +184,7 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
           "tags_at_testsf",
           "(photos_at_testsf*tags_at_testsf)",
           "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"]],
-      runner.provenance_graph.traces.values.map{|rtrace| rtrace.inspect})
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.print_push_elems})
   end
 
 
