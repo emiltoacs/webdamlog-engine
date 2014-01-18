@@ -10,6 +10,11 @@ module WLBud
       @traces = {}
     end
 
+    def consolidate
+      @traces.each_value{|trace| trace.consolidate }
+
+    end
+
     def add_new_push_elem bud_push_elem
       if @traces.key? bud_push_elem.orig_rule_id
         @traces[bud_push_elem.orig_rule_id].add_new_push_elem(bud_push_elem)
@@ -18,20 +23,28 @@ module WLBud
       end
     end
 
-    def add_new_pushed_out orig_rule_id, source, derivated
+    def add_new_proof orig_rule_id, source, derivated
       @traces[orig_rule_id].add_new_proof source, derivated
     end
   end
 
+
+
   # Keep the trace of all the push elements used to evaluate a rule
   class RuleTrace
 
-    attr_reader :pushed_out_facts
+    attr_reader :pushed_out_facts, :last_push_elem
 
     def initialize bud_push_elem
       @rule_id = bud_push_elem.orig_rule_id
-      @push_elems = [bud_push_elem]
+      @push_elems = [bud_push_elem]      
       @pushed_out_facts = []
+      @consolidated = false
+    end
+
+    def consolidate
+      @last_push_elem = @push_elems.last
+      @consolidated = true
     end
 
     def add_new_push_elem bud_push_elem
@@ -45,24 +58,38 @@ module WLBud
     # Remove the object id from the name to perform test and display the push
     # element for stdout
     def self.sanitize_push_elem_name push_elt
-      res = push_elt.tabname.to_s
-      # remove Scanner or PushSHJoin object number
-      if res.gsub!(/:[0-9]*/,'')
-        return res
-        # remove Project object number
-      elsif res.gsub!(/project[0-9]*/,"project#{push_elt.schema}")
-        return res
-        # remove nothing
+      if push_elt.is_a? Bud::PushElement
+        res = push_elt.tabname.to_s
+        # remove Scanner or PushSHJoin object number
+        if res.gsub!(/:[0-9]*/,'')
+          return res
+          # remove Project object number
+        elsif res.gsub!(/project[0-9]*/,"project#{push_elt.schema}")
+          return res
+          # remove nothing
+        else
+          return res
+        end
       else
-        return res
-      end
+        raise WLBud::WLError, "Wrong type of parameter push_elems is a #{push_elems.class}"
+      end   
     end
 
-    def print_push_elems
+    def print_push_elems push_elems = nil
       @push_elems.map{|pshelt| "#{RuleTrace.sanitize_push_elem_name pshelt}"}
+    end
+
+    def print_last_push_elem
+      if @consolidated
+        "#{RuleTrace.sanitize_push_elem_name @last_push_elem}"
+      else
+        raise WLBud::WLError, "Cannot print last_push_elems before consolidation of the provenance graph"
+      end
     end
   end
 
+
+  
   class ProofTree
     def initialize source, derivated
       @sources = source

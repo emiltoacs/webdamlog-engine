@@ -90,6 +90,11 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
       runner.provenance_graph.traces.map do |rid,rtrace|
         [rid,rtrace.pushed_out_facts.map{|ptree| ptree.to_a_budstruct}]
       end)
+
+    assert_equal ["(photos_at_testsf*tags_at_testsf*tags_at_testsf)",
+      "project[photo, owner, useless]"],
+      runner.provenance_graph.traces.map{|rid,rtrace| rtrace.print_last_push_elem }
+    
   end
 end
 

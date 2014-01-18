@@ -534,6 +534,7 @@ module WLBud
             @provenance_graph.add_new_push_elem(pshelt)
           end
         end
+        @provenance_graph.consolidate
       end
     end
 
