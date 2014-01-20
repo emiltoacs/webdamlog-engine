@@ -100,6 +100,92 @@ end
 
 
 
+# Check that all the push-joins are created from one rules, there is no reuse of
+# the same joins. That is if the same join appear in two different rule, two
+# different pushshjoins will be created.
+class TcWlTracePushSHJoin< Test::Unit::TestCase
+  include MixinTcWlTest
+
+  def setup
+    @pg = <<-EOF
+peer testsf = localhost:10000;
+collection ext per photos@testsf(photo*,owner*);
+collection ext per images@testsf(photo*,owner*,useless*);
+collection ext per tags@testsf(img*,tag*);
+collection ext per album1@testsf(pict*,owner*);
+collection ext per album2@testsf(pict*,owner*);
+collection ext per album3@testsf(pict*,owner*);
+fact photos@testsf(1,"alice");
+fact photos@testsf(2,"alice");
+fact photos@testsf(3,"alice");
+fact tags@testsf(1,"alice");
+fact tags@testsf(1,"bob");
+fact tags@testsf(2,"alice");
+fact tags@testsf(3,"bob");
+fact tags@testsf(5,"alice");
+fact tags@testsf(5,"bob");
+fact images@testsf(4,"bob","uselessfield");
+fact images@testsf(5,"bob","uselessfield");
+rule album1@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice"), tags@testsf($img,"bob");
+rule album2@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice");
+rule album3@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice");
+    EOF
+    @pg_file = "test_do_wiring"
+    @username = "testsf"
+    @port = "10000"
+    # create program files
+    File.open(@pg_file,"w"){ |file| file.write @pg }
+  end
+
+  def teardown
+    # delete all Webdamlog runners
+    ObjectSpace.each_object(WLRunner) do |obj|
+      rule_dir = obj.rule_dir
+      obj.delete
+      clean_rule_dir rule_dir
+    end
+    if EventMachine::reactor_running?
+      Bud::stop_em_loop
+      EventMachine::reactor_thread.join
+    end
+    ObjectSpace.garbage_collect
+    File.delete(@pg_file) if File.exists?(@pg_file)
+  end
+
+  # Test that push_joins are not reused across rules
+  def test_pushshjoin_shred_rules
+    runner = WLRunner.create(@username, @pg_file, @port)
+    runner.tick
+    bud_rule = []
+    Dir.chdir(runner.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 3, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rule << line.strip if line.include? "album1_at_testsf" or line.include? "album2_at_testsf" or line.include? "album3_at_testsf"
+          end
+        end
+      end
+    end
+    assert_equal ["album1_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
+      "album2_at_testsf <= (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;",
+      "album3_at_testsf <= (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;"],
+      bud_rule
+
+    assert_equal(["photos_at_testsf",
+        "tags_at_testsf",
+        "(photos_at_testsf*tags_at_testsf)",
+        "(photos_at_testsf*tags_at_testsf*tags_at_testsf)",
+        "(photos_at_testsf*tags_at_testsf)",
+        "(photos_at_testsf*tags_at_testsf)"],
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| WLBud::RuleTrace.sanitize_push_elem_name(push_elem)} )
+
+    assert_equal([],
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| push_elem.object_id}.dups )
+  end
+end
+
+
 
 # Simple test mostly used during development. It has only one rule
 class TcWlTraceDoWiring < Test::Unit::TestCase
@@ -191,6 +277,5 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
           "(photos_at_testsf*tags_at_testsf*tags_at_testsf)"]],
       runner.provenance_graph.traces.values.map{|rtrace| rtrace.print_push_elems})
   end
-
 
 end

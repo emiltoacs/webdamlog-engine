@@ -1,28 +1,28 @@
 # ####License####
 #  File name header_test.rb
 #  Copyright © by INRIA
-# 
+#
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
+#
 #   WebdamLog - Jun 27, 2012
-# 
+#
 #   Encoding - UTF-8
-# ####License####
-# Prefer webdamlog from local source tree to any version in RubyGems
+# ####License#### Prefer webdamlog from local source tree to any version in
+# RubyGems
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 $:.unshift "."
 # full relative path to specify that you want the current version in the project
 # and not the gem
 require 'wlbud'
 
-#stdlib
+# #stdlib
 require 'test/unit'
 require 'fileutils'
-#lib
+# #lib
 require 'pp'
 require 'yaml'
-#custom
+# #custom
 require 'wlbud/wlextendsbud'
 
 # Mixin with some code common to most of my tc_wl_* tests
@@ -30,15 +30,15 @@ module MixinTcWlTest
 
   # Empty the default rule_dir where the engine write its bloom blocks
   def clean_rule_dir rule_dir
-    FileUtils.rm_rf(rule_dir, secure: true)
+    FileUtils.rm_rf(rule_dir, :secure => true)
   end
 
   # self.included is a callback method triggered when this module is included.
   #
   # self reference MixinTcWlTest and klass is the module which include this one.
   #
-  # + verbose allow to use the $test_verbose options when running tests
-  # + BUD_DEBUG allow to use the $BUD_DEBUG options when running tests
+  # + verbose allow to use the $test_verbose options when running tests +
+  # BUD_DEBUG allow to use the $BUD_DEBUG options when running tests
   #
   def self.included othermod
     if ARGV.include?("verbose")
@@ -53,7 +53,8 @@ module MixinTcWlTest
   #
   # The sub-class of WLBud::WL redefine the initialize method with two
   # additional parameters:
-  # * program that should be the string representing the program in a webdamlog syntax
+  # * program that should be the string representing the program in a webdamlog
+  #   syntax
   # * filetowrite the file in which to write the program given program
   #
   # ===parameter
@@ -89,8 +90,8 @@ module MixinTcWlTest
 
   # Block until a message has been received on the inbound of the given wlpeer
   #
-  # @param [Bud] wlpeer the instance of the Bud peer to wait for receiving message
-  # @return [Boolean] true is something have been received
+  # @param [Bud] wlpeer the instance of the Bud peer to wait for receiving
+  # message @return [Boolean] true is something have been received
   #
   def wait_inbound(wlpeer)
     cpt = 0
@@ -106,4 +107,9 @@ module MixinTcWlTest
 end
 
 
-
+module Enumerable
+  # Return the array of all the duplicates
+  def dups
+    inject({}) {|h,v| h[v]=h[v].to_i+1; h}.reject{|k,v| v==1}.keys
+  end
+end

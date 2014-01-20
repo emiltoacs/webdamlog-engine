@@ -33,7 +33,7 @@ module WLBud
   # Keep the trace of all the push elements used to evaluate a rule
   class RuleTrace
 
-    attr_reader :pushed_out_facts, :last_push_elem
+    attr_reader :push_elems, :pushed_out_facts, :last_push_elem
 
     def initialize bud_push_elem
       @rule_id = bud_push_elem.orig_rule_id
@@ -71,7 +71,7 @@ module WLBud
           return res
         end
       else
-        raise WLBud::WLError, "Wrong type of parameter push_elems is a #{push_elems.class}"
+        raise WLBud::WLError, "Wrong type of parameter push_elems is a #{push_elt.class}"
       end   
     end
 
