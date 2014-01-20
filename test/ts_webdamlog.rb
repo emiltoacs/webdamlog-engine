@@ -83,4 +83,4 @@ end
 
 # clean rule dir created during tests
 require 'fileutils'
-FileUtils.rm_rf(WLBud::WL.get_path_to_rule_dir, secure: true)
+FileUtils.rm_rf(WLBud::WL.get_path_to_rule_dir, :secure => true)
