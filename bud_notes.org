@@ -204,6 +204,10 @@ According to the doc of "sync_do" inserting into a scratch with a
 deferred operator (especially <+ since <- is idiot) must be really
 inserting stuff for the next round.
 
+Scratch are not invalidated at the begining if @pendings is empty and
+scratch is not in a source(i.e. it appers at least once in the lhs of a
+rule).
+
 *** Join
 
 Self-join are very limited: only one and no-way to rename the two
