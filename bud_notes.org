@@ -1,4 +1,4 @@
-#-*- mode: org -*-
+k#-*- mode: org -*-
 #+STARTUP: content
 #+STARTUP: indent
 
@@ -207,6 +207,7 @@ inserting stuff for the next round.
 Scratch are not invalidated at the begining if @pendings is empty and
 scratch is not in a source(i.e. it appers at least once in the lhs of a
 rule).
+
 
 *** Join
 
@@ -517,3 +518,8 @@ access to internal data of WLpeer.
 * Other Remark
 
 + implementation :: http://www.ccs.neu.edu/home/ramsdell/tools/datalog/datalog.html
+
+
+ un deux trois
+ un deux trois
+ un deux trois

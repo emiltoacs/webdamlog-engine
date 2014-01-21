@@ -4,7 +4,7 @@ require_relative '../../lib/webdamlog_runner'
 
 require 'test/unit'
 
-
+# Test creation of push_elements tracking in the provenance graph. 
 class TcWlTracePushOut < Test::Unit::TestCase
   include MixinTcWlTest
 
@@ -51,7 +51,7 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
     File.delete(@pg_file) if File.exists?(@pg_file)
   end
 
-  
+  # Check the push_elements added to the proof tree and traces
   def test_build_proof_when_push_out
     runner = WLRunner.create(@username, @pg_file, @port)
     runner.tick
@@ -94,13 +94,15 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
     assert_equal ["(photos_at_testsf*tags_at_testsf*tags_at_testsf)",
       "project[photo, owner, useless]"],
       runner.provenance_graph.traces.map{|rid,rtrace| rtrace.print_last_push_elem }
-    
+
+    assert_equal [[:photos_at_testsf, :tags_at_testsf, :tags_at_testsf], [:images_at_testsf]],
+      runner.provenance_graph.traces.map{|rid,rtrace| rtrace.sources}
   end
 end
 
 
 
-# Check that all the push-joins are created from one rules, there is no reuse of
+# Check that all the push-joins are created from one rule, there is no reuse of
 # the same joins. That is if the same join appear in two different rule, two
 # different pushshjoins will be created.
 class TcWlTracePushSHJoin< Test::Unit::TestCase
@@ -178,16 +180,16 @@ rule album3@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,
         "(photos_at_testsf*tags_at_testsf*tags_at_testsf)",
         "(photos_at_testsf*tags_at_testsf)",
         "(photos_at_testsf*tags_at_testsf)"],
-      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| WLBud::RuleTrace.sanitize_push_elem_name(push_elem)} )
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| push_elem.sanitize_push_elem_name } )
 
     assert_equal([],
-      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| push_elem.object_id}.dups )
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| push_elem.object_id}.dups )    
   end
 end
 
 
 
-# Simple test mostly used during development. It has only one rule
+# Simple test mostly used during development. It has only one rule.
 class TcWlTraceDoWiring < Test::Unit::TestCase
   include MixinTcWlTest
   

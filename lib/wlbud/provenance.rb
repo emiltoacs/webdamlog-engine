@@ -40,10 +40,14 @@ module WLBud
       @push_elems = [bud_push_elem]      
       @pushed_out_facts = []
       @consolidated = false
+      # @!attribute [r]
+      #  @return [Array] relation names as symbol
+      @sources = nil
     end
 
     def consolidate
       @last_push_elem = @push_elems.last
+      @sources = build_ordered_source_collection
       @consolidated = true
     end
 
@@ -55,33 +59,36 @@ module WLBud
       @pushed_out_facts << ProofTree.new(source, derivated)
     end
 
-    # Remove the object id from the name to perform test and display the push
-    # element for stdout
-    def self.sanitize_push_elem_name push_elt
-      if push_elt.is_a? Bud::PushElement
-        res = push_elt.tabname.to_s
-        # remove Scanner or PushSHJoin object number
-        if res.gsub!(/:[0-9]*/,'')
-          return res
-          # remove Project object number
-        elsif res.gsub!(/project[0-9]*/,"project#{push_elt.schema}")
-          return res
-          # remove nothing
-        else
-          return res
-        end
+    # read accessor to the @sources attribute
+    def sources
+      raise WLBud::WLError, "try to access @sources before consolidation" unless @consolidated
+      return @sources
+    end
+
+    # Build the array of collection ordered as they are evaluated in the rule.
+    # It start from the last push_element to retrieve in a backward manner the
+    # source collections.
+    def build_ordered_source_collection push_elem = nil
+      raise WLBud::WLErrorTyping, "The last push element in a RuleTrace object is nil" if @last_push_elem.nil?
+      push_elem ? pshelt = push_elem : pshelt = @last_push_elem
+      srcs = []
+      if pshelt.is_a? Bud::PushSHJoin
+        srcs = pshelt.all_rels_below.map{|elem| build_ordered_source_collection elem}.flatten
+      elsif pshelt.is_a? Bud::PushElement
+        srcs << pshelt.collection_name
       else
-        raise WLBud::WLError, "Wrong type of parameter push_elems is a #{push_elt.class}"
-      end   
+        raise WLBud::WLErrorTyping, "Wrong type for the last push element in a RuleTrace object which is an instance of #{@last_push_elem.class}"
+      end
+      return srcs
     end
 
     def print_push_elems push_elems = nil
-      @push_elems.map{|pshelt| "#{RuleTrace.sanitize_push_elem_name pshelt}"}
+      @push_elems.map{|pshelt| "#{pshelt.sanitize_push_elem_name }"}
     end
 
     def print_last_push_elem
       if @consolidated
-        "#{RuleTrace.sanitize_push_elem_name @last_push_elem}"
+        "#{@last_push_elem.sanitize_push_elem_name }"
       else
         raise WLBud::WLError, "Cannot print last_push_elems before consolidation of the provenance graph"
       end
@@ -103,4 +110,6 @@ module WLBud
       {src.to_a => @derivated.to_a}
     end
   end
+
+  
 end

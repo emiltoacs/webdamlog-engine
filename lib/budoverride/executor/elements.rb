@@ -3,7 +3,7 @@ module Bud
   # Add the rule from which the push element has been created
   class PushElement
 
-    attr_reader :orig_rule_id
+    attr_reader :orig_rule_id, :collection_name
 
     # add provenance tracking
     def initialize(name_in, bud_instance, collection_name=nil, given_schema=nil, defer_schema=false, &blk)
@@ -26,7 +26,7 @@ module Bud
       end
     end
 
-    
+    # Create new proof tree when a tuple is pushed into a collection
     def push_out(item, do_block=true)    
       if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
         source = item
@@ -68,6 +68,30 @@ module Bud
       end
     end
 
+
+    # Remove the object id from the name to perform test and display the push
+    # element for stdout
+    def self.sanitize_push_elem_name push_elt
+      if push_elt.is_a? Bud::PushElement
+        res = push_elt.tabname.to_s
+        # remove Scanner or PushSHJoin object number
+        if res.gsub!(/:[0-9]*/,'')
+          return res
+          # remove Project object number
+        elsif res.gsub!(/project[0-9]*/,"project#{push_elt.schema}")
+          return res
+          # remove nothing
+        else
+          return res
+        end
+      else
+        raise WLBud::WLError, "Wrong type of parameter push_elems is a #{push_elt.class}"
+      end
+    end
+    # Instance method version of previous class method
+    def sanitize_push_elem_name
+      PushElement.sanitize_push_elem_name self
+    end
 
   end
 end

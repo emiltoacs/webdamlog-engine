@@ -289,8 +289,8 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
 
     private
 
-    # rewrite a parsed wlrule and install it in the engine !@attributes
-    # [WBud::WLRule] rule as an object
+    # rewrite a parsed wlrule and install it in the engine
+    #  !@attributes [WBud::WLRule] rule as an object
     def install_rule wlrule
       if @wl_program.bound_n_local?(wlrule)
         return translate_rule(wlrule)
