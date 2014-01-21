@@ -294,6 +294,7 @@ module WLBud
             do_wiring
             @viz = VizOnline.new(self) if @options[:trace]
             @need_rewrite_strata=false
+            @collection_added=false
           elsif @collection_added # only if collections have been added and @need_rewrite_strata is false because no rules has been added
             update_app_tables
             @collection_added = false

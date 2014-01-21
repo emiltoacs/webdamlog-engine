@@ -1,4 +1,4 @@
-k#-*- mode: org -*-
+#-*- mode: org -*-
 #+STARTUP: content
 #+STARTUP: indent
 
@@ -393,7 +393,10 @@ toplevel.push_sources[this_stratum][[oid, the_name]] = scanner
                     Then it is stored in @scanners and @push_sources.
 
 
+*** Wiring of PushElements
 
+It seems that PushSHJoins have only one output but scanners can have
+multiples.
 
 
 

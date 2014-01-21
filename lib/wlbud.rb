@@ -433,7 +433,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
           end
           # add new rules only if it has not already been derived
           unless @sprout_rules.has_key?(new_rule)
-            new_rules[new_rule]=new_rule
+            new_rules[new_rule] = new_rule
           end
         end
       end

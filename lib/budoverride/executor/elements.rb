@@ -43,8 +43,8 @@ module Bud
           ou.insert(item, self)
         elsif ou.class <= Bud::BudCollection
           if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
-            derivated = item            
-            @bud_instance.provenance_graph.add_new_proof @orig_rule_id, source, derivated
+            inferred = item
+            @bud_instance.provenance_graph.add_new_proof @orig_rule_id, source, inferred
           end
           ou.do_insert(item, ou.new_delta)
         elsif ou.class <= Bud::LatticeWrapper
