@@ -3,13 +3,15 @@
 #  Copyright © by INRIA
 #
 #  Contributors : Webdam Team <webdam.inria.fr>
-#       Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
 #
 #   WebdamLog - 30 juin 2011
 #
 #   Encoding - UTF-8
 # ####License####
+
+# :title:WLBud WLBud is a Ruby Module that simulates WebdamLog behavior using
+# Bud.
 module WLBud
 
   PATH_LIB = File.expand_path(File.dirname(__FILE__))
@@ -17,10 +19,6 @@ module WLBud
   PATH_CONFIG = File.expand_path("config/", PATH_LIB)
   RULE_DIR_NAME = "wlrule_to_bud"
   PATH_BUD = File.expand_path("bud/", PATH_LIB)
-  # No modification of the load path in a gem #$:.unshift PATH_WLBUD unless
-  # $LOAD_PATH.include?(PATH_WLBUD) #$:.unshift PATH_LIB unless
-  # $LOAD_PATH.include?(PATH_LIB) #$:.unshift PATH_CONFIG unless
-  # $LOAD_PATH.include?(PATH_CONFIG)
 
   # control bud gem version
   require "#{PATH_WLBUD}/version"
@@ -36,7 +34,7 @@ module WLBud
   require 'set'
   require 'benchmark'
 
-  # #file project
+  # file project
   require "#{PATH_WLBUD}/wlprogram"
   require "#{PATH_WLBUD}/wlpacket"
   require "#{PATH_WLBUD}/wlerror"
@@ -53,10 +51,6 @@ module WLBud
   # Override bud methods
   require "budoverride"
 
-  # :title:WLBud WLBud is a Ruby Module that simulates WebdamLog behavior using
-  # Bud. :main:WLBud
-
-
   # PENDING remove class to force user to create a new class that include WLBud.
   #   It is very unlikely that any user wants to instantiate this class directly
   #   since all the method adding(and so the rules) would be share by all the
@@ -64,7 +58,6 @@ module WLBud
   #
   # Alternative: we could change the code to add methods to instance of objects
   #  instead of the class (lots of refactoring)
-  #
   class WL
     include WLBud
 
@@ -225,32 +218,18 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     end # schema_init
 
     # Adds dynamically facts
-    #
+    # @return valid, err
     def add_facts(wl_facts)
-      facts, err = {}
-      if wl_facts.is_a? Hash
-        valid, msg = WLPacketData.valid_hash_of_facts wl_facts
-        if valid
-          facts, err = insert_updates(wl_facts)
-        else
-          raise WLErrorTyping, msg
-        end
-      else
-        if wl_facts.is_a? WLBud::WLFact
-          fact = {wl_facts.fullrelname => [wl_facts.content] }
-          facts, err = add_facts fact
-        elsif wl_facts.is_a? String
-          fact = @wl_program.parse(wl_facts, true)
-          if fact.is_a? WLBud::WLFact
-            facts, err = add_facts fact
-          else
-            raise WLErrorTyping, "fact string is not considered as a fact construct, but is #{fact.class} : #{fact}"
-          end
-        else
-          raise WLErrorTyping, "fact is not considered as a fact construct, but is of class #{wl_facts.class}"
-        end
-      end
-      return facts, err
+      converted_facts = convert_facts_into_valid_hash wl_facts
+      return insert_facts_in_coll(converted_facts)
+    end
+    
+    # Delete facts strategy for deletion, if @provenance is true then
+    # propagation algorithm is used otherwise re-computation is performed
+    #  @return valid, err
+    def delete_facts(wl_facts)
+      converted_facts = convert_facts_into_valid_hash wl_facts
+      return delete_facts_in_coll(converted_facts)
     end
 
     # It will dynamically add a collection to the program
@@ -354,8 +333,37 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       self.class.send(:define_method, meth_name, block)
     end
 
-    # Insert or delete facts in collections according to messages received from
-    # channel. facts should respect {WLPacketData.valid_hash_of_facts} format
+    # Different structures to represent facts could be used, this method return
+    # the hash with relation name as key and array of tuples(a tuple is also an
+    # array).
+    def convert_facts_into_valid_hash wl_facts
+      if wl_facts.is_a? Hash
+        valid, msg = WLPacketData.valid_hash_of_facts wl_facts
+        if valid
+          converted_facts = wl_facts
+        else
+          raise WLErrorTyping, msg
+        end
+      else
+        if wl_facts.is_a? WLBud::WLFact
+          fact = {wl_facts.fullrelname => [wl_facts.content] }
+          converted_facts = convert_facts_into_valid_hash fact
+        elsif wl_facts.is_a? String
+          fact = @wl_program.parse(wl_facts, true)
+          if fact.is_a? WLBud::WLFact
+            converted_facts = convert_facts_into_valid_hash fact
+          else
+            raise WLErrorTyping, "fact string is not considered as a fact construct, but is #{fact.class} : #{fact}"
+          end
+        else
+          raise WLErrorTyping, "fact is not considered as a fact construct, but is of class #{wl_facts.class}"
+        end
+      end
+      return converted_facts
+    end
+
+    # Insert facts in collections according to messages received from channel.
+    # facts should respect {WLPacketData.valid_hash_of_facts} format
     #
     # Collections in which to add facts are suppose to support <+ operator
     #
@@ -367,7 +375,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     # TODO customize according to the type of relation in which facts are
     # inserted
     #
-    def insert_updates(facts)
+    def insert_facts_in_coll(facts)
       valid = {}
       err = {}
       facts.each_pair do |k,tuples|
@@ -396,9 +404,63 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
         else
           err[[k,tuples]] = "relation name #{k} translated to #{relation_name} has not been declared previously"
         end
-      end # end facts.each_pair
+      end # facts.each_pair
       return valid, err
-    end # end insert_updates
+    end # insert_updates
+
+    
+    # Delete facts from collections
+    #  facts should be a hash {relname=>[tuples,...]}
+    # @return valid, err
+    def delete_facts_in_coll facts
+      valid = {}
+      err = {}
+      facts.each_pair do |rel_name,tuples|
+        relation_name = rel_name
+        relation_name = rel_name.gsub(/@/, "_at_") if rel_name.to_s.include?('@')
+        if @wl_program.wlcollections.has_key? relation_name
+          tuples.each do |tuple|
+            if tuple.is_a? Array or tuple.is_a? Struct
+              if tuple.size == @wl_program.wlcollections[relation_name].arity
+
+                if @provenance
+                  coll = tables[relation_name.to_sym]
+                  if coll.is_a? BudCollection
+                    begin
+                      deleted = coll.delete_without_invalidation tuple
+                      (valid[relation_name] ||= []) << deleted
+                    rescue StandardError => error
+                      err[[relation_name,tuple]]=error.inspect
+                    end
+                  end
+                else
+                  coll = tables[relation_name.to_sym]
+                  if coll.is_a? BudTable
+                    begin
+                      coll.pending_delete tuple
+                      (valid[relation_name] ||= []) << tuple
+                    rescue StandardError => error
+                      err[[relation_name,tuple]]=error.inspect
+                    end
+                  else
+                    raise WLError, "try to delete facts from a #{coll.class} instead of a table collection"
+                  end
+                end
+                
+              else
+                err[[rel_name,tuple]] = "fact of arity #{tuple.size} in relation #{k} of arity #{arity}"
+              end
+            else
+              err[[rel_name,tuple]] = "fact in relation #{k} with value \"#{tuple}\" should be an Array or struct instead found a #{tuple.class}"
+            end
+          end # tuples.each
+        else
+          err[[rel_name,tuples]] = "relation name #{rel_name} translated to #{relation_name} has not been declared previously"
+        end   
+      end # facts.each_pair
+      return valid, err
+    end # delete_facts_in_coll
+    
 
     # Read incoming packets on the channels and format them into an array of
     # WLPacketData
@@ -426,7 +488,8 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
         coll.pro do |tuple|
           new_rule = String.new template.show_wdl_format
           var_to_bound.each_index do |ind_var|
-            # FIXME hard coded @ to add quotes around field value but not around relation name and peer name
+            # FIXME hard coded @ to add quotes around field value but not around
+            # relation name and peer name
             new_rule = new_rule.gsub "#{var_to_bound[ind_var]}@", "#{tuple[ind_var]}@"
             new_rule = new_rule.gsub "@#{var_to_bound[ind_var]}", "@#{tuple[ind_var]}"
             new_rule = new_rule.gsub "#{var_to_bound[ind_var]}", "#{tuple[ind_var]}"

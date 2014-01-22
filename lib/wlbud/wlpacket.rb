@@ -133,7 +133,7 @@ module WLBud
         if hash.is_a? Hash
           return true, "valid empty hash" if hash.empty?
           hash.each_pair { |k,v|
-            return false, "keys in the hash should be String" unless k.is_a? String
+            return false, "keys in the hash should be String" unless k.is_a? String or k.is_a? Symbol
             return false, "values in the hash should be Array" unless v.is_a? Array
           }
           return true, "valid hash of facts to insert"

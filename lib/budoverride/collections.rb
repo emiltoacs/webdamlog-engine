@@ -14,6 +14,8 @@ module Bud
       keycols = get_key_vals(tuple)
       if @storage[keycols] == tuple
         v = @storage.delete keycols
+      elsif @delta[keycols] == tuple
+        v = @delta.delete keycols
       end
       return v
     end
