@@ -4,6 +4,199 @@ require_relative '../../lib/webdamlog_runner'
 
 require 'test/unit'
 
+class TcWlTracePushOutWithSeed < Test::Unit::TestCase
+  include MixinTcWlTest
+
+  def setup
+    @pg1 = <<-EOF
+peer test1 = localhost:10000;
+peer test2 = localhost:10001;
+collection ext per friend@test1(friend*,fr_group*);
+collection ext per photos@test1(photo*,owner*);
+collection ext per tags@test1(img*,tag*);
+collection ext per album@test1(pict*,owner*);
+fact friend@test1(test1,"picture");
+fact friend@test1(test2,"picture");
+fact photos@test1(1,"test1");
+fact photos@test1(2,"test1");
+fact photos@test1(3,"test2");
+fact tags@test1(1,"alice");
+fact tags@test1(1,"bob");
+fact tags@test1(2,"alice");
+rule album@test1($photo,$owner) :- friend@test1($friend,"picture"), photos@$friend($photo,$owner), tags@$owner($photo,"bob");
+    EOF
+    @pg_file1 = "test_provenance_with_seeds_1"
+    @username1 = "test1"
+    @port1 = "10000"
+    # create program files
+    File.open(@pg_file1,"w"){ |file| file.write @pg1 }
+
+    
+    @pg2 = <<-EOF
+peer test1 = localhost:10000;
+peer test2 = localhost:10001;
+collection ext per photos@test2(photo*,owner*);
+collection ext per tags@test2(img*,tag*);
+collection ext per album@test2(pict*,owner*);
+fact friend@test2(test1,"picture");
+fact friend@test2(test2,"picture");
+fact photos@test2(1,"test2");
+fact photos@test2(2,"test2");
+fact photos@test2(4,"test2");
+fact tags@test2(1,"bob");
+fact tags@test2(3,"bob");
+fact tags@test2(4,"alice");
+fact tags@test2(4,"bob");
+    EOF
+    @pg_file2 = "test_provenance_with_seeds_2"
+    @username2 = "test2"
+    @port2 = "10001"
+    # create program files
+    File.open(@pg_file2,"w"){ |file| file.write @pg2 }
+  end
+
+  def teardown
+    # delete all Webdamlog runners
+    ObjectSpace.each_object(WLRunner) do |obj|
+      rule_dir = obj.rule_dir
+      obj.delete
+      clean_rule_dir rule_dir
+    end
+    if EventMachine::reactor_running?
+      Bud::stop_em_loop
+      EventMachine::reactor_thread.join
+    end
+    ObjectSpace.garbage_collect
+    File.delete(@pg_file1) if File.exists?(@pg_file1)
+    File.delete(@pg_file2) if File.exists?(@pg_file2)
+  end
+
+  def test_provenance_with_seeds
+    runner1 = WLRunner.create(@username1, @pg_file1, @port1)
+    runner2 = WLRunner.create(@username2, @pg_file2, @port2)
+
+    runner1.tick
+    runner2.tick
+
+    # Check that we translated the rule as expected
+    bud_rules_1 = []
+    Dir.chdir(runner1.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 1, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rules_1 << line.strip if line.include? "<="
+          end
+        end
+      end
+    end
+    assert_equal [
+      "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;"],
+      bud_rules_1
+    bud_rules_2 = []
+    Dir.chdir(runner2.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 0, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rules_2 << line.strip if line.include? "<="
+          end
+        end
+      end
+    end
+    assert_equal [], bud_rules_2
+
+    runner1.tick
+    runner2.tick
+
+    # Check that we translated the rule as expected
+    bud_rules_1 = []
+    Dir.chdir(runner1.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 3, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rules_1 << line.strip if line.include? "<="
+          end
+        end
+      end
+    end
+    assert_equal [
+      "seed_from_test1_3_1_at_test1 <= (seed_from_test1_1_1_at_test1 * photos_at_test1 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='test1' end;",
+      "sbuffer <= seed_from_test1_1_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_5_1_at_test2\", ['true']] if atom0[0]=='test2' end;",
+      "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;"],
+      bud_rules_1    
+    bud_rules_2 = []
+    Dir.chdir(runner2.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 1, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rules_2 << line.strip if line.include? "<=" or line.include? "<+"
+          end
+        end
+      end
+    end
+    assert_equal [
+      "seed_from_test2_1_1_at_test2 <= (deleg_from_test1_5_1_at_test2 * photos_at_test2 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='true' end;"],
+      bud_rules_2
+
+    runner1.tick
+    runner2.tick
+
+    # Check that we translated the rule as expected
+    bud_rules_1 = []
+    Dir.chdir(runner1.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 6, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rules_1 << line.strip if line.include? "<="
+          end
+        end
+      end
+    end
+    assert_equal ["seed_from_test1_3_1_at_test1 <= (seed_from_test1_1_1_at_test1 * photos_at_test1 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='test1' end;",
+      "album_at_test1 <= (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['2', 'test1'] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test1' and atom1[1]=='bob' end;",
+      "album_at_test1 <= (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['1', 'test1'] if atom0[0]=='1' and atom1[0]=='1' and atom0[1]=='test1' and atom1[1]=='bob' end;",
+      "sbuffer <= seed_from_test1_1_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_5_1_at_test2\", ['true']] if atom0[0]=='test2' end;",
+      "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;",
+      "sbuffer <= seed_from_test1_3_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_9_1_at_test2\", ['true']] if atom0[0]=='3' and atom0[1]=='test2' end;"],
+      bud_rules_1
+    bud_rules_2 = []
+    Dir.chdir(runner2.rule_dir) do
+      wlrule_files = Dir.glob("webdamlog*")
+      assert_equal 5, wlrule_files.length
+      wlrule_files.each do |file| File.open(file) do |io|
+          io.readlines.each do |line|
+            bud_rules_2 << line.strip if line.include? "<=" or line.include? "<+"
+          end
+        end
+      end
+    end
+    assert_equal ["sbuffer <= (seed_from_test2_1_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['2', 'test2']] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test2' and atom1[1]=='bob' end;",
+      "sbuffer <= (deleg_from_test1_9_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['3', 'test2']] if atom0[0]=='true' and atom1[0]=='3' and atom1[1]=='bob' end;",
+      "seed_from_test2_1_1_at_test2 <= (deleg_from_test1_5_1_at_test2 * photos_at_test2 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='true' end;",
+      "sbuffer <= (seed_from_test2_1_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['1', 'test2']] if atom0[0]=='1' and atom1[0]=='1' and atom0[1]=='test2' and atom1[1]=='bob' end;",
+      "sbuffer <= (seed_from_test2_1_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['4', 'test2']] if atom0[0]=='4' and atom1[0]=='4' and atom0[1]=='test2' and atom1[1]=='bob' end;"],
+      bud_rules_2
+
+    runner1.tick
+    runner2.tick
+    
+    # Check that fixpoint is reached
+    runner1.tick
+    runner2.tick
+    assert_equal [["1", "test1"], ["1", "test2"], ["3", "test2"], ["4", "test2"]],
+      runner1.tables[:album_at_test1].pro{|t| t.to_a }.sort
+    runner1.tick
+    runner2.tick
+    assert_equal [["1", "test1"], ["1", "test2"], ["3", "test2"], ["4", "test2"]],
+      runner1.tables[:album_at_test1].pro{|t| t.to_a }.sort
+  end
+  
+end
+
 
 # Test creation of push_elements tracking in the provenance graph via RuleTrace
 # objects and ProofTrees object
@@ -31,7 +224,7 @@ fact images@testsf(5,"bob","uselessfield");
 rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice"), tags@testsf($img,"bob");
 rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
     EOF
-    @pg_file = "test_do_wiring"
+    @pg_file = "test_build_proof_when_push_out"
     @username = "testsf"
     @port = "10000"
     # create program files
@@ -67,8 +260,7 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
           end
         end
       end
-    end
-    
+    end    
     # Check that we translated the rule as expected
     assert_equal [
       "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
@@ -155,7 +347,7 @@ rule album1@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,
 rule album2@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice");
 rule album3@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice");
     EOF
-    @pg_file = "test_do_wiring"
+    @pg_file = "test_pushshjoin_shred_rules"
     @username = "testsf"
     @port = "10000"
     # create program files
@@ -232,7 +424,7 @@ fact tags@testsf(2,"alice");
 fact tags@testsf(3,"bob");
 rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"alice"), tags@testsf($img,"bob");
     EOF
-    @pg_file = "test_do_wiring"
+    @pg_file = "test_trace_simple_derivation"
     @username = "testsf"
     @port = "10000"
     # create program files

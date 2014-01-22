@@ -44,7 +44,6 @@ module WLBud
   end
 
 
-
   
   class RuleTrace
 
