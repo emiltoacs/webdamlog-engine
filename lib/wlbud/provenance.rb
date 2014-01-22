@@ -69,9 +69,11 @@ module WLBud
     def consolidate
       # retrieve the last push element that insert facts in a collection
       @push_elems.reverse_each do |pshelt|
+        # Scanners may have multiple outputs
         if pshelt.is_a? Bud::ScannerElement
           next
         end
+        # All other PushElements (non-scanners ones) have one output
         unless pshelt.outputs.size == 1
           raise WLBud::WLError, "Element of class #{pshelt.class} raised an error since we assumed that non-scanners elements must have only one output instead there are #{pshelt.outputs.size} output"
         end

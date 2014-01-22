@@ -5,8 +5,8 @@ require_relative '../../lib/webdamlog_runner'
 require 'test/unit'
 
 
-# Test creation of push_elements tracking in the provenance graph via RuleTraces
-# objects.
+# Test creation of push_elements tracking in the provenance graph via RuleTrace
+# objects and ProofTrees object
 class TcWlTracePushOut < Test::Unit::TestCase
   include MixinTcWlTest
 
@@ -84,7 +84,7 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
         ["images_at_testsf", "project[:photo, :owner, :useless]"]],
       runner.provenance_graph.traces.values.map{|rtrace| rtrace.print_push_elems})
 
-    # Check that
+    # Check facts stored in the proof trees
     assert_equal(
       [[0,
           [{[["1", "alice"], ["1", "alice"], ["1", "bob"]]=>["1", "alice"]},
@@ -103,6 +103,8 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
     assert_equal [[:photos_at_testsf, :tags_at_testsf, :tags_at_testsf], [:images_at_testsf]],
       runner.provenance_graph.traces.map{|rid,rtrace| rtrace.sources}
 
+    # Check the association between relation names in RuleTrace and facts in
+    # ProofTrees
     assert_equal(
       [[:photos_at_testsf,
           [[{:photo=>"1", :owner=>"alice"}, [{:album_at_testsf=>["1", "alice"]}]],
@@ -190,6 +192,7 @@ rule album3@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,
         end
       end
     end
+    
     assert_equal ["album1_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
       "album2_at_testsf <= (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;",
       "album3_at_testsf <= (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;"],
@@ -204,7 +207,7 @@ rule album3@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,
       runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| push_elem.sanitize_push_elem_name } )
 
     assert_equal([],
-      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| push_elem.object_id}.dups )
+      runner.provenance_graph.traces.values.map{|rtrace| rtrace.push_elems}.flatten.map{|push_elem| push_elem.object_id}.dups)
   end
 end
 

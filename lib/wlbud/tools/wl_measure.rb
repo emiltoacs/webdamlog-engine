@@ -18,7 +18,8 @@ module WLBud
 
     attr_reader :measure_file
 
-    def initialize budtime=0, peername, measure_file
+    def initialize(budtime, peername, measure_file)
+      budtime ||= 0
       raise WLBud::WLError, "take care to initialize WlMeasure object at tick 0" if budtime != 0
       Dir.mkdir(BENCH_FILE_DIR) unless File.exist?(BENCH_FILE_DIR)
       if measure_file.nil?
