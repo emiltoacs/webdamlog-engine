@@ -110,7 +110,8 @@ EOF
         "1",
         {"declarations"=>["collection ext persistent newrel@p1(atom1*);"],
           "facts"=>{"newrel_at_p1"=>[["5"],["6"]]},
-          "rules"=>["rule join@p1($x):- newrel@p1($x),local2@p1($x);"]
+          "rules"=>["rule join@p1($x):- newrel@p1($x),local2@p1($x);"],
+          :facts_to_delete=>{}
         }
       ]
     ]
@@ -130,7 +131,8 @@ EOF
         "1",
         {"declarations"=>["collection ext newscratchrel@p1(atom1*);"],
           "facts"=>{"newscratchrel_at_p1"=>[["2"],["3"]]},
-          "rules"=>["rule join@p1($x):- newscratchrel@p1($x),local@p1($x);"]
+          "rules"=>["rule join@p1($x):- newscratchrel@p1($x),local@p1($x);"],
+          :facts_to_delete=>{}
         }
       ]
     ]

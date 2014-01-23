@@ -58,21 +58,7 @@ if ARGV.include?("ordered")
   require "20_deleg_seeds/tc_wl_four_peers_program.rb"
   require "20_deleg_seeds/tc_wl_pending_delegations.rb"
   require "20_deleg_seeds/tc_peer_vars.rb"
-  require "20_deleg_seeds/tc_wl_selfjoin_rewriting.rb"
-  require "01_bud/tc_bud_collection.rb"
-  require "01_bud/tc_bud_delete_fact.rb"
-  require "00_misc/tc_project_conf.rb"
-  require "00_misc/tc_meta_test.rb"
-  require "00_misc/tc_tools.rb"
-  require "02_dumb/tc_wl_wlbud_deletion.rb"
-  require "02_dumb/tc_wl_wlbud_local_2_add_source_relation.rb"
-  require "02_dumb/tc_wl_wlbud_misc.rb"
-  require "02_dumb/tc_wl_wlbud_delegation_1_simple.rb"
-  require "02_dumb/tc_wl_wlbud_rule_projection.rb"
-  require "02_dumb/tc_wl_wlbud_local_1_evaluation.rb"
-  require "02_dumb/tc_wl_wlbud_callback.rb"
-  require "02_dumb/tc_wl_wlbud_delegation_2_complex.rb"
-  require "02_dumb/tc_wl_wlbud_send_packet.rb"
+  require "20_deleg_seeds/tc_wl_selfjoin_rewriting.rb" 
 else
   files.each { |file| require file }
   

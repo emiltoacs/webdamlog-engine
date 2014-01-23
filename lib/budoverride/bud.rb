@@ -262,6 +262,8 @@ module WLBud
           if @options[:debug]
             puts "Process packets received from #{packet_value.print_meta_data}"
           end
+          # Delete facts TODO here
+          # packet_value.facts_to_delete
           # Declare all the new relations and insert the rules
           packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
           if @options[:filter_delegations]
@@ -269,6 +271,7 @@ module WLBud
           else
             packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?
           end
+          # Add new facts
           add_facts(packet_value.facts) unless packet_value.facts.nil?
         end
         # PENDING remove new_sprout_rules attribute add new rules from seeds

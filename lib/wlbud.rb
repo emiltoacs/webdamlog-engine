@@ -45,6 +45,7 @@ module WLBud
   require "#{PATH_WLBUD}/wlgrammar"
   require "#{PATH_WLBUD}/provenance/graph"
   require "#{PATH_WLBUD}/provenance/node"
+  require "#{PATH_WLBUD}/monkeypatch"
   # file tool project
   require "#{PATH_WLBUD}/tools/wltools"
   require "#{PATH_WLBUD}/tools/wl_measure"
@@ -78,7 +79,7 @@ module WLBud
     #   (an array of WLPacketData)
     attr_reader :test_received_on_chan
     # A copy of the packet send on the channel in its serialized form that is an
-    #   array as described in WLChannel serialize for channel that is: [[@dest,[@peer_name.to_s,@src_time_stamp.to_s,{'facts'=>@facts,'rules'=>@rules,'declarations'=>@declarations}]]]
+    #   array as described in WLChannel serialize for channel that is: [[@dest,[@peer_name.to_s,@src_time_stamp.to_s,{:facts=>@facts,:rules=>@rules,:declarations=>@declarations}]]]
     attr_reader :test_send_on_chan
     attr_reader :wl_callback, :wl_callback_step
     attr_reader :measure_obj
@@ -428,6 +429,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
                   coll = tables[relation_name.to_sym]
                   if coll.is_a? BudCollection
                     begin
+                      # PENDING change here for propagate_deletion
                       deleted = coll.delete_without_invalidation tuple
                       (valid[relation_name] ||= []) << deleted
                     rescue StandardError => error

@@ -24,7 +24,7 @@ module WLBud
 
     # The default constructor parameter dest : should be the URL ipv4:port of
     # the peer to reach TODO remove identifier if useless (not sure for now)
-    def initialize(dest, peerName, srcTimeStamp, data={'facts'=>{},'rules'=>[],'declarations'=>[]})
+    def initialize(dest, peerName, srcTimeStamp, data={:facts=>{},:facts_to_delete=>{}, :rules=>[],:declarations=>[]})
       # #URL with [ipv4:port]
       valid_ip_address_regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]):[0-9]+$/
       valid_hostname_regex = /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9]):[0-9]+$/
@@ -35,7 +35,7 @@ module WLBud
     end
 
     public    
-    # Write this wlpacket objects as a nesting of hashes and arrays: [@dest,[@peer_name.to_s,@src_time_stamp.to_s,{'facts'=>@facts,'rules'=>@rules,'declarations'=>@declarations}]]
+    # Write this wlpacket objects as a nesting of hashes and arrays: [@dest,[@peer_name.to_s,@src_time_stamp.to_s,{:facts=>@facts,:rules=>@rules,:declarations=>@declarations}]]
     #
     def serialize_for_channel
       return [@dest,@data.serialize_for_channel]
@@ -50,7 +50,8 @@ module WLBud
       raise WLErrorTyping,"expected data should have 2 items not nil" unless array.length==2 and array.each { |item| not item.nil? }
       data_array = array[1]
       raise WLErrorTyping,"expected payload must have at least a peername and srcTimeStamp" unless data_array.length==3 and array.first(2).each { |item| not item.nil? }
-      return WLPacket.new(array[0], data_array[0], data_array[1], data_array[2])
+      payload = Hash.transform_keys_to_symbols(data_array[2],1)
+      return WLPacket.new(array[0], data_array[0], data_array[1], payload)
     end
 
     # Build a WlPacket objects from a nesting of hashes and arrays and order
@@ -63,7 +64,8 @@ module WLBud
       raise WLErrorTyping,"expected data should have 2 items not nil" unless array.length==2 and array.each { |item| not item.nil? }
       data_array = array[1]
       raise WLErrorTyping,"expected payload must have at least a peername and srcTimeStamp" unless data_array.length==3 and array.first(2).each { |item| not item.nil? }
-      packet = WLPacket.new(array[0], data_array[0], data_array[1], data_array[2])
+      payload = Hash.transform_keys_to_symbols(data_array[2],1)
+      packet = WLPacket.new(array[0], data_array[0], data_array[1], payload)
       packet.data.get_data_sorted!
       return packet
     end
@@ -74,10 +76,10 @@ module WLBud
   class WLPacketData
 
     attr_reader :peer_name, :src_time_stamp
-    attr_accessor :facts, :rules, :declarations
+    attr_accessor :facts, :rules, :declarations, :facts_to_delete
 
     # the default constructor
-    def initialize(peername, srcTimeStamp, payload={'facts'=>{},'rules'=>[],'declarations'=>[]})
+    def initialize(peername, srcTimeStamp, payload={:facts=>{}, :facts_to_delete=>{}, :rules=>[],:declarations=>[]})
             
       # the peer which send the message: String
       raise WLErrorTyping, "peer name should be a string" unless peername.is_a?(String)
@@ -85,21 +87,27 @@ module WLBud
       # the timeStamp when the source peer send the message: Integer
       @src_time_stamp = srcTimeStamp.to_i
 
+      raise WLErrorTyping, "Payload should be a Hash #{payload} " unless payload.is_a?(Hash)
       # TODO type check could be more elaborated here it is just hash or array
-      # or nil
-      raise WLErrorTyping, "Lacking facts entry in packet " unless payload.key?('facts')
-      raise WLErrorTyping, "Incorret data type for facts : #{payload['facts'].class}" unless (payload['facts'].is_a?(Hash) or payload['facts'].nil?)
-      # Should follow the given structure !{name of relation => [[tuple], [tuple], [tuple]]}
-      # TODO add flag for add or remove
-      @facts = payload['facts'] || {}
-      raise WLErrorTyping, "Lacking rules entry in packet " unless payload.key?('rules')
-      raise WLErrorTyping, "Incorret data type for rules : #{payload['rules'].class}" unless (payload['rules'].is_a?(Array) or payload['rules'].nil?)
+      # or nil.
+      raise WLErrorTyping, "Lacking facts entry in packet #{payload} " unless payload.key?(:facts)
+      raise WLErrorTyping, "Incorret data type for facts #{payload[:facts].class}" unless (payload[:facts].is_a?(Hash) or payload[:facts].nil?)
+      # Should follow the given structure !{name of relation => [[tuple],
+      # [tuple], [tuple]]}
+      @facts = payload[:facts] || {}
+      raise WLErrorTyping, "Lacking facts_to_delete entry in packet #{payload} " unless payload.key?(:facts_to_delete)
+      raise WLErrorTyping, "Incorret data type for facts : #{payload[:facts_to_delete].class}" unless (payload[:facts_to_delete].is_a?(Hash) or payload[:facts_to_delete].nil?)
+      # Should follow the given structure !{name of relation => [[tuple],
+      # [tuple], [tuple]]}
+      @facts_to_delete = payload[:facts_to_delete] || {}
+      raise WLErrorTyping, "Lacking rules entry in packet #{payload} " unless payload.key?(:rules)
+      raise WLErrorTyping, "Incorret data type for rules : #{payload[:rules].class}" unless (payload[:rules].is_a?(Array) or payload[:rules].nil?)
       # !@attribute [Array] of rules
-      @rules = payload['rules'] || []
-      raise WLErrorTyping, "Lacking declarations entry in packet " unless payload.key?('declarations')
-      raise WLErrorTyping, "Incorret data type for declaration of new collection : #{payload['declarations'].class}" unless (payload['declarations'].is_a?(Array) or payload['declarations'].nil?)      
+      @rules = payload[:rules] || []
+      raise WLErrorTyping, "Lacking declarations entry in packet #{payload} " unless payload.key?(:declarations)
+      raise WLErrorTyping, "Incorret data type for declaration of new collection : #{payload[:declarations].class}" unless (payload[:declarations].is_a?(Array) or payload[:declarations].nil?)
       # !@attributes [Array] of collection declarations
-      @declarations = payload['declarations'] || []
+      @declarations = payload[:declarations] || []
     end
 
     public
@@ -107,18 +115,12 @@ module WLBud
     class << self      
     
       # The specific builder for WLPackets from message payload when reading a
-      # WLChannel
-      # ===return
-      # a WLPacketData object
-      #
+      #  WLChannel
+      #  ===return
+      #  a WLPacketData object
       def read_from_channel(array, debug=false)
-        # raise WLErrorTyping.new("I received a packet with wrong structure
-        # maybe payload != 1 length:" + array.length.to_s + " content:" +
-        # array.inspect.to_s) unless (array.length==1) #puts "Warning! length of
-        # payloads different from 1!" unless debug and (array.length==1)
-        packet = array[0]
-        puts "packet is nil" if debug and packet.nil?
-        wlpacketdata = WLPacketData.new(packet[0], packet[1], packet[2])
+        puts "read_from_channel, array is nil" if debug and array.nil?
+        wlpacketdata = WLPacketData.new(array[0], array[1], array[2])
         if debug
           puts "BEGIN Read from channel: "
           puts wlpacketdata.pretty_print
@@ -151,15 +153,16 @@ module WLBud
     # Return the hash with facts, rules and declaration
     #
     def get_data
-      return {'facts'=>@facts,'rules'=>@rules,'declarations'=>@declarations}
+      return {:facts=>@facts,:rules=>@rules,:declarations=>@declarations,:facts_to_delete=>@facts_to_delete}
     end
 
     # Return the hash with facts, rules and declaration with their values sorted
     #
     def get_data_sorted
-      return {'facts'=>@facts.each_pair { |k,v| v.sort },
-        'rules'=>@rules.sort,
-        'declarations'=>@declarations.sort}
+      return {:facts=>@facts.each_pair { |k,v| v.sort },
+        :facts_to_delete=>@facts_to_delete.each_pair { |k,v| v.sort },
+        :rules=>@rules.sort,
+        :declarations=>@declarations.sort}
     end
 
     # Return the hash with facts, rules and declaration with their values sorted
@@ -169,6 +172,7 @@ module WLBud
       @declarations.sort!
       @rules.sort!
       @facts.each_pair { |k,v| v.sort! }
+      @facts_to_delete.each_pair { |k,v| v.sort! }
       return get_data
     end
 
@@ -190,6 +194,14 @@ module WLBud
           puts "#{rel[1]}"
         end
       end
+      # facts to delete
+      unless self.facts_to_delete.nil?
+        puts "#{self.facts_to_delete.size} relations with deletions:"
+        self.facts_to_delete.each do |rel|
+          puts "#{rel.first} removed"
+          puts "#{rel[1]}"
+        end
+      end
       # rules added
       puts "#{self.rules.size} rules to add:" unless self.rules.nil?
       puts "#{self.rules.inspect}"
@@ -208,6 +220,7 @@ module WLBud
     def length
       res=0
       res+=1 unless @facts.nil? or @facts.empty?
+      res+=1 unless @facts_to_delete.nil? or @facts_to_delete.empty?
       res+=1 unless @rules.nil? or @rules.empty?
       res+=1 unless @declarations.nil? or @declarations.empty?
       return res

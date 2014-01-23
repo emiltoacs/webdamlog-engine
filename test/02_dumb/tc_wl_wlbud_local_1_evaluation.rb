@@ -121,9 +121,10 @@ EOF
     wl_peer_1.tables[:chan] << ["localhost:11111",
       ["p1",
         "0",
-        {"declarations"=>[],
-          "facts"=>{"local_at_p1"=>[["5"]]},
-          "rules"=>[]
+        {:declarations=>[],
+          :facts=>{"local_at_p1"=>[["5"]]},
+          :rules=>[],
+          :facts_to_delete=>{}
         }
       ]
     ]
@@ -157,7 +158,8 @@ EOF
         "1",
         {"declarations"=>[],
           "facts"=>{"local3_at_p1"=>[["3"]]},
-          "rules"=>["rule join13@p1($x):- local@p1($x),local3@p1($x);"]
+          "rules"=>["rule join13@p1($x):- local@p1($x),local3@p1($x);"],
+          :facts_to_delete=>{}
         }
       ]
     ]
@@ -179,7 +181,8 @@ EOF
         "2",
         {"declarations"=>[],
           "facts"=>{"local3_at_p1"=>[["4"],["10"]]},
-          "rules"=>[]
+          "rules"=>[],
+          :facts_to_delete=>{}
         }
       ]
     ]
@@ -218,7 +221,8 @@ EOF
         {"declarations"=>["collection ext joinOfjoin@p1(atom1*);"],
           "facts"=>{"local3_at_p1"=>[["4"],["5"]]},
           "rules"=>["rule join13@p1($x):- local@p1($x),local3@p1($x);",
-            "rule joinOfjoin@p1($x):- join@p1($x),join13@p1($x);"]
+            "rule joinOfjoin@p1($x):- join@p1($x),join13@p1($x);"],
+          :facts_to_delete=>{}
         }
       ]
     ]
@@ -254,7 +258,8 @@ EOF
         "2",
         {"declarations"=>[],
           "facts"=>{"local3_at_p1"=>[["3"],["4"],["10"]]},
-          "rules"=>[]
+          "rules"=>[],
+          :facts_to_delete=>{}
         }
       ]
     ]
@@ -298,7 +303,8 @@ EOF
         {"declarations"=>["collection ext persistent joinOfjoin@p1(atom1*);"],
           "facts"=>{"local3_at_p1"=>[["4"],["5"]]},
           "rules"=>["rule join13@p1($x):- local@p1($x),local3@p1($x);",
-            "rule joinOfjoin@p1($x):- join@p1($x),join13@p1($x);"]
+            "rule joinOfjoin@p1($x):- join@p1($x),join13@p1($x);"],
+          :facts_to_delete=>{}
         }
       ]
     ]
@@ -334,7 +340,8 @@ EOF
         "2",
         {"declarations"=>[],
           "facts"=>{"local3_at_p1"=>[["2"],["3"],["4"],["10"]]},
-          "rules"=>[]
+          "rules"=>[],
+          :facts_to_delete=>{}
         }
       ]
     ]

@@ -45,7 +45,6 @@ EOF
   end
 
   # Test how to add facts and relation via the channel into a running webdamlog instance
-  #
   def test_add_relation_and_facts
     begin
       wl_peer = []
@@ -56,9 +55,10 @@ EOF
           p.sync_do do
             p.chan << ["localhost:11110",
               ["p0", "0",
-                {"rules"=>[],
-                  "facts"=>{"new_rel_at_p0"=>[["1"], ["2"], ["3"], ["4"]]},
-                  "declarations"=>["collection ext persistent new_rel@p0(attr1*);"]
+                {:rules=>[],
+                  :facts=>{"new_rel_at_p0"=>[["1"], ["2"], ["3"], ["4"]]},
+                  :declarations=>["collection ext persistent new_rel@p0(attr1*);"],
+                  :facts_to_delete=>{}
                 }]]
           end                                         
           assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_rel should have been created")
@@ -86,10 +86,11 @@ EOF
           p.sync_do do
             p.chan << ["localhost:11110",
               ["p0", "0",
-                {"rules"=>["rule join@p0($X):-new_rel@p0($X),bootstrap@p0($X);"],
-                  "facts"=>{"new_rel_at_p0"=>[["3"], ["4"], ["5"], ["6"]]},
-                  "declarations"=>["collection ext persistent new_rel@p0(attr1*);",
-                    "collection ext persistent join@p0(attr1*);"]
+                {:rules=>["rule join@p0($X):-new_rel@p0($X),bootstrap@p0($X);"],
+                  :facts=>{"new_rel_at_p0"=>[["3"], ["4"], ["5"], ["6"]]},
+                  :declarations=>["collection ext persistent new_rel@p0(attr1*);",
+                    "collection ext persistent join@p0(attr1*);"],
+                  :facts_to_delete=>{}
                 }]]
           end
           assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_real should have been created")

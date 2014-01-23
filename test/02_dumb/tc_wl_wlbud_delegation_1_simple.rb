@@ -1,18 +1,18 @@
 # ####License####
 #  File name tc_simple_delegation.rb
 #  Copyright © by INRIA
-# 
+#
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
+#
 #   WebdamLog - Jul 6, 2012
-# 
+#
 #   Encoding - UTF-8
 # ####License####
 $:.unshift File.dirname(__FILE__)
 # Note: important to load global variable before include since it could
-# influence the behavior of inclusion
-# $WL_TEST = true # changed for an options in hash of WL object
+# influence the behavior of inclusion $WL_TEST = true # changed for an options
+# in hash of WL object
 require_relative '../header_test'
 
 class TcWlDelegation1Simple < Test::Unit::TestCase
@@ -91,7 +91,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     # In test I use it as a callback block to evaluate and wait for pop in test
     # to ensure that underlying bud thread has finished tick
     #
-    # XXX not really useful since tick is already blocking 
+    # XXX not really useful since tick is already blocking
     #
     q0 = Queue.new
     q1 = Queue.new
@@ -104,7 +104,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     wl_peer[0].register_wl_callback(:callback_step_end_tick, &block0)
     wl_peer[1].register_wl_callback(:callback_step_end_tick, &block1)
     
-    #p "===wl_peer[1].tick 1==="
+    # #p "===wl_peer[1].tick 1==="
     wl_peer[1].tick
     q1.pop
     assert_equal 0, wl_peer[1].sbuffer.length
@@ -112,7 +112,7 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     assert_equal 5, wl_peer[1].delegated_at_p1.length
     assert_equal [["0"], ["3"], ["4"], ["5"], ["6"]], wl_peer[1].delegated_at_p1.to_a.sort
 
-    #p "===wl_peer[0].tick 1==="
+    # #p "===wl_peer[0].tick 1==="
     wl_peer[0].tick
     q0.pop
     # sleep 0.2 unless EventMachine::defers_finished?
@@ -126,17 +126,17 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     assert_equal 0, wl_peer[0].chan.pending.length, "pending is always empty at the end of the tick"
     assert_equal 1, wl_peer[0].test_send_on_chan.length, "one packet should have been sent"
     assert_equal(["collection inter persistent deleg_from_p0_1_1@p1(deleg_from_p0_1_1_x_0*);"],
-      wl_peer[0].test_send_on_chan[0][1][2]['declarations'],
+      wl_peer[0].test_send_on_chan[0][1][2][:declarations],
       "the delegation should be formated as expected")
-    new_declaration = wl_peer[0].test_send_on_chan[0][1][2]['declarations']
+    new_declaration = wl_peer[0].test_send_on_chan[0][1][2][:declarations]
     /(deleg.*)\(/ =~ new_declaration.to_s
     new_rel = Regexp.last_match(1).gsub('@', '_at_')
     assert_kind_of Bud::BudScratch, wl_peer[0].tables[new_rel.to_sym], "check the type of the newly created relation Table or Scratch"
     assert_equal(["rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),delegated@p1($x);"],
-      wl_peer[0].test_send_on_chan[0][1][2]['rules'],
+      wl_peer[0].test_send_on_chan[0][1][2][:rules],
       "the rules to be sent is not as expected")
 
-    #p "===wl_peer[1].tick 2==="    
+    # #p "===wl_peer[1].tick 2==="
     old_nb_rel_peer2 = wl_peer[1].tables.length
     old_nb_rule_peer2 = wl_peer[1].tables[:t_rules].length
     # wait until the callback function receive_data in server.rb has been called
@@ -179,27 +179,25 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     assert_equal [["3"], ["4"]], wl_peer[1].sbuffer.to_a.sort.map{ |obj| obj.fact }
     assert_equal 1, wl_peer[1].test_send_on_chan.length
     assert_equal 3, wl_peer[1].test_send_on_chan.first[1].length
-    assert_equal 3, wl_peer[1].test_send_on_chan.first[1][2].length
-    assert_equal 1, wl_peer[1].test_send_on_chan.first[1][2]["facts"].length
-    assert_equal 2, wl_peer[1].test_send_on_chan.first[1][2]["facts"]["join_delegated_at_p0"].length
+    assert_equal 4, wl_peer[1].test_send_on_chan.first[1][2].length
+    assert_equal 1, wl_peer[1].test_send_on_chan.first[1][2][:facts].length
+    assert_equal 2, wl_peer[1].test_send_on_chan.first[1][2][:facts]["join_delegated_at_p0"].length
     # sort the content of the fact list to pass the next test since the content
     # could be in any order
-    wl_peer[1].test_send_on_chan.first[1][2]["facts"]["join_delegated_at_p0"]=
-      wl_peer[1].test_send_on_chan.first[1][2]["facts"]["join_delegated_at_p0"].to_a.sort
+    wl_peer[1].test_send_on_chan.first[1][2][:facts]["join_delegated_at_p0"]=
+      wl_peer[1].test_send_on_chan.first[1][2][:facts]["join_delegated_at_p0"].to_a.sort
     assert_equal([["localhost:11110",["p1", "1",
-            {"declarations"=>[],
-              "facts"=>{"join_delegated_at_p0"=>[["3"], ["4"]]},
-              "rules"=>[]}
-          ]
-        ]],
+            {:declarations=>[],
+              :facts=>{"join_delegated_at_p0"=>[["3"], ["4"]]},
+              :rules=>[],
+              :facts_to_delete=>{}}]]],
       wl_peer[1].test_send_on_chan)
 
     # Adding facts in a scratch via channel is useless since it will be erased
-    # at the beginning of the tick.
-    # TODO: Not so true check that
+    # at the beginning of the tick. TODO: Not so true check that
     #
-    #p "===wl_peer[0].tick 2==="
-    # wait until the callback function receive_data in server.rb has been called
+    # #p "===wl_peer[0].tick 2===" wait until the callback function receive_data
+    # in server.rb has been called
     cpt=0
     while wl_peer[0].inbound.empty?
       sleep 0.2
@@ -214,15 +212,15 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     assert_equal 1, wl_peer[0].test_received_on_chan.length
     assert_kind_of WLBud::WLPacketData, wl_peer[0].test_received_on_chan.first
     assert_equal 1, wl_peer[0].test_received_on_chan.first.facts.length
-    #p wl_peer[0].test_received_on_chan.first.facts
-    # sort the content of the fact list to pass the next test since the content
-    # could be in any order
+    # #p wl_peer[0].test_received_on_chan.first.facts sort the content of the
+    # fact list to pass the next test since the content could be in any order
     wl_peer[0].test_received_on_chan.first.facts.each_pair{|k,v| v.sort!}
-    assert_equal({"declarations"=>[],
+    assert_equal({"peer_name"=>"p1",
+        "src_time_stamp"=>1,
         "facts"=>{"join_delegated_at_p0"=>[["3"], ["4"]]},
-        "peer_name"=>"p1",
+        "facts_to_delete"=>{},
         "rules"=>[],
-        "src_time_stamp"=>1},
+        "declarations"=>[]},
       WLTools::SerializeObjState.obj_to_hash(wl_peer[0].test_received_on_chan.first))
 
     assert_equal 2, wl_peer[0].join_delegated_at_p0.length, "there is facts in the join although it is a scratch, all facts written by a chan are present at this tick"
@@ -232,7 +230,8 @@ Hash[@tcoption#{i}.each_pair.to_a])")
     assert_equal 0, wl_peer[0].join_delegated_at_p0.length, "facts in the scratch inserted via channel has disappear since they have not been rederivated"
     assert_equal [], wl_peer[0].join_delegated_at_p0.to_a.sort, "join is anew empty"
   
-    # TODO: change last and finish here (last is scratch without external updates)
+    # TODO: change last and finish here (last is scratch without external
+    # updates)
     
   ensure
     wl_peer.each { |item| assert item.clear_rule_dir }

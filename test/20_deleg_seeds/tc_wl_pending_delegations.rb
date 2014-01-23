@@ -43,23 +43,25 @@ end
   def test_pending_delegation_content
     runner = nil
     assert_nothing_raised do
-      runner = WLRunner.create(@username, @pg_file, @port, {filter_delegations: true})
+      runner = WLRunner.create(@username, @pg_file, @port, {:filter_delegations => true})
     end
     assert runner.filter_delegations
     runner.run_engine
     runner.sync_do {
       runner.chan <~ [["localhost:11110",
           ["p0", "0",
-            {"rules"=>["rule local2@test_pending_delegation_content('14') :- local@test_pending_delegation_content('4');"],
-              "facts"=>{},
-              "declarations"=>[]
+            {:rules=>["rule local2@test_pending_delegation_content('14') :- local@test_pending_delegation_content('4');"],
+              :facts=>{},
+              :declarations=>[],
+              :facts_to_delete=>{}
             }]]]}
     runner.sync_do {
       runner.chan <~ [["localhost:11110",
           ["p0", "0",
-            {"rules"=>["rule local2@test_pending_delegation_content('15') :- local@test_pending_delegation_content('4');"],
-              "facts"=>{},
-              "declarations"=>[]
+            {:rules=>["rule local2@test_pending_delegation_content('15') :- local@test_pending_delegation_content('4');"],
+              :facts=>{},
+              :declarations=>[],
+              :facts_to_delete=>{}
             }]]]
     }
     # force another tick to flush chan

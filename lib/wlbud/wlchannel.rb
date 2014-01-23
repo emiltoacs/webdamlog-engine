@@ -31,13 +31,14 @@ module WLBud
       list_of_packet_value = []
       self.each do |raw_string|
         # XXX ugly but easy, maybe a parsing in the spirit of json(mess with
-        # hash since it expect ':' instead of '=>') or tt could be done here
-        chan_packet = []
-        eval "chan_packet = #{raw_string}"
+        # hash since it expect ':' instead of '=>') or tt could be done here        
+        chan_packet = raw_string
         # PENDING For some strange reason, the payloads method did not work, so I used
         # this instead.
-        payload = chan_packet[1..(chan_packet.size-1)]
-        list_of_packet_value << WLPacketData.read_from_channel(payload, debug)
+        data = chan_packet.to_a[1]
+        payload = Hash.transform_keys_to_symbols(data[2],1)
+        data = [data[0], data[1], payload]
+        list_of_packet_value << WLPacketData.read_from_channel(data, debug)
       end
       return list_of_packet_value
     end
