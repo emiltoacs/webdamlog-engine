@@ -26,7 +26,7 @@ fact tags@test1(5,"alice");
 fact tags@test1(5,"alice");
 rule album@test1($photo,$owner) :- images@test1($photo,$owner), tags@test1($photo,"alice");
     EOF
-    @pg_file1 = "test_deletion_without_propagation"
+    @pg_file1 = "test_deletion_without_propagation_in_provenance_mode"
     @username1 = "test1"
     @port1 = "10000"
     # create program files
@@ -58,7 +58,7 @@ rule album@test1($photo,$owner) :- images@test1($photo,$owner), tags@test1($phot
     # Check that delete_facts does not trigger a new tick
     valid, err = runner1.delete_facts({"photos_at_test1"=>[["1", "test1"], ["2", "test1"]]})
     assert_equal({}, err)
-    assert_equal( {"photos_at_test1" => [["1", "test1"], ["2", "test1"]]}, valid)
+    assert_equal({"photos_at_test1" => [["1", "test1"], ["2", "test1"]]}, valid)
     assert_equal 1, runner1.budtime
     assert_equal [["3", "test2"]], runner1.tables[:photos_at_test1].pro{|t| t.to_a }.sort
     assert_equal [["1", "alice"], ["1", "bob"], ["5", "alice"]], runner1.tables[:tags_at_test1].pro{|t| t.to_a }.sort
@@ -123,7 +123,7 @@ rule album@test1($photo,$owner) :- images@test1($photo,$owner), tags@test1(@phot
     File.delete(@pg_file1) if File.exists?(@pg_file1)
   end
 
-  def test_deletion_witt_simple_propagation
+  def test_deletion_with_simple_propagation
 
   end
 
