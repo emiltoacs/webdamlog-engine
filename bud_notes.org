@@ -521,8 +521,3 @@ access to internal data of WLpeer.
 * Other Remark
 
 + implementation :: http://www.ccs.neu.edu/home/ramsdell/tools/datalog/datalog.html
-
-
- un deux trois
- un deux trois
- un deux trois

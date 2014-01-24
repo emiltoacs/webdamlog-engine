@@ -51,7 +51,7 @@ module WLBud
   require "#{PATH_WLBUD}/tools/wl_measure"
 
   # Override bud methods
-  require "budoverride"
+  require "#{PATH_LIB}/budoverride"
 
   # PENDING remove class to force user to create a new class that include WLBud.
   #   It is very unlikely that any user wants to instantiate this class directly
