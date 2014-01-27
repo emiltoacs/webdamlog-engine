@@ -1,7 +1,32 @@
+* Experimentation
 
-* Current notes
+** Online doc
 
-** Test harness and experiment auto deploy
++ Gerome :: https://docs.google.com/document/d/1TeC9013WAThH8Q5HFdCSx77N7b1UqjjvcJQ17kFgPSM/edit?usp=sharing
++ Julia :: https://docs.google.com/document/d/1qqQFpNa2XAqo8TSmYiPcRkGBGmGyD41GVWkz5eyCVrA/edit?usp=sharing
+
+
+** UMass
+
+Machines:
++ avid.cs.umass.edu :: mysql + svn
++ dbcluster.cs.umass.edu :: gateway to /miklau./ nodes
++ {miklau1, miklau2, miklau3, miklau4, miklau5}.cs.umass.edu :: nodes to run peers
+
+
+** Setup
+
+Add your public key to all the machines
+: scp .ssh/id_rsa.pud <hostname>:~/.ssh/authorized_keys
+
+Install python(already on my machine) add the fabric module for python
+
+
+* Misc
+
+** Current notes
+
+*** Test harness and experiment auto deploy
 
 1. data_generators.rb create the program files for each peers.
    1. generate file name with peer name
@@ -12,13 +37,13 @@
 4. Retrieve log files
 
 
-*** TODO benchmark
+**** TODO benchmark
 file in parameter by default under bench_files
 
 
-* Improvement
+** Improvement
 
-** TODO goes to minitest and more
+*** TODO goes to minitest and more
 
 design test with dependency graph in the spirit of google test
 
@@ -26,13 +51,13 @@ see for exemple gem:
 https://github.com/ooyala/scope
 
 
-* Bug
+** Bug
 
-** dsock is nill
+*** dsock is nill
 unclear errror message usually comes from a engine not started when invoking a sync_do
 
 
-** Channel stop receiving
+*** Channel stop receiving
    Testing multiple wlbud instance fails because it makes communication via
    channel broke. Message are not received at the right time or not at all.
 #+begin_src ruby
@@ -60,21 +85,21 @@ unclear errror message usually comes from a engine not started when invoking a s
 #+end_src
 
 
-** Netbeans freeze
-   Netbeans freeze because of a bg in ruby plugins
-   auto-completion mechanism.
-   : pkill -KILL -f netbeans
+*** Netbeans freeze
+    Netbeans freeze because of a bg in ruby plugins
+    auto-completion mechanism.
+    : pkill -KILL -f netbeans
 
 
-** Ruby event machine mess-up
-   Eventmachine is going messy because of some non-regular stop, It
-   generates some error about unregistered callback in bud.
-   : pkill -KILL -f ruby
+*** Ruby event machine mess-up
+    Eventmachine is going messy because of some non-regular stop, It
+    generates some error about unregistered callback in bud.
+    : pkill -KILL -f ruby
 
 
-* Updates
+** Updates
 
-** Paperclip
+*** Paperclip
 
 ##################################################
 #  NOTE FOR UPGRADING FROM PRE-3.0 VERSION       #
@@ -93,9 +118,9 @@ attachment's path and are using Paperclip's default, you'll have to add
 Successfully installed paperclip-3.4.1
 
 
-** Update from bud 0.9.1 to 0.9.5
+*** Update from bud 0.9.1 to 0.9.5
 
-*** BudCollection.pro method changed
+**** BudCollection.pro method changed
 
 To iterate on tuples in the buffers of the collections, this method pro
 can be used with a block but the interpretation of the block has now
@@ -141,7 +166,7 @@ def pro(the_name=tabname, the_schema=schema, &blk)
 #+end_src
 
 
-*** Channel changed
+**** Channel changed
 
 + bug :: WLBud.aggregate_facts
 + svn version :: 3486
@@ -154,6 +179,6 @@ def pro(the_name=tabname, the_schema=schema, &blk)
 
 
 
-* exemple
+** Exemple
 
 fact delegation@ungars("unautre", 0, false, "rule contact@local($username, $ip, $port, $online, $email):-contact@sigmod_peer($username, $ip, $port, $online, $email);")
