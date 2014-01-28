@@ -1,5 +1,17 @@
 * Experimentation
 
+** TODO
+
+*** Discuss changes for my experiences or change python scripts
+
+1. use /start(false)/ in bud.rb
+
+2. they use /tick/ instead of /run_engine/ in run_access_remote.rb
+
+3. hard-coded name of runner file /XP_NOACCESS/ in /run_xp.rb/
+
+
+
 ** Online doc
 
 + Gerome :: https://docs.google.com/document/d/1TeC9013WAThH8Q5HFdCSx77N7b1UqjjvcJQ17kFgPSM/edit?usp=sharing

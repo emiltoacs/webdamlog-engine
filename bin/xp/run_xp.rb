@@ -34,8 +34,8 @@ def run_xp!
   end
 end
 
-# Giving a program file generated from data_generators start the peer given in
-# the name of the file using the address found in the program file
+# Instantiate a new runner from the pg_file given.
+#  peername is supposed to be the last element in the name splitted by '_'
 def create_wl_runner pg_file
   ip_addr = port = ''
   pg_splitted = pg_file.split "_"
