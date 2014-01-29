@@ -110,8 +110,10 @@ module WLBud
     end
 
     # Build the array of collection ordered as they are evaluated in the rule.
-    # It start from the last push_element to retrieve in a backward manner the
-    # source collections.
+    # To retrieve the source collection, we start from the last push_element and
+    # run backward to the source push elements until the the source collections
+    # are reached. Note that depending on the type of push elements the way to
+    # retrieve sources differs.
     def build_ordered_source_collection push_elem = nil
       raise WLBud::WLErrorTyping, "The last push element in a RuleTrace object is nil" if @output_push_elem.nil?
       push_elem ? pshelt = push_elem : pshelt = @output_push_elem

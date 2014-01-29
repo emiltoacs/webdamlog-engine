@@ -43,8 +43,12 @@ module Bud
           ou.insert(item, self)
         elsif ou.class <= Bud::BudCollection
           if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
-            inferred = item
-            @bud_instance.provenance_graph.add_new_proof @orig_rule_id, source, inferred
+            # PENDING remove group predicate from provenance tracking. It is not
+            # in Webdamlog but this it is used in provenance optimizations. 
+            unless self.is_a? Bud::PushGroup
+              inferred = item
+              @bud_instance.provenance_graph.add_new_proof @orig_rule_id, source, inferred
+            end
           end
           ou.do_insert(item, ou.new_delta)
         elsif ou.class <= Bud::LatticeWrapper
