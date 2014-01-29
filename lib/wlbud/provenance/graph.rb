@@ -113,7 +113,9 @@ module WLBud
     # To retrieve the source collection, we start from the last push_element and
     # run backward to the source push elements until the the source collections
     # are reached. Note that depending on the type of push elements the way to
-    # retrieve sources differs.
+    # retrieve sources differs. FIXME take care that tuple could be simple Array
+    # when group predicate is used. For now we skip provenance for group_by, see
+    # our push_out in budoverride/elements.rb
     def build_ordered_source_collection push_elem = nil
       raise WLBud::WLErrorTyping, "The last push element in a RuleTrace object is nil" if @output_push_elem.nil?
       push_elem ? pshelt = push_elem : pshelt = @output_push_elem
