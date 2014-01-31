@@ -27,7 +27,7 @@ module Bud
     end
 
     # Create new proof tree when a tuple is pushed into a collection
-    def push_out(item, do_block=true)    
+    def push_out(item, do_block=true)
       if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
         source = item
       end
@@ -43,7 +43,7 @@ module Bud
           ou.insert(item, self)
         elsif ou.class <= Bud::BudCollection
           if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
-            # PENDING remove group predicate from provenance tracking. It is not
+            # hacky, remove group predicate from provenance tracking. It is not
             # in Webdamlog but this it is used in provenance optimizations. 
             unless self.is_a? Bud::PushGroup
               inferred = item
@@ -67,6 +67,15 @@ module Bud
         if o.class <= Bud::LatticeWrapper
           o <+ item
         else
+          # TODO insert here provenance tracking
+          if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
+            # hacky, remove group predicate from provenance tracking. It is not
+            # in Webdamlog but this it is used in provenance optimizations.
+            unless self.is_a? Bud::PushGroup
+              inferred = item
+              @bud_instance.provenance_graph.add_new_proof @orig_rule_id, source, inferred
+            end
+          end
           o.pending_merge([item])
         end
       end

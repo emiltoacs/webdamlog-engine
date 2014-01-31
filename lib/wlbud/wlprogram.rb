@@ -421,13 +421,21 @@ In the string: #{line}
       str_res = ""
       body = wlrule.body
 
-      # Generate rule head Send fact buffer if non-local head
+      # Generate rule head:
+      # + send fact buffer if non-local head
+      # + use deferred for pure extensional (pure means we skip the intermediary)
       unless bound_n_local?(wlrule.head)
         str_res << "sbuffer <= "
       else if is_tmp?(wlrule.head)
           str_res << "temp :#{wlrule.head.fullrelname} <= "
         else
-          str_res << "#{wlrule.head.fullrelname} <= "
+          if intermediary? wlrule.head
+            str_res << "#{wlrule.head.fullrelname} <= "
+          elsif extensional_head? wlrule
+            str_res << "#{wlrule.head.fullrelname} <+ "
+          else
+            str_res << "#{wlrule.head.fullrelname} <= "
+          end
         end
       end
 
@@ -846,6 +854,21 @@ In the string: #{line}
       return @rule_id_seed
     end
 
+    def intermediary? (wlatom)
+      if wlatom.is_a? WLBud::WLAtom
+        if @wlcollections[wlatom.fullrelname] != nil
+          return @wlcollections[wlatom.fullrelname].rel_type.intermediary?
+        else
+          return wlatom.relname.start_with?("deleg_from_")
+        end
+      elsif wlatom.is_a? WLBud::WLCollection
+        return wlatom.get_type.intermediary?
+      else
+        raise WLErrorProgram,
+          "Tried to determine if #{wlatom} is intermediary but it has wrong type #{wlatom.class}"
+      end
+    end
+
     public
 
     # The print_content method prints the content of the relations declarations,
@@ -871,6 +894,46 @@ In the string: #{line}
 
     # Return true if the whole program to evaluate is empty
     def empty? ; return (rules_empty? and facts_empty? and collection_empty?) ; end
+
+    def extensional_head? (wlrule)
+      # We want to always check the rule head which for intermediary relations
+      #  means finding their parents
+      if intermediary?(wlrule.head)
+        headrule = nil
+        @rule_mapping.keys.each { |id|
+          headrule = @rule_mapping[id]
+          break if headrule.include?(wlrule.rule_id)
+          headrule = nil
+        }
+        if (headrule != nil)
+          return extensional?(headrule.first.head)
+        else
+          raise WLErrorProgram,
+            "Not good, can't locate the parent rule for this intermediary one #{wlrule}"
+        end
+      else
+        return extensional?(wlrule.head)
+      end
+    end
+
+    def extensional? (wlatom)
+      if wlatom.is_a? WLBud::WLAtom
+        if @wlcollections[wlatom.fullrelname] != nil
+          return @wlcollections[wlatom.fullrelname].rel_type.extensional?
+        else #FIXME: it would be better to look this up in the delegated kind relation
+          return !wlatom.relname.end_with?("_i") && !wlatom.relname.start_with?("deleg_from")
+        end
+      elsif wlatom.is_a? WLBud::WLCollection
+        return wlatom.get_type.extensional?
+      else
+        raise WLErrorProgram,
+          "Tried to determine is #{wlatom} is extensional but it has wrong type #{wlatom.class}"
+      end
+    end
+
+    def intensional_head? (wlatom)
+      !extensional_head? wlatom
+    end
 
   end # class WLProgram
 

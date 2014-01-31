@@ -72,23 +72,28 @@ module WLBud
         if pshelt.is_a? Bud::ScannerElement
           next
         end
-        # All other PushElements (non-scanners ones) have one output
-        unless pshelt.outputs.size == 1
-          raise WLBud::WLError, "Element of class #{pshelt.class} raised an error since we assumed that non-scanners elements must have only one output instead there are #{pshelt.outputs.size} output"
+        # All other PushElements (non-scanners ones) have one output or pending
+        # if a deferred op is used
+        unless pshelt.outputs.size == 1 or pshelt.pendings.size == 1
+          raise WLBud::WLError, "Element of class #{pshelt.class} raised an error since we assumed that non-scanners elements must have only one output or pending instead there are #{pshelt.outputs.size} output and #{pshelt.pendings.size} output"
         end
         if pshelt.outputs.first.is_a? Bud::PushElement
           next
+        elsif pshelt.pendings.first.is_a? Bud::BudCollection
+          @output_push_elem = pshelt
+          @target = pshelt.pendings
         elsif pshelt.outputs.first.is_a? Bud::BudCollection
           @output_push_elem = pshelt
+          @target = pshelt.outputs
         else
-          raise WLBud::WLErrorTyping, "found an object of class #{pshelt.outputs.first.class} in @push_elems outputs attribute of RuleTrace"
+          raise WLBud::WLErrorTyping, "found objects #{pshelt.outputs.first.class} and #{pshelt.pendings.first.class} in @push_elems outputs and pendings attribute of RuleTrace"
         end
       end
       @sources = build_ordered_source_collection
       @consolidated = true
-      raise WLBud::WLErrorTyping, "last push element is wired to multiple output but it is expected to have only one" unless @output_push_elem.outputs.size == 1
-      raise WLBud::WLErrorTyping, "output of the last psu element is supposed to be a Bud::BudCollection not a #{@output_push_elem.outputs.first}" unless @output_push_elem.outputs.first.is_a? Bud::BudCollection
-      @inferred = @output_push_elem.outputs.first.tabname
+      raise WLBud::WLErrorTyping, "last push element is wired to multiple output but it is expected to have only one" unless @target.size == 1
+      raise WLBud::WLErrorTyping, "output of the last push element is supposed to be a Bud::BudCollection not a #{@target.first}" unless @target.first.is_a? Bud::BudCollection
+      @inferred = @target.first.tabname
     end
 
     def add_new_push_elem bud_push_elem

@@ -85,7 +85,7 @@ fact tags@test2(4,"bob");
       assert_equal 1, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
-            bud_rules_1 << line.strip if line.include? "<="
+            bud_rules_1 << line.strip if line.include? "<=" or line.include? "<+"
           end
         end
       end
@@ -116,7 +116,7 @@ fact tags@test2(4,"bob");
       assert_equal 3, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
-            bud_rules_1 << line.strip if line.include? "<="
+            bud_rules_1 << line.strip if line.include? "<=" or line.include? "<+"
           end
         end
       end
@@ -151,14 +151,14 @@ fact tags@test2(4,"bob");
       assert_equal 6, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
-            bud_rules_1 << line.strip if line.include? "<="
+            bud_rules_1 << line.strip if line.include? "<=" or line.include? "<+"
           end
         end
       end
     end
     assert_equal ["seed_from_test1_3_1_at_test1 <= (seed_from_test1_1_1_at_test1 * photos_at_test1 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='test1' end;",
-      "album_at_test1 <= (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['2', 'test1'] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test1' and atom1[1]=='bob' end;",
-      "album_at_test1 <= (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['1', 'test1'] if atom0[0]=='1' and atom1[0]=='1' and atom0[1]=='test1' and atom1[1]=='bob' end;",
+      "album_at_test1 <+ (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['2', 'test1'] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test1' and atom1[1]=='bob' end;",
+      "album_at_test1 <+ (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['1', 'test1'] if atom0[0]=='1' and atom1[0]=='1' and atom0[1]=='test1' and atom1[1]=='bob' end;",
       "sbuffer <= seed_from_test1_1_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_5_1_at_test2\", ['true']] if atom0[0]=='test2' end;",
       "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;",
       "sbuffer <= seed_from_test1_3_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_9_1_at_test2\", ['true']] if atom0[0]=='3' and atom0[1]=='test2' end;"],
@@ -260,11 +260,11 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
           end
         end
       end
-    end    
+    end
     # Check that we translated the rule as expected
     assert_equal [
-      "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
-      "photos_at_testsf <= images_at_testsf do |atom0| [atom0[0], atom0[1]] end;"],
+      "album_at_testsf <+ (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
+      "photos_at_testsf <+ images_at_testsf do |atom0| [atom0[0], atom0[1]] end;"],
       bud_rules
 
     # Check the traces in the provenance graph
@@ -278,11 +278,30 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
 
     # Check facts stored in the proof trees
     assert_equal(
+      [[0, [{[["1", "alice"], ["1", "alice"], ["1", "bob"]]=>["1", "alice"]}]],
+        [1,
+          [{[["4", "bob", "uselessfield"]]=>["4", "bob"]},
+            {[["5", "bob", "uselessfield"]]=>["5", "bob"]}]]],
+      runner.provenance_graph.traces.map do |rid,rtrace|
+        [rid,rtrace.pushed_out_facts.map{|ptree| ptree.to_a_budstruct}]
+      end)
+    runner.tick
+    runner.tick
+    runner.tick
+    # FIXME duplicates in here
+    assert_equal(
       [[0,
           [{[["1", "alice"], ["1", "alice"], ["1", "bob"]]=>["1", "alice"]},
+            {[["1", "alice"], ["1", "alice"], ["1", "bob"]]=>["1", "alice"]},
+            {[["5", "bob"], ["5", "alice"], ["5", "bob"]]=>["5", "bob"]},
+            {[["1", "alice"], ["1", "alice"], ["1", "bob"]]=>["1", "alice"]},
+            {[["5", "bob"], ["5", "alice"], ["5", "bob"]]=>["5", "bob"]},
+            {[["1", "alice"], ["1", "alice"], ["1", "bob"]]=>["1", "alice"]},
             {[["5", "bob"], ["5", "alice"], ["5", "bob"]]=>["5", "bob"]}]],
         [1,
           [{[["4", "bob", "uselessfield"]]=>["4", "bob"]},
+            {[["5", "bob", "uselessfield"]]=>["5", "bob"]},
+            {[["4", "bob", "uselessfield"]]=>["4", "bob"]},
             {[["5", "bob", "uselessfield"]]=>["5", "bob"]}]]],
       runner.provenance_graph.traces.map do |rid,rtrace|
         [rid,rtrace.pushed_out_facts.map{|ptree| ptree.to_a_budstruct}]
@@ -385,9 +404,9 @@ rule album3@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,
       end
     end
     
-    assert_equal ["album1_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
-      "album2_at_testsf <= (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;",
-      "album3_at_testsf <= (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;"],
+    assert_equal ["album1_at_testsf <+ (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
+      "album2_at_testsf <+ (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;",
+      "album3_at_testsf <+ (photos_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1| [atom0[0], atom0[1]] if atom1[1]=='alice' end;"],
       bud_rule
 
     assert_equal(["photos_at_testsf",
@@ -460,7 +479,7 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
         end
       end
     end
-    assert_equal "album_at_testsf <= (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
+    assert_equal "album_at_testsf <+ (photos_at_testsf * tags_at_testsf * tags_at_testsf ).combos(photos_at_testsf.photo => tags_at_testsf.img,photos_at_testsf.photo => tags_at_testsf.img) do |atom0, atom1, atom2| [atom0[0], atom0[1]] if atom1[1]=='alice' and atom2[1]=='bob' and atom1[0]==atom2[0] end;",
       bud_rule
 
     assert_equal(2, runner.push_elems.size)
