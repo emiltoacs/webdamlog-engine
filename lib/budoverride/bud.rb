@@ -437,7 +437,7 @@ module WLBud
       end
       if @options[:measure]
         @measure_obj.append_measure @budtime-1
-        @measure_obj.dump_measures @budtime-1
+        @measure_obj.dump_measures
       end
     end
 

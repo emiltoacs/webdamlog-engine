@@ -130,9 +130,7 @@ class TcBudCollection < Test::Unit::TestCase
   end
 
   # Check that scratch with deferred operators works well for rules
-  #
-  # XXX: rule with defered operations on scratch seems buggy
-  #
+  # XXX a scratch seems not updated correctly
   class ScratchDeferredOpRule
     include Bud
     state do
@@ -159,23 +157,32 @@ class TcBudCollection < Test::Unit::TestCase
   def test_scratch_deferred_op_rule
     program = ScratchDeferredOpRule.new
     program.tick
+    # scratch has the content described in bootstrap 
     assert_equal( [['a', 'b', 1, 2],['a', 'c', 3, 4]], program.scrtch.to_a.sort)
+    # table has the content described in bootstrap
     assert_equal( [['a', 'b', 1, 2],['z', 'y', 9, 8]], program.tbl.to_a.sort)
+    # scratch received nothing at this tick since operators are deferred
     assert_equal( [['m', 'n'],['o', 'p']], program.scrtch2.to_a.sort)
+    # scratch received instantaneously the content of tbl
     assert_equal( [['a', 'b'],['m', 'n'],['o', 'p'],['z', 'y']], program.scrtch3.to_a.sort)
 
     program.tick
+    # scratch are emptied and no rules or pending fact for scrtch
     assert_equal( [], program.scrtch.to_a.sort)
+    # tables are persistent so no changes till previous tick
     assert_equal( [['a', 'b', 1, 2],['z', 'y', 9, 8]], program.tbl.to_a.sort)
+    # scrtch2 received the facts pending from previous tick
     assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch2.to_a.sort)
+    # scrtch3 continue to receive the facts instantaneously from tbl and the pending facts from scratch at the previous step
     assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch3.to_a.sort)
 
     program.tick
     assert_equal( [], program.scrtch.to_a.sort)
     assert_equal( [['a', 'b', 1, 2],['z', 'y', 9, 8]], program.tbl.to_a.sort)
+    # pending facts from tbl and nothing from scrtch since it was empty at previous tick
     assert_equal( [['a', 'b'],['z', 'y']], program.scrtch2.to_a.sort)
+    # XXX the ['a', 'c'] fact seems to be too much
     assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch3.to_a.sort)
-
     program.tick
     program.tick
     program.tick
@@ -183,7 +190,33 @@ class TcBudCollection < Test::Unit::TestCase
     assert_equal( [], program.scrtch.to_a.sort)
     assert_equal( [['a', 'b', 1, 2],['z', 'y', 9, 8]], program.tbl.to_a.sort)
     assert_equal( [['a', 'b'],['z', 'y']], program.scrtch2.to_a.sort)
+    # XXX the ['a', 'c'] fact is still here
     assert_equal( [['a', 'b'],['a', 'c'],['z', 'y']], program.scrtch3.to_a.sort)
+    program.tbl <+ [['d', 'e', 5, 6]]
+    program.tick
+    assert_equal( [], program.scrtch.to_a.sort)
+    assert_equal( [['a', 'b', 1, 2],['d', 'e', 5, 6],['z', 'y', 9, 8]], program.tbl.to_a.sort)
+    assert_equal( [['a', 'b'],['z', 'y']], program.scrtch2.to_a.sort)
+    assert_equal( [['a', 'b'],['a', 'c'],['d', 'e'],['z', 'y']], program.scrtch3.to_a.sort)
+    program.scrtch <+ [['f', 'g', 7, 8]]
+    program.tick
+    assert_equal( [['f', 'g', 7, 8]], program.scrtch.to_a.sort)
+    assert_equal( [['a', 'b', 1, 2],['d', 'e', 5, 6],['z', 'y', 9, 8]], program.tbl.to_a.sort)
+    assert_equal( [['a', 'b'],['d', 'e'],['z', 'y']], program.scrtch2.to_a.sort)
+    assert_equal( [['a', 'b'],['a', 'c'],['d', 'e'],['z', 'y']], program.scrtch3.to_a.sort)
+    program.tick
+    assert_equal( [], program.scrtch.to_a.sort)
+    assert_equal( [['a', 'b', 1, 2],['d', 'e', 5, 6],['z', 'y', 9, 8]], program.tbl.to_a.sort)
+    assert_equal( [['a', 'b'],['d', 'e'],['f', 'g'],['z', 'y']], program.scrtch2.to_a.sort)
+    # Now the fact ['a', 'c'] has disappeared, it requires that source table has to be invalidated
+    assert_equal( [['a', 'b'],['d', 'e'],['f', 'g'],['z', 'y']], program.scrtch3.to_a.sort)
+    program.tick
+    assert_equal( [], program.scrtch.to_a.sort)
+    assert_equal( [['a', 'b', 1, 2],['d', 'e', 5, 6],['z', 'y', 9, 8]], program.tbl.to_a.sort)
+    assert_equal( [['a', 'b'],['d', 'e'],['z', 'y']], program.scrtch2.to_a.sort)
+    # XXX Again we still have ['f', 'g'] that will be deleted next time an
+    # invalidation will forces to recompute this scrtch3
+    assert_equal( [['a', 'b'],['d', 'e'],['f', 'g'],['z', 'y']], program.scrtch3.to_a.sort)
   end
 end
 

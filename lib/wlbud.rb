@@ -178,7 +178,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     # in bloom.
     #
     # @param [WLCollection] wlcollection that should be declared in bud @param
-    # colltype must be a sub class of Bud::Collection. It is use to force the
+    # colltype must be a sub class of Bud::Collection. It is used to force the
     # declaration of the given type of Bud Collection for this WLCollection. Use
     # it in test only as the method is supposed to parse correctly the
     # WLCollection @param args optional args if colltype is a channel then args
