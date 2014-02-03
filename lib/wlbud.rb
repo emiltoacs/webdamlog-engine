@@ -135,16 +135,40 @@ module WLBud
     # Because of new 0.9.1 bud evaluation system, it is needed to create a file
     # in which bud is supposed to read the rule instead of just reading a block
     # dynamically created.
-    #
     def translate_rule(wlrule)
       raise "Impossible to add in bud a rule that is either unbound or non-local" unless @wl_program.bound_n_local?(wlrule)
       puts "Adding a rule: #{wlrule}" if @options[:debug]
       @wl_program.disamb_peername!(wlrule)
       rule = "#{@wl_program.translate_rule_str(wlrule)}"
       name = "webdamlog_#{@peername}_#{wlrule.rule_id}"
-      str = build_string_rule_to_include(name, rule)
+      install_bud_rule rule, name
+      @rule_installed << wlrule
+      # the last element is the bud name for the block created
+      return wlrule.rule_id, wlrule.show_wdl_format, "__bloom__#{name}"
+    end
+
+    # Install any rule given in a bud format. This is not the proper method to
+    # insert rule in Webdamlog you should use translate_rule that takes a
+    # wlrule.
+    #
+    # Take care of the fact that it allows to insert any kind of rule that may
+    # break the Webdamlog semantics. For this reason the provenance of such
+    # rules is not supported and may even break the consistency of the
+    # provenance for the whole program, for instance if this rule updates
+    # Webdamlog relations.
+    def install_bud_rule bud_rule, name
+      if name.nil?
+        if @@bud_custom_rule_id.nil?
+          @@bud_custom_rule_id = 0
+        else
+          @@bud_custom_rule_id = @@bud_custom_rule_id + 1
+        end
+        str = build_string_rule_to_include("bud_custom_rule_#{@@bud_custom_rule_id}", bud_rule)
+      else
+        str = build_string_rule_to_include(name, bud_rule)
+      end  
       fullfilename = File.join(@rule_dir,name)
-      raise WLErrorPeerId, "there must be an error in unique id: #{wlrule.rule_id} of this rule: #{wlrule} \n \
+      raise WLErrorPeerId, "there must be an error in unique id: #{name} of this rule: \n #{bud_rule} \n \
 engine is trying to write this new rule in an existing file: #{fullfilename}" if File.exists?(fullfilename)
       fout = File.new("#{fullfilename}", "w+")
       fout.puts "#{str}"
@@ -153,16 +177,13 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
         puts "Content of the tmp file is:\n#{File.readlines(fullfilename).each{|f| f }}\n"
       end
       load fullfilename
-      @rule_installed << wlrule
-      @need_rewrite_strata = true
-      # the last element is the bud name for the block created
-      return wlrule.rule_id, wlrule.show_wdl_format, "__bloom__#{name}"
+      @need_rewrite_strata = true      
     end
 
     # Build the bloom block to insert in bud with the given rule inside and as
     # name of the block "sym_name"
-    #
-    def build_string_rule_to_include (sym_name, rule)
+    def build_string_rule_to_include (name, rule)
+      sym_name = name.to_sym unless name.is_a?(Symbol)
       # Does not require to load anything since it is suppose to be loaded in
       # the good environment str = "require '#{__FILE__}'\n"
       str = "class #{self.class}\n"
@@ -219,8 +240,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       return @tables[name].tabname, @tables[name].schema
     end # schema_init
 
-    # Adds dynamically facts
-    # @return valid, err
+    # Adds dynamically facts @return valid, err
     def add_facts(wl_facts)
       converted_facts = convert_facts_into_valid_hash wl_facts
       return insert_facts_in_coll(converted_facts)
