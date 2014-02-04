@@ -26,14 +26,25 @@ module WLBud
       end
     end
 
+    # Here source is possibly one Bud::TupleStruct or several tuple represented
+    # as an array of Bud::TupleStruct. However inferred is one single tuple.
+    # @return [ProofTree] the proof tree created or nil if it was a duplicate
     def add_new_proof orig_rule_id, source, inferred
+      # Create new proof tree
       pt = @traces[orig_rule_id].add_new_proof source, inferred
-      src_rel = @traces[orig_rule_id].sources
-      src_tuples = pt.sources
-      raise WLBud::WLError, "Proof for fact #{pt.inferred} with #{src_tuples.size} facts, does not respect arity of rule #{orig_rule_id} supposed to be #{src_rel.size}" unless src_rel.size == src_tuples.size
-      src_rel.zip(src_tuples).each do |src,tuple|
-        @rel_index[src][tuple] << pt
-      end
+
+      unless pt.nil?
+        # Update relation index used to find proof trees
+        src_rels = @traces[orig_rule_id].sources
+        src_tuples = pt.sources
+        raise WLBud::WLError, "Proof for fact #{pt.inferred} with #{src_tuples.size} facts, does not respect arity of rule #{orig_rule_id} supposed to be #{src_rels.size}" unless src_rels.size == src_tuples.size
+        src_rels.zip(src_tuples).each do |rel,tuple|
+          @rel_index[rel][tuple] << pt
+        end
+        return pt
+      else
+        return nil
+      end      
     end
 
     def print_rel_index
@@ -55,8 +66,8 @@ module WLBud
       @rule_id = bud_push_elem.orig_rule_id
       # The array of all the push elements used to evaluate a rule
       @push_elems = [bud_push_elem]
-      # The array of all the proof tree depending on this rule
-      @pushed_out_facts = []
+      # The hash of all the proof tree depending on this rule
+      @pushed_out_facts = {}
       # true when the rule is completely wired in and out
       @consolidated = false
       # @return [Array] relation names as symbol
@@ -99,13 +110,19 @@ module WLBud
     def add_new_push_elem bud_push_elem
       @push_elems <<  bud_push_elem
     end
-
-    # @return [ProofTree] the new ProofTree object added to this trace
+    
+    # @return [ProofTree] the proof tree created or nil if it was a duplicate
     def add_new_proof source, inferred
       raise WLBud::WLError, "try to access add new proof before consolidation" unless @consolidated
       pt = ProofTree.new(source, inferred, self)
-      @pushed_out_facts << pt
-      return pt
+      key = pt.to_a_budstruct.to_a
+      # ignore duplicates
+      unless @pushed_out_facts.include?(key)
+        @pushed_out_facts[key] = pt
+        return pt
+      else
+        return nil
+      end
     end
 
     # read accessor to the @sources attribute
@@ -154,6 +171,8 @@ module WLBud
 
     attr_reader :sources, :inferred, :rule_trace
 
+    # Here source is possibly one Bud::TupleStruct or several tuple represented
+    # as an array of Bud::TupleStruct
     def initialize source, inferred, rule_trace
       if source.kind_of?(Bud::TupleStruct)
         src = [source]
@@ -168,8 +187,8 @@ module WLBud
       else
         raise WLBud::WLErrorTyping, "source of the proof tree should be an array or a single TupleStruct not a #{source.class}"
       end
-      # An array of tuple, a tuple is always converted into an array (originally
-      # a TupleStruct)
+      # An array of tuple, a tuple is always converted into an array of
+      # Bud::TupleStruct
       @sources = src
       # One single tuple inferred from source
       @inferred = inferred
@@ -179,6 +198,7 @@ module WLBud
       @proof = {@sources => @inferred}
     end
 
+    # Used to create unique key for this proof
     def to_a_budstruct
       src = @sources.map{|tuple| tuple.kind_of?(Bud::TupleStruct) ? tuple.to_a : tuple}
       {src.to_a => @inferred.to_a}
