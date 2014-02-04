@@ -201,7 +201,6 @@ module WLBud
     # the tick_internal.
     #
     # Override bud method Bud.tick_internal
-    #
     def tick_internal
       # ### WLBud:Begin adding to Bud
       #
@@ -238,6 +237,11 @@ module WLBud
         @inside_tick = true
 
         # ### WLBud:Begin adding to Bud
+        
+        # reset the do_extra_tick variable that is set to true by perform extra
+        # tick used to start a new tick when extensional relations are updated
+        # locally
+        @do_extra_tick = false
         if @options[:measure]
           @measure_obj.append_measure @budtime
         end

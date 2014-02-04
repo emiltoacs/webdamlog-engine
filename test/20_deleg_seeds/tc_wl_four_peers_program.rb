@@ -453,7 +453,7 @@ rule test_join@peer4($img):-photos@peer4($img), tags@peer4($img,alice1);
         peers[1].t_rules.pro { |t| [t.src] }
     end
     peers[3].sync_do do
-      assert_equal [["test_join_at_peer4 <= ((photos_at_peer4 * tags_at_peer4).combos(photos_at_peer4.img => (tags_at_peer4.img)) do |atom0, atom1|\n  [atom0[0]] if (atom1[1] == \"alice1\")\nend)"],
+      assert_equal [["test_join_at_peer4 < (+(photos_at_peer4 * tags_at_peer4).combos(photos_at_peer4.img => (tags_at_peer4.img)) do |atom0, atom1|\n  [atom0[0]] if (atom1[1] == \"alice1\")\nend)"],
         ["sbuffer <= (((deleg_from_sue3_5_1_at_peer4 * photos_at_peer4) * tags_at_peer4).combos(photos_at_peer4.img => (tags_at_peer4.img)) do |atom0, atom1, atom2|\n  if (atom0[0] == \"true\") and (atom2[1] == \"alice1\") then\n    [\"localhost:10002\", \"album_i_at_sue3\", [atom1[0], \"peer4\"]]\n  end\nend)"]],
         peers[3].t_rules.pro { |t| [t.src] }
       assert_equal([["334"], ["688"], ["78"], ["840"], ["843"]],

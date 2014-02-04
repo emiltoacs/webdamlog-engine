@@ -47,6 +47,9 @@ end
         runner1 = WLRunner.create(@username1, @pg_file1, @port1, {:measure => true})
       end
       runner1.tick
+      assert_equal [], runner1.tables[:proj_at_p1].map{ |t| Hash[t.each_pair.to_a] }
+      assert_equal [], runner1.snapshot_facts(:proj_at_p1)      
+      runner1.tick
       assert_equal [{:atom1=>"1",:atom2=>"2"},{:atom1=>"1",:atom2=>"3"}], runner1.tables[:proj_at_p1].map{ |t| Hash[t.each_pair.to_a] }
       assert_equal [{:atom1=>"1",:atom2=>"2"},{:atom1=>"1",:atom2=>"3"}], runner1.snapshot_facts(:proj_at_p1)
       runner1.tick

@@ -599,6 +599,20 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
 
     public
 
+    # Schedule a tick to start after the end of the current tick. Note that
+    # extra_tick does not stack, i.e. only one could be scheduled, the next tick
+    # will reset the do_extra_tick variable at the beginning of its computation.
+    def schedule_extra_tick
+      if @running_async
+        if not @do_extra_tick
+          @do_extra_tick = true
+          EventMachine::next_tick do
+            tick_internal
+          end
+        end
+      end
+    end
+
     # Register a callback triggered during the tick at the moment specified by
     # *step*, it will execute &blk
     #

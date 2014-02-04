@@ -423,15 +423,13 @@ In the string: #{line}
 
       # Generate rule head:
       # + send fact buffer if non-local head
-      # + use deferred for pure extensional (pure means we skip the intermediary)
+      # + use deferred for pure extensional (pure means not intermediary rules)
       unless bound_n_local?(wlrule.head)
         str_res << "sbuffer <= "
       else if is_tmp?(wlrule.head)
           str_res << "temp :#{wlrule.head.fullrelname} <= "
         else
-          if intermediary? wlrule.head
-            str_res << "#{wlrule.head.fullrelname} <= "
-          elsif extensional_head? wlrule
+          if pure_extensional_head? wlrule
             str_res << "#{wlrule.head.fullrelname} <+ "
           else
             str_res << "#{wlrule.head.fullrelname} <= "
@@ -895,6 +893,8 @@ In the string: #{line}
     # Return true if the whole program to evaluate is empty
     def empty? ; return (rules_empty? and facts_empty? and collection_empty?) ; end
 
+    # True if the relation in the head is extensional or an intermediary rule
+    # rewritten from an extensional
     def extensional_head? (wlrule)
       # We want to always check the rule head which for intermediary relations
       #  means finding their parents
@@ -911,6 +911,16 @@ In the string: #{line}
           raise WLErrorProgram,
             "Not good, can't locate the parent rule for this intermediary one #{wlrule}"
         end
+      else
+        return extensional?(wlrule.head)
+      end
+    end
+
+    # True iff the relation in the head is declared as extensional. Intermediary
+    # rules are not considered as extensional
+    def pure_extensional_head? wlrule
+      if intermediary?(wlrule.head)
+        false
       else
         return extensional?(wlrule.head)
       end

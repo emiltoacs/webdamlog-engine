@@ -141,10 +141,9 @@ end
 
       assert runner.sprout_rules.empty?
       runner.update_add_rule(test_string)
-
       assert runner.sprout_rules.empty?
-
       assert_equal 1,runner.t_rules.length, "only the original rule is installed"
+      
       runner.tick
 
       assert_equal [
@@ -164,12 +163,12 @@ end
       runner.t_rules.pro { |t| assert_equal(t.src, t.orig_src, "rules has been reparsed by bud after webdamlog add them") }
 
       assert_equal [["seed_from_test_seed_1_1_at_test_seed <= (((local2_at_test_seed * local3_at_test_seed) * local4_at_test_seed).combos(local2_at_test_seed.atom1 => (local3_at_test_seed.atom1)) do |atom0, atom1, atom2|\n  [atom0[1], atom1[1], atom2[0]]\nend)"],
-        ["local1_at_test_seed <= (((seed_from_test_seed_1_1_at_test_seed * relname1_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname1\") and ((atom0[2] == \"flocal3\") and (atom2[1] == \"flocal3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
-        ["local1_at_test_seed <= (((seed_from_test_seed_1_1_at_test_seed * relname2_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname2\") and ((atom0[2] == \"flocal3\") and (atom2[1] == \"flocal3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
-        ["local1_at_test_seed <= (((seed_from_test_seed_1_1_at_test_seed * relname1_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname1\") and ((atom0[2] == \"useless3\") and (atom2[1] == \"useless3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
-        ["local1_at_test_seed <= (((seed_from_test_seed_1_1_at_test_seed * relname2_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname2\") and ((atom0[2] == \"useless3\") and (atom2[1] == \"useless3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
-        ["local1_at_test_seed <= (((seed_from_test_seed_1_1_at_test_seed * relname1_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname1\") and ((atom0[2] == \"useless4\") and (atom2[1] == \"useless4\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
-        ["local1_at_test_seed <= (((seed_from_test_seed_1_1_at_test_seed * relname2_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname2\") and ((atom0[2] == \"useless4\") and (atom2[1] == \"useless4\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"]],
+        ["local1_at_test_seed < (+((seed_from_test_seed_1_1_at_test_seed * relname1_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname1\") and ((atom0[2] == \"flocal3\") and (atom2[1] == \"flocal3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
+        ["local1_at_test_seed < (+((seed_from_test_seed_1_1_at_test_seed * relname2_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname2\") and ((atom0[2] == \"flocal3\") and (atom2[1] == \"flocal3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
+        ["local1_at_test_seed < (+((seed_from_test_seed_1_1_at_test_seed * relname1_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname1\") and ((atom0[2] == \"useless3\") and (atom2[1] == \"useless3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
+        ["local1_at_test_seed < (+((seed_from_test_seed_1_1_at_test_seed * relname2_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname2\") and ((atom0[2] == \"useless3\") and (atom2[1] == \"useless3\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
+        ["local1_at_test_seed < (+((seed_from_test_seed_1_1_at_test_seed * relname1_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname1\") and ((atom0[2] == \"useless4\") and (atom2[1] == \"useless4\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"],
+        ["local1_at_test_seed < (+((seed_from_test_seed_1_1_at_test_seed * relname2_at_test_seed) * local4_at_test_seed).combos do |atom0, atom1, atom2|\n  if (atom0[0] == \"flocalhead1\") and ((atom0[1] == \"relname2\") and ((atom0[2] == \"useless4\") and (atom2[1] == \"useless4\"))) then\n    [\"flocalhead1\", atom1[0], atom1[1]]\n  end\nend)"]],
         runner.t_rules.pro { |t| [t.src] },
         "the bud program running is wrong"
 
@@ -181,7 +180,10 @@ end
           ["flocalhead1", "relname2", "useless4"]],
         runner.tables[:seed_from_test_seed_1_1_at_test_seed].pro { |t| t.to_a },
         "intermediary relation created should have some tuples")
-      
+
+      assert_equal [],
+        runner.tables[:local1_at_test_seed].pro { |t| t.to_a }
+      runner.tick
       assert_equal [["flocalhead1", "relname1_1_1", "relname1_1_2"],
         ["flocalhead1", "relname1_2_1", "relname1_2_2"],
         ["flocalhead1", "relname2_1_1", "relname2_1_2"],

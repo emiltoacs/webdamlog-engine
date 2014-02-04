@@ -82,7 +82,7 @@ EOF
       (0..NUMBER_OF_TEST_PG-1).each do |i|
         wl_peer << eval("@@#{CLASS_PEER_NAME}#{i}.new(\'p#{i}\', STR#{i}, @#{TEST_FILENAME_VAR}#{i}, Hash[@tcoption#{i}.each_pair.to_a])")
         wl_peer.each { |p| p.run_bg }
-        wl_peer.each do |p|
+        wl_peer.each do |p|          
           p.sync_do do
             p.chan << ["localhost:11110",
               ["p0", "0",
@@ -96,8 +96,8 @@ EOF
           assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_real should have been created")
           assert(p.tables.has_key?("join_at_p0".to_sym), "join should have been created")
           assert_equal [["3"], ["4"], ["5"], ["6"]], p.new_rel_at_p0.to_a.sort
-          assert_equal [["3"], ["4"]], p.join_at_p0.to_a.sort
-        end
+          assert_equal [["3"], ["4"]], wl_peer.first.join_at_p0.to_a.sort
+        end        
       end
     ensure
       wl_peer.each{ |peer| peer.clear_rule_dir }

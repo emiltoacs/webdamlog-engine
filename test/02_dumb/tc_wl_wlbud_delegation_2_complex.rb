@@ -425,6 +425,7 @@ EOF
     # fire p1 to check that facts from the delegation to p2 has been produced
     # and sent to p1
     wl_peer[1].tick
+    wl_peer[1].tick
     # there is no new rules only the remember that we made a delegation
     assert_equal(["WLRULE: rule copylocalatp2@p1($X) :- local@p2($X);",
         "String: rule copylocalatp2@p1($X) :- local@p2($X);"],

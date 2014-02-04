@@ -93,6 +93,9 @@ EOF
     assert_equal 5, wl_peer_1.local2_at_p1.length
     assert_equal [["3"], ["4"], ["5"], ["6"], ["7"]], wl_peer_1.local2_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.join_at_p1.length
+    assert_equal [], wl_peer_1.join_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 2, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
   ensure
@@ -115,6 +118,9 @@ EOF
     assert_equal 5, wl_peer_1.local2_at_p1.length
     assert_equal [["3"], ["4"], ["5"], ["6"], ["7"]], wl_peer_1.local2_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.join_at_p1.length
+    assert_equal [], wl_peer_1.join_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 2, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
 
@@ -135,6 +141,9 @@ EOF
     assert_equal 5, wl_peer_1.local_at_p1.length    
     assert_equal [["1"], ["2"], ["3"], ["4"], ["5"]], wl_peer_1.local_at_p1.to_a.sort
 
+    assert_equal 2, wl_peer_1.join_at_p1.length
+    assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 3, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"], ["5"]], wl_peer_1.join_at_p1.to_a.sort
   ensure
@@ -173,6 +182,9 @@ EOF
     assert_equal 1, wl_peer_1.local3_at_p1.length
     assert_equal [["3"]], wl_peer_1.local3_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.join13_at_p1.length
+    assert_equal [], wl_peer_1.join13_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 1, wl_peer_1.join13_at_p1.length
     assert_equal [["3"]], wl_peer_1.join13_at_p1.to_a.sort
 
@@ -192,6 +204,9 @@ EOF
     assert_equal 3, wl_peer_1.local3_at_p1.length
     assert_equal [["10"], ["3"], ["4"]], wl_peer_1.local3_at_p1.to_a.sort
 
+    assert_equal 1, wl_peer_1.join13_at_p1.length
+    assert_equal [["3"]], wl_peer_1.join13_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 2, wl_peer_1.join13_at_p1.length
     assert_equal [["3"], ["4"]], wl_peer_1.join13_at_p1.to_a.sort
   ensure
@@ -247,9 +262,15 @@ EOF
     assert_equal 2, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.join13_at_p1.length
+    assert_equal [], wl_peer_1.join13_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 1, wl_peer_1.join13_at_p1.length
     assert_equal [["4"]], wl_peer_1.join13_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.joinOfjoin_at_p1.length
+    assert_equal [], wl_peer_1.joinOfjoin_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 1, wl_peer_1.joinOfjoin_at_p1.length
     assert_equal [["4"]], wl_peer_1.joinOfjoin_at_p1.to_a.sort
 
@@ -268,9 +289,15 @@ EOF
     assert_equal 4, wl_peer_1.local3_at_p1.length
     assert_equal [["10"], ["3"], ["4"], ["5"]], wl_peer_1.local3_at_p1.to_a.sort
 
+    assert_equal 1, wl_peer_1.join13_at_p1.length
+    assert_equal [["4"]], wl_peer_1.join13_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 2, wl_peer_1.join13_at_p1.length
     assert_equal [["3"],["4"]], wl_peer_1.join13_at_p1.to_a.sort
 
+    assert_equal 1, wl_peer_1.joinOfjoin_at_p1.length
+    assert_equal [["4"]], wl_peer_1.joinOfjoin_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 2, wl_peer_1.joinOfjoin_at_p1.length
     assert_equal [["3"],["4"]], wl_peer_1.joinOfjoin_at_p1.to_a.sort    
 
@@ -329,9 +356,15 @@ EOF
     assert_equal 2, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.join13_at_p1.length
+    assert_equal [], wl_peer_1.join13_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 1, wl_peer_1.join13_at_p1.length
     assert_equal [["4"]], wl_peer_1.join13_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.joinOfjoin_at_p1.length
+    assert_equal [], wl_peer_1.joinOfjoin_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 1, wl_peer_1.joinOfjoin_at_p1.length
     assert_equal [["4"]], wl_peer_1.joinOfjoin_at_p1.to_a.sort
     
@@ -349,8 +382,12 @@ EOF
     wl_peer_1.tick
     assert_equal 5, wl_peer_1.local3_at_p1.length
     assert_equal [["10"], ["2"], ["3"], ["4"], ["5"]], wl_peer_1.local3_at_p1.to_a.sort
+    
+    wl_peer_1.tick
     assert_equal 3, wl_peer_1.join13_at_p1.length
     assert_equal [["2"],["3"],["4"]], wl_peer_1.join13_at_p1.to_a.sort
+
+    wl_peer_1.tick
     assert_equal 2, wl_peer_1.joinOfjoin_at_p1.length
     assert_equal [["3"],["4"]], wl_peer_1.joinOfjoin_at_p1.to_a.sort    
   ensure

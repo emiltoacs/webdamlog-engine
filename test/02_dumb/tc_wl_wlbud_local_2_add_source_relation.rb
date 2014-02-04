@@ -93,13 +93,17 @@ EOF
     wl_peer_1 = Test1Local2.new('p1', Hash[@tcoption0.each_pair.to_a])
     # p "===wl_peer_1.tick 1 test_1 ==="
     wl_peer_1.tick
-    
+
+    sleep 0.1
     assert_equal 4, wl_peer_1.local_at_p1.length
     assert_equal [["1"], ["2"], ["3"], ["4"]], wl_peer_1.local_at_p1.to_a.sort
 
     assert_equal 5, wl_peer_1.local2_at_p1.length
     assert_equal [["3"], ["4"], ["5"], ["6"], ["7"]], wl_peer_1.local2_at_p1.to_a.sort
 
+    assert_equal 0, wl_peer_1.join_at_p1.length
+    assert_equal [], wl_peer_1.join_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 2, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
 
@@ -121,6 +125,10 @@ EOF
     assert_equal 2, wl_peer_1.newrel_at_p1.length
     assert_equal [["5"],["6"]], wl_peer_1.newrel_at_p1.to_a.sort
 
+
+    assert_equal 2, wl_peer_1.join_at_p1.length
+    assert_equal [["3"], ["4"]], wl_peer_1.join_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 4, wl_peer_1.join_at_p1.length
     assert_equal [["3"], ["4"], ["5"], ["6"]], wl_peer_1.join_at_p1.to_a.sort
 
@@ -136,12 +144,15 @@ EOF
         }
       ]
     ]
+
     wl_peer_1.tick
-    
     assert_kind_of Bud::BudScratch, wl_peer_1.newscratchrel_at_p1
     assert_equal 2, wl_peer_1.newscratchrel_at_p1.length
     assert_equal [["2"],["3"]], wl_peer_1.newscratchrel_at_p1.to_a.sort, "insert in chan via chan is now ok"
 
+    assert_equal 4, wl_peer_1.join_at_p1.length
+    assert_equal [["3"], ["4"], ["5"], ["6"]], wl_peer_1.join_at_p1.to_a.sort
+    wl_peer_1.tick
     assert_equal 5, wl_peer_1.join_at_p1.length
     assert_equal [["2"], ["3"], ["4"], ["5"], ["6"]], wl_peer_1.join_at_p1.to_a.sort
 
