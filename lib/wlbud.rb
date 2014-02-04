@@ -240,7 +240,8 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       return @tables[name].tabname, @tables[name].schema
     end # schema_init
 
-    # Adds dynamically facts @return valid, err
+    # Adds dynamically facts
+    #  @return valid, err
     def add_facts(wl_facts)
       converted_facts = convert_facts_into_valid_hash wl_facts
       return insert_facts_in_coll(converted_facts)
@@ -275,8 +276,10 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       return name.to_s, schema
     end
 
-    # Takes in a string representing a WLRule, * parses it * rewrite it * adds
-    #   its local part to the engine
+    # Takes in a string representing a WLRule,
+    #  * parses it
+    #  * rewrite it
+    #  * adds its local part to the engine
     #
     # @raise [WLError] if something goes wrong @return [Array] rule_id, rule
     # string of the local rule installed or nil if the rule is fully delegated.

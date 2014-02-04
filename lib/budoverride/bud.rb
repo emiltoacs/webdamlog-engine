@@ -33,7 +33,7 @@ module WLBud
     #   put in a waiting queue  instead of being added to the program.  Some
     #   external intervention will be required to validate them such as calling
     #   {WLRunner::update_add_rule} on @pending_delegations entries.
-    # * +:noprovenance+ if true all the provenance mechanism is skipped
+    # * +:noprovenance+ if true all the provenance mechanisms are skipped
     def initialize (peername, pgfilename, options={})
       # ### WLBud:Begin adding to Bud special bud parameter initialization
       if options[:measure]

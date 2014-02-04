@@ -93,6 +93,7 @@ EOF
                   :facts_to_delete=>{}
                 }]]
           end
+          sleep 0.1
           assert(p.tables.has_key?("new_rel_at_p0".to_sym), "new_real should have been created")
           assert(p.tables.has_key?("join_at_p0".to_sym), "join should have been created")
           assert_equal [["3"], ["4"], ["5"], ["6"]], p.new_rel_at_p0.to_a.sort
