@@ -602,6 +602,23 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
 
     public
 
+    # Just like run_bg from bud except that it does not start a tick directly.
+    # This is useful in experiment to start a peer that will wait until it
+    # receives a packet from the network. Typically starting another node that
+    # will send to this one a packet to start its execution.
+    def run_bg_no_tick
+    start
+
+    schedule_and_wait do
+      if @running_async
+        raise Bud::Error, "run_bg called on already-running Bud instance"
+      end
+      @running_async = true
+    end
+
+    @rtracer.sleep if options[:rtrace]
+  end
+
     # Schedule a tick to start after the end of the current tick. Note that
     # extra_tick does not stack, i.e. only one could be scheduled, the next tick
     # will reset the do_extra_tick variable at the beginning of its computation.
