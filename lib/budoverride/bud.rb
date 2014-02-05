@@ -34,7 +34,7 @@ module WLBud
     #   external intervention will be required to validate them such as calling
     #   {WLRunner::update_add_rule} on @pending_delegations entries.
     # * +:noprovenance+ if true all the provenance mechanisms are skipped
-    def initialize (peername, pgfilename, options={})
+    def initialize (peername, pgfilename, options = {})
       # ### WLBud:Begin adding to Bud special bud parameter initialization
       if options[:measure]
         @start_time = Time.now
@@ -91,6 +91,9 @@ module WLBud
       @new_sprout_rules = {}
       # Rules generated from a seed
       @sprout_rules = {}
+      # Schedule the end of the Webdamlog engine at the given tick it will dies
+      # by itself
+      @dies_at_tick = options[:dies_at_tick] ||= 0
 
       if options[:wl_test]
         @test_received_on_chan = []
@@ -224,6 +227,19 @@ module WLBud
       # already in bud but I moved receive_inbound before all the stuff about
       # app_tables, push_sorted_elements, ...
       receive_inbound
+
+      # termination condition
+      if @dies_at_tick > 0 and @budtime == @dies_at_tick
+        # kill himself when dies_at_tick is reached
+        rel_name = "peer_done_at_#{@peername}"
+        if @tables[rel_name.to_sym]
+          add_facts({ rel_name => [[true]] })
+        else
+          raise WLError, "the special table peer_done should have been declared \
+to kill this peer, in a webdamlog program it is expected that you add \n \
+collection int peer_done#{@peername}(key*);"
+        end
+      end
       # ### WLBud:End adding to Bud
 
       puts "#{object_id}/#{port} : ============================================= (#{@budtime})" if $BUD_DEBUG
@@ -267,9 +283,8 @@ module WLBud
           if @options[:debug]
             puts "Process packets received from #{packet_value.print_meta_data}"
           end
-          # Delete facts TODO here
-          # packet_value.facts_to_delete
-          # Declare all the new relations and insert the rules
+          # Delete facts TODO here packet_value.facts_to_delete Declare all the
+          # new relations and insert the rules
           packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
           if @options[:filter_delegations]
             @pending_delegations[packet_value.peer_name.to_sym][packet_value.src_time_stamp] << packet_value.rules
@@ -444,6 +459,26 @@ module WLBud
         @measure_obj.append_measure @budtime-1
         @measure_obj.dump_measures
       end
+
+      # This peer dies if the tick finished is the last one
+      peer_done_rel_name = "peer_done_at_#{@peername}"
+      if @dies_at_tick > 0 and @budtime-1 == @dies_at_tick
+        stop        
+        if @tables[peer_done_rel_name.to_sym].first.key == :kill
+          # Bud.shutdown_all_instances
+          # Bud.stop_em_loop
+        end
+      elsif @dies_at_tick == 0
+        unless @tables[peer_done_rel_name.to_sym].nil?
+          if @tables[peer_done_rel_name.to_sym].length > 0
+            stop
+            if @tables[peer_done_rel_name.to_sym].first.key == :kill
+              # Bud.shutdown_all_instances
+              # Bud.stop_em_loop
+            end
+          end
+        end
+      end      
     end
 
 

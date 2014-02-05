@@ -1,4 +1,4 @@
-#  Copyright © by INRIA
+# Copyright © by INRIA
 #
 #  Contributors : Webdam Team <webdam.inria.fr>
 #       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
@@ -6,36 +6,63 @@
 #   WebdamLog
 #
 #   Encoding - UTF-8
-require_relative 'data_generators'
 require_relative '../../lib/webdamlog_runner'
 require_relative '../../lib/wlbud/wlerror'
+require 'csv'
 
-# generate the dataset and start the experiment
+# Constants
+XP_FILE_DIR = ARGV.first if defined?(ARGV)
+XPFILE = "XP_NOACCESS"
+NUM_ITER = ARGV[1].to_i if (ARGV[1] != nil)
+
+
+# Parameters:
+# * XP_FILE_DIR : The path to the directory with the data generator
+#
+# By convention :
+# * there should be a CSV file named XP_NOACCESS with the list of peer name to
+#   start.
+# * the program file name of each peer must be an underscore separated string.
+#   The last field must be the peername.
 def run_xp!
-  if ARGV.include?("xp1")
-    include WLXP1
-    run_xp_peers
+  # parse parameters
+  raise "no argument found, expected 2" unless defined?(ARGV)
+  raise "WLXP alone is not an experiment, choose one of the xp" unless defined? XPFILE
+  raise "first argument must be the directory with program files" if (ARGV[0].nil?)  
+
+  # Retrieve program files
+  xpfiles = []
+  CSV.foreach(get_run_xp_file) do |row|
+    xpfiles = row
+    p "Start experiments with #{xpfiles}"
   end
-  if ARGV.include?("xp2")
-    include WLXP2
-    run_xp_peers
+
+  # Create WLRunner objects
+  runners = []
+  xpfiles.each do |f|
+    runners << create_wl_runner(File.join(XP_FILE_DIR,f))
+    p "#{runners.last.peername} created"
   end
-  if ARGV.include?("xp3")
-    include WLXP2
-    run_xp_peers
+  
+  # Start Webdamlog peers
+  runners.each do |runner|
+    if runner.peername.include? "source"
+      # start in background and die by itself when NUM_ITER ticks has been done
+      # on this source node
+      runner.run_bg_not_tick
+    elsif runner.peername.include? "master"
+      # start in foreground and die when Webdamlog relation tokill is updated
+      runner.run_fg
+    else
+      # start in background and die when Webdamlog relation tokill is updated
+      runner.run_bg_not_tick
+    end
   end
-  if ARGV.include?("xp4")
-    include WLXP2
-    run_xp_peers
-  end
-  if ARGV.include?("xp5")
-    include WLXP5
-    run_xp_peers
-  end
+
 end
 
 # Instantiate a new runner from the pg_file given.
-#  peername is supposed to be the last element in the name splitted by '_'
+#  peername is supposed to be the last element in the file name splitted by '_'
 def create_wl_runner pg_file
   ip_addr = port = ''
   pg_splitted = pg_file.split "_"
@@ -47,39 +74,24 @@ def create_wl_runner pg_file
       peerline = line.split("=").last.strip
       peerline.slice!(-1) # remove last ;
       ip_addr, port = peerline.split ":"
-      loop = false    
+      loop = false
     end
   end
   file.close
   raise WLError, "impossible to find the peername given in the end of the program \
-filename: #{peername} in the list of peer specified in the program" if ip_addr.nil? or port.nil?  
-  return WLRunner.create(peername, pg_file, port, {:ip => ip_addr, :measure => true})
-end # def start_peer
+filename: #{peername} in the list of peer specified in the program" if ip_addr.nil? or port.nil?
+  if peername.include? "source"
+    raise "second argument must be the number of tick before a source peer dies" if (ARGV[1].nil?)
+    return WLRunner.create(peername, pg_file, port, {:ip => ip_addr, :measure => true, :dies_at_tick => NUM_ITER})
+  else
+    return WLRunner.create(peername, pg_file, port, {:ip => ip_addr, :measure => true})
+  end
+end # def create_wl_runner
 
-def run_xp_peers
-  xpfiles = []
-  CSV.foreach(get_run_xp_file) do |row|
-    xpfiles = row
-    p "Start experiments with #{xpfiles}"
-  end
-  runners = []
-  xpfiles.each do |f|
-    runners << create_wl_runner(f)
-    p "#{runners.last.peername} created"
-  end
-  runners.reverse_each do |runner|
-    runner.on_shutdown do
-      p "Final tick step of #{runner.peername} : #{runner.budtime}"
-    end
-  end
-  runners.reverse_each do |runner|
-    runner.run_engine
-    p "#{runner.peername} started"
-  end
-  sleep 3  
-  runners.each do |runner|
-    runner.stop
-  end
-end # def run_xp_peers
+def get_run_xp_file  
+  file_name = File.join(XP_FILE_DIR, XPFILE)
+  raise "expected file #{file_name} does not exists" unless File.exist?(file_name)
+  return file_name
+end
 
 run_xp! if __FILE__==$0
