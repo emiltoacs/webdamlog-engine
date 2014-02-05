@@ -66,7 +66,6 @@ end
       :t_table_info,
       :t_table_schema,
       :t_underspecified,
-      :t_derivation,
       :chan,
       :sbuffer,
       :local_at_test_delay_fact_loading,

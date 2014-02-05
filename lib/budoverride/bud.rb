@@ -458,9 +458,6 @@ module WLBud
     #
     def builtin_state
       super
-      # Contains the times nodes informations TODO: facts should be the list of
-      # facts used to derive head: define field to use(some kind of id)
-      table :t_derivation, [:rule_id, :facts] => [:derivated]
       @builtin_tables = @tables.clone if toplevel
       # Unique channel that serves for all messages. Each timestep exactly one
       # or zero packet is sent to each peer (see wlpacket).

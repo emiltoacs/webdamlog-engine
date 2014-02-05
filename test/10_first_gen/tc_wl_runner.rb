@@ -144,7 +144,7 @@ end
       assert_equal 11110, runner.port
       runner.run_engine
       assert runner.running_async
-      assert_equal 19, runner.tables.size
+      assert_equal 18, runner.tables.size
       assert_not_nil runner.tables[:local2_at_test_create_user]
       assert_equal 4, runner.tables[:local2_at_test_create_user].to_a.size
     ensure

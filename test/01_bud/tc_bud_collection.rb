@@ -276,7 +276,7 @@ class TcBudCollection < Test::Unit::TestCase
         [t2.k2]
       end
       halt <= tbl1 do |t|
-        [:kill] if t.k1 == 2
+        [true] if t.k1 == 2
       end
     end
   end
@@ -287,7 +287,7 @@ class TcBudCollection < Test::Unit::TestCase
     program.run_fg
 
     assert_equal([[ 0 ],[ 1 ],[ 2 ],[ 3 ]], program.tbl1.to_a.sort)
-    assert_equal([[ :kill ]], program.halt.to_a.sort)
+    assert_equal([[ true ]], program.halt.to_a.sort)
 
     assert_equal false, program.instance_variable_get(:@bud_started)
     assert_equal false, program.running_async
