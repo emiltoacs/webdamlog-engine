@@ -10,4 +10,4 @@ group :development, :test do
   gem 'ruby-debug-ide', '>= 0.4.22'
 end
 
-ruby '2.1.0'
+ruby '2.1'

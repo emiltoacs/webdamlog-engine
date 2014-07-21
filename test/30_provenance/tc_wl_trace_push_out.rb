@@ -78,10 +78,11 @@ fact tags@test2(4,"bob");
     runner1.tick
     runner2.tick
 
-    # Check that we translated the rule as expected
+    # Check that we translated the rule as expected after the very first tick
+    # runner1 has only one rule
     bud_rules_1 = []
     Dir.chdir(runner1.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 1, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
@@ -93,9 +94,10 @@ fact tags@test2(4,"bob");
     assert_equal [
       "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;"],
       bud_rules_1
+    # runner 2 has zero rule
     bud_rules_2 = []
     Dir.chdir(runner2.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 0, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
@@ -108,11 +110,10 @@ fact tags@test2(4,"bob");
 
     runner1.tick
     runner2.tick
-
-    # Check that we translated the rule as expected
+    # After the tick the first rule should have generated two new rules
     bud_rules_1 = []
     Dir.chdir(runner1.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 3, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
@@ -122,18 +123,19 @@ fact tags@test2(4,"bob");
       end
     end
     assert_equal [
+      "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;",
       "seed_from_test1_3_1_at_test1 <= (seed_from_test1_1_1_at_test1 * photos_at_test1 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='test1' end;",
-      "sbuffer <= seed_from_test1_1_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_5_1_at_test2\", ['true']] if atom0[0]=='test2' end;",
-      "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;"],
-      bud_rules_1    
+      "sbuffer <= seed_from_test1_1_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_5_1_at_test2\", ['true']] if atom0[0]=='test2' end;"],
+      bud_rules_1
+    # After the tick one delegation should be installed
     bud_rules_2 = []
-    Dir.chdir(runner2.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
-      assert_equal 1, wlrule_files.length
-      wlrule_files.each do |file| File.open(file) do |io|
-          io.readlines.each do |line|
-            bud_rules_2 << line.strip if line.include? "<=" or line.include? "<+"
-          end
+    cdir = Dir.new(runner2.rule_dir)
+    wlrule_files = cdir.grep(/webdamlog.*/).sort
+    assert_equal 1, wlrule_files.length
+    wlrule_files.each do |file|
+      File.open(File.join(runner2.rule_dir,file)) do |io|
+        io.readlines.each do |line|
+          bud_rules_2 << line.strip if line.include? "<=" or line.include? "<+"
         end
       end
     end
@@ -147,7 +149,7 @@ fact tags@test2(4,"bob");
     # Check that we translated the rule as expected
     bud_rules_1 = []
     Dir.chdir(runner1.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 6, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
@@ -156,16 +158,17 @@ fact tags@test2(4,"bob");
         end
       end
     end
-    assert_equal ["seed_from_test1_3_1_at_test1 <= (seed_from_test1_1_1_at_test1 * photos_at_test1 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='test1' end;",
-      "album_at_test1 <+ (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['2', 'test1'] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test1' and atom1[1]=='bob' end;",
-      "album_at_test1 <+ (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['1', 'test1'] if atom0[0]=='1' and atom1[0]=='1' and atom0[1]=='test1' and atom1[1]=='bob' end;",
-      "sbuffer <= seed_from_test1_1_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_5_1_at_test2\", ['true']] if atom0[0]=='test2' end;",
+    assert_equal ["sbuffer <= seed_from_test1_3_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_9_1_at_test2\", ['true']] if atom0[0]=='3' and atom0[1]=='test2' end;",
       "seed_from_test1_1_1_at_test1 <= friend_at_test1 do |atom0| [atom0[0]] if atom0[1]=='picture' end;",
-      "sbuffer <= seed_from_test1_3_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_9_1_at_test2\", ['true']] if atom0[0]=='3' and atom0[1]=='test2' end;"],
+      "seed_from_test1_3_1_at_test1 <= (seed_from_test1_1_1_at_test1 * photos_at_test1 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='test1' end;",
+      "sbuffer <= seed_from_test1_1_1_at_test1 do |atom0| [\"localhost:10001\", \"deleg_from_test1_5_1_at_test2\", ['true']] if atom0[0]=='test2' end;",
+      "album_at_test1 <+ (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['1', 'test1'] if atom0[0]=='1' and atom1[0]=='1' and atom0[1]=='test1' and atom1[1]=='bob' end;",
+      "album_at_test1 <+ (seed_from_test1_3_1_at_test1 * tags_at_test1 ).combos() do |atom0, atom1| ['2', 'test1'] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test1' and atom1[1]=='bob' end;"],
       bud_rules_1
+    
     bud_rules_2 = []
     Dir.chdir(runner2.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 5, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
@@ -174,10 +177,10 @@ fact tags@test2(4,"bob");
         end
       end
     end
-    assert_equal ["sbuffer <= (seed_from_test2_1_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['2', 'test2']] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test2' and atom1[1]=='bob' end;",
+    assert_equal ["seed_from_test2_1_1_at_test2 <= (deleg_from_test1_5_1_at_test2 * photos_at_test2 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='true' end;",
       "sbuffer <= (deleg_from_test1_9_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['3', 'test2']] if atom0[0]=='true' and atom1[0]=='3' and atom1[1]=='bob' end;",
-      "seed_from_test2_1_1_at_test2 <= (deleg_from_test1_5_1_at_test2 * photos_at_test2 ).combos() do |atom0, atom1| [atom1[0], atom1[1]] if atom0[0]=='true' end;",
       "sbuffer <= (seed_from_test2_1_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['1', 'test2']] if atom0[0]=='1' and atom1[0]=='1' and atom0[1]=='test2' and atom1[1]=='bob' end;",
+      "sbuffer <= (seed_from_test2_1_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['2', 'test2']] if atom0[0]=='2' and atom1[0]=='2' and atom0[1]=='test2' and atom1[1]=='bob' end;",
       "sbuffer <= (seed_from_test2_1_1_at_test2 * tags_at_test2 ).combos() do |atom0, atom1| [\"localhost:10000\", \"album_at_test1\", ['4', 'test2']] if atom0[0]=='4' and atom1[0]=='4' and atom0[1]=='test2' and atom1[1]=='bob' end;"],
       bud_rules_2
 
@@ -252,7 +255,7 @@ rule photos@testsf($X,$Y):-images@testsf($X,$Y,$Z);
     runner.tick
     bud_rules = []
     Dir.chdir(runner.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 2, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
@@ -399,7 +402,7 @@ rule album3@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,
     runner.tick
     bud_rule = []
     Dir.chdir(runner.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 3, wlrule_files.length
       wlrule_files.each do |file| File.open(file) do |io|
           io.readlines.each do |line|
@@ -476,7 +479,7 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
     runner.tick
     bud_rule = ""
     Dir.chdir(runner.rule_dir) do
-      wlrule_files = Dir.glob("webdamlog*")
+      wlrule_files = Dir.glob("webdamlog*").sort
       assert_equal 1, wlrule_files.length
       File.open(wlrule_files.first) do |io|
         io.readlines.each do |line|
