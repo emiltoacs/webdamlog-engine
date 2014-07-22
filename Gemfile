@@ -5,6 +5,7 @@ source 'https://rubygems.org'
 gem 'bud', '>= 0.9.7'
 gem 'polyglot'
 gem 'treetop'
+gem 'ruby_deep_clone', '0.6.0'
 group :development, :test do
   gem 'debase'
   gem 'ruby-debug-ide', '>= 0.4.22'

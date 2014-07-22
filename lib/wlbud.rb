@@ -17,6 +17,7 @@ module WLBud
   require 'treetop'
   require 'yaml'
   require 'prettyprint'
+  require 'deep_clone'
   # stdlib
   require 'set'
   require 'benchmark'
@@ -544,10 +545,10 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
           end
         end
       end
-      diff_facts = compute_differential_facts sbuffer_facts, @cached_facts
+      diff_fact_to_add, diff_fact_to_del = compute_differential_facts @cached_facts, sbuffer_facts
       peer_to_contact.each do |dest|
         packet = WLPacket.new(dest, @peername, @budtime)
-        packet.data.facts = diff_facts[dest]
+        packet.data.facts = diff_fact_to_add[dest]
         packet.data.rules = @rules_to_delegate[dest]
         packet.data.declarations = @relation_to_declare[dest]
         packets_to_send << packet.serialize_for_channel
@@ -574,7 +575,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       # delegations and relations to send ; and  
       @relation_to_declare.clear
       @rules_to_delegate.clear
-      @cached_facts = Marshal.load(Marshal.dump(sbuffer_facts))
+      @cached_facts = DeepClone.clone(sbuffer_facts.transform_inner_array_into_set)
 
       if @options[:debug]
         puts "BEGIN display what I wrote in chan to be send"
@@ -596,7 +597,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
 
     # This method group facts by relations and by peers.
     #
-    # ==== return a hash
+    # @return [Hash] {@dest, {@peer_name, [[atom1,...], [atom2,...],... ] }}
     #
     # * +key+ destination
     # * +value+ hash of relation with their facts
@@ -611,8 +612,13 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     end
     
     # @return the list of facts that differs between old and new
-    def compute_differential_facts new_facts, old_facts 
-      new_facts
+    def compute_differential_facts old_facts, new_facts
+      to_add = {}
+      to_del = {}
+      old_facts.deep_diff_split_lookup new_facts
+      
+      #return to_add, to_del
+      return new_facts
     end
     
     public

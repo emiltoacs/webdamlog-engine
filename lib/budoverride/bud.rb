@@ -579,8 +579,6 @@ collection int peer_done#{@peername}(key*);"
         @provenance_graph.consolidate
       end
     end
-
-
     
     # WLBud:Begin Override bud to add the rule id to inject when creating the
     # push element
