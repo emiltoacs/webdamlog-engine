@@ -372,7 +372,7 @@ EOF
         Hash[at, tab]
       }
     )
-    
+    sleep 0.1
 
     # fire p2 to install the delegation
     wl_peer[2].tick

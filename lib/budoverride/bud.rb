@@ -6,7 +6,7 @@ module WLBud
     # Hacky: attribute that store the rule_id currently evaluated while wiring
     #   to be added to push_elems
     attr_reader :current_eval_rule_id
-
+    
     # The initializer for WLBud directly overrides the initializer from Bud.
     #
     # Override bud method
@@ -398,8 +398,7 @@ collection int peer_done#{@peername}(key*);"
 
         # part 3: transition
         #
-        # ##WLBud:Begin adding to Bud
-        #
+        # WLBud:Begin adding to Bud
         if @options[:measure]
           @measure_obj.append_measure @budtime
         end
@@ -422,8 +421,7 @@ collection int peer_done#{@peername}(key*);"
         if @options[:measure]
           @measure_obj.append_measure @budtime
         end
-        #
-        # ### WLBud:End adding to Bud
+        # WLBud:End adding to Bud
 
         do_flush
 

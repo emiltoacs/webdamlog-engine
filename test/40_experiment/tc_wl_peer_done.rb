@@ -37,7 +37,7 @@ rule album@testsf($img,$owner) :- photos@testsf($img,$owner), tags@testsf($img,"
     @port1 = "10000"
     # create program files
     File.open(@pg_file1,"w"){ |file| file.write @pg1 }
-  end
+end
 
   def teardown
     # delete all Webdamlog runners
@@ -157,8 +157,8 @@ fact tags@test2(4,"bob");
     assert_equal 1, runner1.tables[:peer_done_at_testsf].length
     assert_equal false, runner1.instance_variable_get(:@bud_started)
     assert_equal false, runner1.running_async
-#    assert_equal 1, runner2.tables[:peer_done_at_test2].length
-#    assert_equal false, runner2.instance_variable_get(:@bud_started)
-#    assert_equal false, runner2.running_async
+    #    assert_equal 1, runner2.tables[:peer_done_at_test2].length
+    #    assert_equal false, runner2.instance_variable_get(:@bud_started)
+    #    assert_equal false, runner2.running_async
   end
 end

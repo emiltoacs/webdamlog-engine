@@ -63,9 +63,8 @@ module Bud
       end
     end
 
-    # Add a new proof in the provenance graph and schedule an extra_tick usually
-    # used the proof is an update, i.e. is an insertion in extensional
-    # relation.
+    # Add a new proof in the provenance graph and schedule an extra_tick when
+    # the proof is an update, i.e. is an insertion in extensional relation.
     def add_new_proof source, inferred, extra_tick=false
       if @bud_instance.kind_of? WLBud::WL and @bud_instance.provenance
         # hacky, remove group predicate from provenance tracking. It is not in
