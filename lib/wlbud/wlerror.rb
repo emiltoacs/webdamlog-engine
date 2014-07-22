@@ -1,13 +1,3 @@
-#  File name wlerror.rb
-#  Copyright © by INRIA
-# 
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
-#   WebdamLog - 30 juin 2011
-# 
-#   Encoding - UTF-8
 module WLBud
 
   # Raise when a method supposed to be override in subclass has not been defined

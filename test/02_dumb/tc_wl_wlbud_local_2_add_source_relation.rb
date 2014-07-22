@@ -1,14 +1,3 @@
-# ####License####
-#  File name tc_local_2_add_source_relation.rb
-#  Copyright © by INRIA
-# 
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
-#   WebdamLog - Aug 7, 2012
-# 
-#   Encoding - UTF-8
-# ####License####
 $:.unshift File.dirname(__FILE__)
 require_relative '../header_test'
 

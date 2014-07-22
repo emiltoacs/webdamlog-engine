@@ -1,14 +1,3 @@
-# ####License####
-#  File name tc_bud_collection.rb
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - Aug 14, 2012
-#
-#   Encoding - UTF-8
-# ####License####
 $:.unshift File.dirname(__FILE__)
 require_relative '../header_test'
 
@@ -32,7 +21,7 @@ class TcBudCollection < Test::Unit::TestCase
     # you cannot write rule with arity 0 collection in the head
     bloom do
     end
-  end
+  end  
   def test_arity_0_collection
     program = Arity0Collection.new
     program.tick
@@ -239,8 +228,7 @@ class TcBudCollection < Test::Unit::TestCase
         [:kill] if t.k1 == 2
       end
     end
-  end
-  
+  end  
   def test_halt_builtin_scratch
     program = TestHaltBuiltinScratch.new
     program.tick
@@ -253,41 +241,6 @@ class TcBudCollection < Test::Unit::TestCase
     program.tick
     assert_equal([[ 0 ],[ 1 ],[ 2 ]], program.tbl1.to_a.sort)
     assert_equal([[ :kill ]], program.halt.to_a.sort)
-
-    assert_equal false, program.instance_variable_get(:@bud_started)
-    assert_equal false, program.running_async
-  end
-
-
-
-  class TestHaltBuiltinScratchRunFg
-    include Bud
-
-    state do
-      table :counter, [:k1,:k2]
-      table :tbl1, [:k1]
-    end
-    bootstrap do
-      counter <= [[0,1],[1,2],[2,3]]
-      tbl1 <= [[0]]
-    end
-    bloom do
-      tbl1 <= (tbl1 * counter).combos(tbl1.k1 => counter.k1) do |t1,t2|
-        [t2.k2]
-      end
-      halt <= tbl1 do |t|
-        [true] if t.k1 == 2
-      end
-    end
-  end
-
-  def test_halt_builtin_scratch_run_fg
-    program = TestHaltBuiltinScratchRunFg.new
-
-    program.run_fg
-
-    assert_equal([[ 0 ],[ 1 ],[ 2 ],[ 3 ]], program.tbl1.to_a.sort)
-    assert_equal([[ true ]], program.halt.to_a.sort)
 
     assert_equal false, program.instance_variable_get(:@bud_started)
     assert_equal false, program.running_async

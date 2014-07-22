@@ -1,14 +1,3 @@
-#  File name wlmonkeypatch.rb
-#  Copyright © by INRIA
-# 
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
-#   WebdamLog - 11 juil. 2011
-# 
-#   Encoding - UTF-8
-
 module WLBud
 #  class Module
 

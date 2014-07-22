@@ -1,8 +1,5 @@
-# #!/usr/bin/env ruby
-
 # Interface to use the webdamlog engine from an external application such as a
 # rail application
-
 require_relative 'wlbud'
 require_relative 'wlbud/wlerror'
 

@@ -1,14 +1,3 @@
-# ####License####
-#  File name tc_simple_delegation.rb
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - Jul 6, 2012
-#
-#   Encoding - UTF-8
-# ####License####
 $:.unshift File.dirname(__FILE__)
 # Note: important to load global variable before include since it could
 # influence the behavior of inclusion $WL_TEST = true # changed for an options

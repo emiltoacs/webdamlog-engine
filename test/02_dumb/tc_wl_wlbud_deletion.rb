@@ -1,12 +1,3 @@
-#  File name tc_wl_wlbud_deletion.rb
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - Jan 20, 2013
-#
-#   Encoding - UTF-8
 $:.unshift File.dirname(__FILE__)
 require_relative '../header_test'
 

@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog
-#
-#   Encoding - UTF-8
 require_relative '../wlerror'
 require 'csv'
 

@@ -1,14 +1,3 @@
-# ####License####
-#  File name tc_wl_program_treetop.rb
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - Aug 15, 2012
-#
-#   Encoding - UTF-8
-# ####License####
 $:.unshift File.dirname(__FILE__)
 require_relative '../header_test'
 
@@ -41,10 +30,10 @@ collection ext persistent localempty@p1();
     assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_1', 'localhost', '11111', {:debug => true})}
     assert_not_nil program
     assert_equal 2, program.wlcollections.size
-    assert_equal "local_at_p1", program.wlcollections.first[0]
-    assert_equal "localempty_at_p1", program.wlcollections.to_a[1][0]
-    assert_equal 1, program.wlcollections.first[1].arity
-    assert_equal 0, program.wlcollections.to_a[1][1].arity
+    assert_equal ["local_at_p1", "localempty_at_p1"], program.wlcollections.keys
+    assert_equal 1, program.wlcollections["local_at_p1"].arity
+    assert_equal 0, program.wlcollections["localempty_at_p1"].arity
+  ensure
     File.delete('test_string_1')
   end
 
@@ -55,6 +44,7 @@ collection ext persistent localempty@p1();
     assert_nothing_raised {program = WLBud::WLProgram.new('the_peername', 'test_string_word', 'localhost', '11111', {:debug => true})}
     File.open('test_string_word',"w"){ |file| file.write "collection ext persistent local_1_@p1(atom1*);"}
     assert_nothing_raised(WLBud::WLErrorGrammarParsing){program = WLBud::WLProgram.new('the_peername', 'test_string_word', 'localhost', '11111', {:debug => true}) }
+  ensure
     File.delete('test_string_word')
   end
 
@@ -71,6 +61,7 @@ end
     assert_equal "local_at_p1", program.wlcollections.first[0]
     assert_equal 0, program.wlcollections.first[1].arity
     assert_equal 0, program.wlfacts.size
+  ensure
     File.delete('test_035_arity_0')
   end
 
@@ -148,6 +139,7 @@ rule local1@p1($X):-local2@p1($X);
     assert_equal "local1_at_p1", program.wlcollections.first[0]
     assert_equal 0, program.wlcollections.first[1].arity
     assert_equal 0, program.wlfacts.size
+  ensure
     File.delete('test_045_rules')
   end
 

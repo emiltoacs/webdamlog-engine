@@ -77,7 +77,6 @@ fact tags@test2(4,"bob");
 
     runner1.tick
     runner2.tick
-
     # Check that we translated the rule as expected after the very first tick
     # runner1 has only one rule
     bud_rules_1 = []

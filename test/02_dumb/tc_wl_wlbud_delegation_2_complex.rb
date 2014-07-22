@@ -1,14 +1,3 @@
-# -*- coding: utf-8 -*- ####License####
-#  File name tc_wl_delegation_2_complex.rb
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - Aug 9, 2012
-#
-#   Encoding - UTF-8
-# ####License####
 $:.unshift File.dirname(__FILE__)
 require_relative '../header_test'
 

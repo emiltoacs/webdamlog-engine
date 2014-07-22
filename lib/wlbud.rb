@@ -1,17 +1,4 @@
-# -*- coding: utf-8 -*- ####License####
-#  File name wlbud.rb
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - 30 juin 2011
-#
-#   Encoding - UTF-8
-# ####License####
-
-# :title:WLBud WLBud is a Ruby Module that simulates WebdamLog behavior using
-# Bud.
+# Main file
 module WLBud
 
   PATH_LIB = File.expand_path(File.dirname(__FILE__))

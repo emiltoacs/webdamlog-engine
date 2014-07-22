@@ -1,20 +1,6 @@
-#  File name wlchannel.rb
-#  Copyright © by INRIA
-# 
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
-#       Émilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-# 
-#   WebdamLog - 30 juin 2011
-# 
-#   Encoding - UTF-8
-
-
-#WLChannel is a special class derived from the BudChannel class,
-#but specially designed to received data packet by packet instead
-#of receiving it as a continuous stream. This is done in accordance
-#with the semantics of WebdamLog.
-#
+# WLChannel is a special class derived from the BudChannel class, but specially
+# designed to received data packet by packet instead of receiving it as a
+# continuous stream. This is done in accordance with the semantics of WebdamLog.
 module WLBud
   include Bud
   

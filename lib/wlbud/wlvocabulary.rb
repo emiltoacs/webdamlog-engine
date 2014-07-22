@@ -613,9 +613,6 @@ this rule has been parsed but no valid id has been assigned for unknown reasons
     end
   end
 
-  module WLFields
-  end
-
   # This is the text part of fields in relation, it could be a constant or a
   # variable
   module WLRToken

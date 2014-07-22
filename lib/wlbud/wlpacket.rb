@@ -1,19 +1,7 @@
-# -*- coding: utf-8 -*-
-#  File name wlpacket.rb
-#  Copyright © by INRIA
-#
-#  Contributors : Webdam Team <webdam.inria.fr>
-#       Jules Testard <jules[dot]testard[@]mail[dot]mcgill[dot]ca>
-#       Emilien Antoine <emilien[dot]antoine[@]inria[dot]fr>
-#
-#   WebdamLog - 30 juin 2011
-#
-#   Encoding - UTF-8
-#
-#   This file contains the two class of objects composing the WLPacket.
-#   WLPacket is the basic type of data used to exchange informations between peers so it contains sets of facts and rules along with all the metadata used for communications.
-#
-#
+# This file contains the two class of objects composing the WLPacket. WLPacket
+# is the basic type of data used to exchange informations between peers so it
+# contains sets of facts and rules along with all the metadata used for
+# communications.
 module WLBud
 
   # This class define the structure of the packet to send on the communication
