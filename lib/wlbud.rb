@@ -528,9 +528,10 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     # of rules.
     def write_packet_on_channel
       packets_to_send = []
-      facts_to_send = aggregate_facts(sbuffer)
-      peer_to_contact = Set.new(facts_to_send.keys)
+      sbuffer_facts = aggregate_facts(sbuffer)
+      peer_to_contact = Set.new(sbuffer_facts.keys)
       peer_to_contact.merge(@rules_to_delegate.keys)
+      peer_to_contact.merge(@relation_to_declare.keys)
       if @options[:wl_test]
         @wl_callback.each_value do |callback|
           if callback[0] == :callback_step_write_on_chan
@@ -539,13 +540,14 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
               raise WLErrorCallback,
                 "Trying to call a callback method that is not responding to call #{block}"
             end
-            block.call(self, facts_to_send, peer_to_contact)
+            block.call(self, sbuffer_facts, peer_to_contact)
           end
         end
       end
+      diff_facts = compute_differential_facts sbuffer_facts, @cached_facts
       peer_to_contact.each do |dest|
         packet = WLPacket.new(dest, @peername, @budtime)
-        packet.data.facts = facts_to_send[dest]
+        packet.data.facts = diff_facts[dest]
         packet.data.rules = @rules_to_delegate[dest]
         packet.data.declarations = @relation_to_declare[dest]
         packets_to_send << packet.serialize_for_channel
@@ -569,9 +571,10 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       # that rules and relations have been correctly installed.
       # 
       # relation and rules enqueued for sending, now clean the list of pending
-      # delegations and relations to send
+      # delegations and relations to send ; and  
       @relation_to_declare.clear
       @rules_to_delegate.clear
+      @cached_facts = Marshal.load(Marshal.dump(sbuffer_facts))
 
       if @options[:debug]
         puts "BEGIN display what I wrote in chan to be send"
@@ -605,6 +608,11 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
         facts_by_peer_and_relations[k] = WLTools::merge_multivaluehash_grouped_by_field(v,0)
       end
       return facts_by_peer_and_relations
+    end
+    
+    # @return the list of facts that differs between old and new
+    def compute_differential_facts new_facts, old_facts 
+      new_facts
     end
     
     public

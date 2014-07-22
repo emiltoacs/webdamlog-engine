@@ -54,7 +54,7 @@ end
     File.delete(@pg_file2) if File.exists?(@pg_file2)
   end
   
-  def test_sbuffer_differencial_merge
+  def test_sbuffer_differential_merge
     runner1 = nil
     runner2 = nil
     assert_nothing_raised do

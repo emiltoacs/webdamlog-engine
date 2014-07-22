@@ -94,6 +94,9 @@ module WLBud
       # Schedule the end of the Webdamlog engine at the given tick it will dies
       # by itself
       @dies_at_tick = options[:dies_at_tick] ||= 0
+      # Store the state of the relations at the previous tick (used for
+      # differential computation)
+      @cached_facts = {}
 
       if options[:wl_test]
         @test_received_on_chan = []
