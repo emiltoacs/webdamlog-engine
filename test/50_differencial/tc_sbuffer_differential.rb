@@ -54,21 +54,60 @@ end
     File.delete(@pg_file2) if File.exists?(@pg_file2)
   end
   
-  def test_sbuffer_content
+  def test_sbuffer_simple_adding
     runner1 = nil
     assert_nothing_raised do
       runner1 = WLRunner.create(@username1, @pg_file1, @port1, {wl_test: true})
     end    
     runner1.tick
-    #    assert_equal(
-    #      [["localhost:10001",
-    #          ["p1",
-    #            "0",
-    #            {:facts=>{"r1_at_p2"=>[["1"], ["2"]]},
-    #              :rules=>[],
-    #              :declarations=>[],
-    #              :facts_to_delete=>{}}]]],
-    #      runner1.test_send_on_chan)
+    # facts are sent the first time
+    assert_equal(
+      [["localhost:10001",
+          ["p1",
+            "0",
+            {:facts=>{"r1_at_p2"=>[["1"], ["2"]]},
+              :rules=>[],
+              :declarations=>[],
+              :facts_to_delete=>{}}]]],
+      runner1.test_send_on_chan)
+    # no new facts so no facts are sent
+    runner1.tick
+    assert_equal(
+      [["localhost:10001",
+          ["p1",
+            "1",
+            {:facts=>{}, :rules=>[], :declarations=>[], :facts_to_delete=>{}}]]],
+      runner1.test_send_on_chan)
+    
+    # simulate new fact received
+    runner1.tables[:chan] << ["localhost:10001",
+      ["p1",
+        "28000",
+        {:declarations=>[],
+          :facts=>{"r1_at_p1"=>[["3"]]},
+          :rules=>[],
+          :facts_to_delete=>{}
+        }
+      ]
+    ]
+    runner1.tick
+    assert_equal(
+      [["localhost:10001",
+          ["p1",
+            "2",
+            {:facts=>{"r1_at_p2"=>[["3"]]},
+              :rules=>[],
+              :declarations=>[],
+              :facts_to_delete=>{}}]]],
+      runner1.test_send_on_chan)
+    # no new facts are sent
+    runner1.tick
+    assert_equal(
+      [["localhost:10001",
+          ["p1",
+            "3",
+            {:facts=>{}, :rules=>[], :declarations=>[], :facts_to_delete=>{}}]]],
+      runner1.test_send_on_chan)
   end
   
   def test_sbuffer_differential_merge
@@ -250,10 +289,8 @@ class TcHashDeepDiffSplitLookupTool < Test::Unit::TestCase
       [{},
         {"peer1"=>
             {"rel1"=>[["fact1"], ["fact2"], ["fact3"]],
-            "rel2"=>[["fact1", "fact12"], ["fact2", "fact22"], ["fact3", "fact32"]]}}],
-      
-      {},
-      
+            "rel2"=>[["fact1", "fact12"], ["fact2", "fact22"], ["fact3", "fact32"]]}}],      
+      {},      
       {"peer1"=> {
           "rel1" => [["fact1"],["fact2"],["fact3"]],
           "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]]}
@@ -264,29 +301,32 @@ class TcHashDeepDiffSplitLookupTool < Test::Unit::TestCase
       [{"peer1"=>
             {"rel1"=>[["fact1"], ["fact2"], ["fact3"]],
             "rel2"=>[["fact1", "fact12"], ["fact2", "fact22"], ["fact3", "fact32"]]}},
-        {}],
-      
+        {}],      
       {"peer1"=> {
           "rel1" => [["fact1"],["fact2"],["fact3"]],
           "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]]}
-      },
-      
+      },      
       {}
     )
   end
   
   def test_no_difference
     assert_deep_diff(
-      [{}, {}],      
+      [{}, {}],
       {"peer1"=> {
           "rel1" => [["fact1"],["fact2"],["fact3"]].to_set ,
           "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]].to_set }
-      },
-      
+      },      
       {"peer1"=> {
           "rel1" => [["fact1"],["fact2"],["fact3"]],
           "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]]}
       }
+    )
+    
+    assert_deep_diff(
+      [{}, {}],
+      {},      
+      {}
     )
   end
  

@@ -53,10 +53,10 @@ end
     end
 
     runner1.on_shutdown do
-      p "Final tick step of #{runner1.peername} : #{runner1.budtime}"
+      #p "Final tick step of #{runner1.peername} : #{runner1.budtime}"
     end
     runner2.on_shutdown do
-      p "Final tick step of #{runner2.peername} : #{runner2.budtime}"
+      #p "Final tick step of #{runner2.peername} : #{runner2.budtime}"
     end
 
     runner1.run_engine

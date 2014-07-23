@@ -548,14 +548,14 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       diff_fact_to_del, diff_fact_to_add = WL::deep_diff_split_lookup @cached_facts, sbuffer_facts
       peer_to_contact.each do |dest|
         packet = WLPacket.new(dest, @peername, @budtime)
-        packet.data.facts_to_delete = diff_fact_to_del[dest]
-        packet.data.facts = diff_fact_to_add[dest]        
+        packet.data.facts_to_delete = ( diff_fact_to_del[dest] or {} )
+        packet.data.facts = ( diff_fact_to_add[dest] or {} )
         packet.data.rules = @rules_to_delegate[dest]
         packet.data.declarations = @relation_to_declare[dest]
         packets_to_send << packet.serialize_for_channel
       end
       if @options[:wl_test]
-        @test_send_on_chan = Marshal.load(Marshal.dump(packets_to_send))
+        @test_send_on_chan = DeepClone.clone(packets_to_send)
         @wl_callback.each_value do |callback|
           if callback[0] == :callback_step_write_on_chan_2
             block = callback[1]
@@ -624,8 +624,8 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     def self.deep_diff_split_lookup(old,new)
       raise WLBud::WLError, "deep_diff_split_lookup expect hash but found \
 #{new.class} and #{old.class}" unless old.kind_of?(Hash) and new.kind_of?(Hash)
-      left = Hash.new{ |h,k| h[k]=Array.new }
-      right = Hash.new{ |h,k| h[k]=Array.new }     
+      left = {}
+      right = {}    
       lookup_table = DeepClone.clone old
       # check each relations for each peers
       (old.keys + new.keys).uniq.each do |key|
@@ -638,7 +638,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
               if lookup_table[key].include?(fact)
                 lookup_table[key].delete(fact)
               else
-                right[key] << fact unless fact.nil?
+                (right[key] ||= []) << fact unless fact.nil?                 
               end
             end
             left[key] = lookup_table[key].to_a unless lookup_table[key].empty?
