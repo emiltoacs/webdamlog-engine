@@ -103,15 +103,6 @@ end
       [],
       runner1.test_send_on_chan)
   end
-  
-  def test_sbuffer_differential_merge
-    runner1 = nil
-    runner2 = nil
-    assert_nothing_raised do
-      runner1 = WLRunner.create(@username1, @pg_file1, @port1)
-      runner2 = WLRunner.create(@username2, @pg_file2, @port2)
-    end
-  end
 end
 
 

@@ -523,10 +523,10 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     # in a single packet for this peer. This method allow to be sure that facts
     # and rules deduce at the same timestep will be received in the remote peer
     # at the same timestep.
-    #
-    # FIXME optimization this fact aggregation is a useless overhead that can be
-    # avoid if I create as many sbuffer collection as non-local relation in head
-    # of rules.
+    # 
+    # FIXME optimization this fact aggregation can done more efficiently
+    # if I create as many sbuffer collection as non-local relation in head of
+    # rules.
     def write_packet_on_channel
       packets_to_send = []
       sbuffer_facts = aggregate_facts(sbuffer)

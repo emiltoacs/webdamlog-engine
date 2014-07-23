@@ -126,5 +126,4 @@ rule album@test1($photo,$owner) :- images@test1($photo,$owner), tags@test1(@phot
   def test_deletion_with_simple_propagation
 
   end
-
 end

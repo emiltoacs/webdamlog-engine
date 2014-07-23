@@ -281,20 +281,18 @@ collection int peer_done#{@peername}(key*);"
             end
           end
         end
-        # add updates of facts and rules
+        # add/remove facts, add new relations declaration and rules
         read_packet_channel.each do |packet_value|
           if @options[:debug]
             puts "Process packets received from #{packet_value.print_meta_data}"
-          end
-          # Delete facts TODO here packet_value.facts_to_delete Declare all the
-          # new relations and insert the rules
+          end          
+          delete_facts(packet_value.facts_to_delete) unless packet_value.facts_to_delete.nil?
           packet_value.declarations.each { |dec| add_collection(dec) } unless packet_value.declarations.nil?
           if @options[:filter_delegations]
             @pending_delegations[packet_value.peer_name.to_sym][packet_value.src_time_stamp] << packet_value.rules
           else
             packet_value.rules.each{ |rule| add_rule(rule) } unless packet_value.rules.nil?
-          end
-          # Add new facts
+          end          
           add_facts(packet_value.facts) unless packet_value.facts.nil?
         end
         # PENDING remove new_sprout_rules attribute add new rules from seeds

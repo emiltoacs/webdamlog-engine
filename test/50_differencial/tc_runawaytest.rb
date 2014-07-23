@@ -13,9 +13,11 @@ peer p1=localhost:11110;
 peer p2=localhost:11111;
 collection ext per r1@p1(atom1*);
 collection int r2@p1(atom1*);
+collection ext per r3@p1(atom1*);
 fact r1@p1(1);
 fact r1@p1(2);
-rule r4@p2($x) :- r1@p1($x);
+fact r3@p1(3);
+rule r5@p2($x) :- r2@p1($x),r3@p1($x);
 end
     EOF
     @username1 = "p1"
@@ -26,11 +28,11 @@ end
     @pg2 = <<-EOF
 peer p2=localhost:11111;
 peer p1=localhost:11110;
-collection ext per r3@p2(atom1*);
-collection int r4@p2(atom1*);
-fact r3@p2(3);
-fact r3@p2(4);
-rule r2@p1($x) :- r3@p2($x);
+collection ext per r4@p2(atom1*);
+collection int r5@p2(atom1*);
+fact r4@p2(3);
+fact r4@p2(4);
+rule r2@p1($x) :- r4@p2($x);
 end
     EOF
     @username2 = "p2"
@@ -53,10 +55,25 @@ end
     end
 
     runner1.on_shutdown do
-      #p "Final tick step of #{runner1.peername} : #{runner1.budtime}"
+      assert_equal(
+        [["1"], ["2"]],
+        runner1.tables[:r1_at_p1].pro{|t| t.to_a }.sort)
+      assert_equal(
+        [["3"], ["4"]],
+        runner1.tables[:r2_at_p1].pro{|t| t.to_a }.sort)
+      assert_equal(
+        [["3"]],
+        runner1.tables[:r3_at_p1].pro{|t| t.to_a }.sort)
+      assert_equal(2,runner1.budtime)
     end
     runner2.on_shutdown do
-      #p "Final tick step of #{runner2.peername} : #{runner2.budtime}"
+      assert_equal(
+        [["3"], ["4"]],
+        runner2.tables[:r4_at_p2].pro{|t| t.to_a }.sort)
+      assert_equal(
+        [["3"]],
+        runner2.tables[:r5_at_p2].pro{|t| t.to_a }.sort)
+      assert_equal(2,runner2.budtime)
     end
 
     runner1.run_engine
