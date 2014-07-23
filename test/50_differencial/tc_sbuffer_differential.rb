@@ -242,7 +242,37 @@ class TcHashDeepDiffSplitLookupTool < Test::Unit::TestCase
   include MixinTcWlTest
   
   def assert_deep_diff(diff, a, b)
-    assert_equal(diff, WLTools::deep_diff_split_lookup(a, b))
+    assert_equal(diff, WLBud::WL::deep_diff_split_lookup(a, b))
+  end
+  
+  def test_empty_value
+    assert_deep_diff(
+      [{},
+        {"peer1"=>
+            {"rel1"=>[["fact1"], ["fact2"], ["fact3"]],
+            "rel2"=>[["fact1", "fact12"], ["fact2", "fact22"], ["fact3", "fact32"]]}}],
+      
+      {},
+      
+      {"peer1"=> {
+          "rel1" => [["fact1"],["fact2"],["fact3"]],
+          "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]]}
+      }
+    )
+    
+    assert_deep_diff(
+      [{"peer1"=>
+            {"rel1"=>[["fact1"], ["fact2"], ["fact3"]],
+            "rel2"=>[["fact1", "fact12"], ["fact2", "fact22"], ["fact3", "fact32"]]}},
+        {}],
+      
+      {"peer1"=> {
+          "rel1" => [["fact1"],["fact2"],["fact3"]],
+          "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]]}
+      },
+      
+      {}
+    )
   end
   
   def test_no_difference

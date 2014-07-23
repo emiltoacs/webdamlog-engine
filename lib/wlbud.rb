@@ -545,10 +545,11 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
           end
         end
       end
-      diff_fact_to_add, diff_fact_to_del = compute_differential_facts @cached_facts, sbuffer_facts
+      diff_fact_to_del, diff_fact_to_add = WL::deep_diff_split_lookup @cached_facts, sbuffer_facts
       peer_to_contact.each do |dest|
         packet = WLPacket.new(dest, @peername, @budtime)
-        packet.data.facts = diff_fact_to_add[dest]
+        packet.data.facts_to_delete = diff_fact_to_del[dest]
+        packet.data.facts = diff_fact_to_add[dest]        
         packet.data.rules = @rules_to_delegate[dest]
         packet.data.declarations = @relation_to_declare[dest]
         packets_to_send << packet.serialize_for_channel
@@ -611,17 +612,50 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       return facts_by_peer_and_relations
     end
     
-    # @return the list of facts that differs between old and new
-    def compute_differential_facts old_facts, new_facts
-      to_add = {}
-      to_del = {}
-      WLTools::deep_diff_split_lookup old_facts, new_facts
-      
-      #return to_add, to_del
-      return new_facts
-    end
-    
     public
+    
+    # List the difference between the previous state facts and sbuffer.
+    # 
+    # Make a recursive diff between facts and split the diff in two hash.
+    # Lookup table is used to fast compare facts.
+    # 
+    # @return [Array] two hash listing the fact only in old and the facts only
+    # in new
+    def self.deep_diff_split_lookup(old,new)
+      raise WLBud::WLError, "deep_diff_split_lookup expect hash but found \
+#{new.class} and #{old.class}" unless old.kind_of?(Hash) and new.kind_of?(Hash)
+      left = Hash.new{ |h,k| h[k]=Array.new }
+      right = Hash.new{ |h,k| h[k]=Array.new }     
+      lookup_table = DeepClone.clone old
+      # check each relations for each peers
+      (old.keys + new.keys).uniq.each do |key|
+        if old[key] != new[key]
+          if old[key].kind_of?(Hash) && new[key].kind_of?(Hash)
+            left[key], right[key] = deep_diff_split_lookup(old[key],new[key])
+          elsif old[key].kind_of?(Set) &&  new[key].kind_of?(Array)
+            # lookup facts          
+            new[key].each do |fact|
+              if lookup_table[key].include?(fact)
+                lookup_table[key].delete(fact)
+              else
+                right[key] << fact unless fact.nil?
+              end
+            end
+            left[key] = lookup_table[key].to_a unless lookup_table[key].empty?
+          elsif old[key].nil?
+            right[key] = new[key]
+          elsif new[key].nil?
+            left[key] = WLTools::transform_first_inner_set_into_array(lookup_table[key])
+          else
+            raise WLBud::WLError, "unexpected type of data to compared in \
+deep_diff_split_lookup: #{old[key].class} #{new[key].class}"
+          end
+        end
+        left.delete(key) if not left[key].nil? and left[key].empty?
+        right.delete(key) if not right[key].nil? and right[key].empty?
+      end
+      return left, right
+    end
 
     # Just like run_bg from bud except that it does not start a tick directly.
     # This is useful in experiment to start a peer that will wait until it
