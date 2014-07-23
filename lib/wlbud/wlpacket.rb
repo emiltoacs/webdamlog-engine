@@ -130,10 +130,20 @@ module WLBud
         else
           return false, "try to test a hash of fact that is not a hash"
         end        
-      end
-      
+      end      
     end # end self
 
+    def empty?
+      if ( (@facts.nil? or @facts.empty?) and 
+            (@facts_to_delete.nil? or @facts_to_delete.empty?) and
+            (@declarations.nil? or @declarations.empty?) and
+            (@rules.nil? or @rules.empty?) )
+        return true
+      else
+        return false
+      end
+    end
+    
     def serialize_for_channel
       return [@peer_name.to_s,@src_time_stamp.to_s,get_data]
     end

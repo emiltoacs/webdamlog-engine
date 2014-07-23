@@ -212,6 +212,7 @@ fact tags@peer4(684,"peer4");
     assert_equal({}, peers[2].new_sprout_rules)
     assert_equal({}, peers[2].sprout_rules)
 
+    sleep 0.2
     # check at alice and bob the delegation received
     peers[0].sync_do do
       assert_equal [["sbuffer <= (friends_at_alice1 do |atom0|\n  [\"localhost:10002\", \"all_friends_i_at_sue3\", [atom0[0]]]\nend)"]],

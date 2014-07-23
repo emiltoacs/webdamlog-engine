@@ -147,15 +147,11 @@ EOF
     p "===all wl_peer tick 2===" if $test_verbose
     p "p0 sent" if $test_verbose
     wl_peer[0].tick
-    assert_equal [["localhost:11111",
-        ["p0", "1", {:rules=>[],
-            :facts=>{"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
-            :declarations=>[],
-            :facts_to_delete=>{}}]]],
+    assert_equal [],
       wl_peer[0].test_send_on_chan.map { |p| (WLBud::WLPacket.deserialize_from_channel_sorted(p)).serialize_for_channel },
-      "p0 should have sent again the list of facts but not the declarations or rules"
+      "nothing since there is nothing new wince last tick"
     
-    sleep 0.3 # wait for the second to be receive
+    sleep 0.2 # wait for the second to be receive
     assert(wait_inbound(wl_peer[1]), "TIMEOUT it seems that #{wl_peer[1].peername} is not receiving any message")
     # #assert_equal 2, wl_peer[1].inbound[:chan].length, "two packets pending to
     # be processed"
@@ -167,16 +163,10 @@ EOF
               ["rule join_delegated@p0($x):-deleg_from_p0_1_1@p1($x),delegated@p1($x),delegated@p2($x),delegated@p3($x);"],
             "declarations"=>
               ["collection inter persistent deleg_from_p0_1_1@p1(deleg_from_p0_1_1_x_0*);"],
-            "facts_to_delete"=>{}}]],
-      ["localhost:11111",
-        ["p0",
-          "1",
-          {"facts"=>{"deleg_from_p0_1_1_at_p1"=>[["1"], ["2"], ["3"], ["4"]]},
-            "rules"=>[],
-            "declarations"=>[],
             "facts_to_delete"=>{}}]]],
       wl_peer[1].inbound[:chan],
-      "the two packets of p1 should correspond to delegation rules and facts for this rules"
+      "the first packet from p1 correspond to delegation rules and facts for \
+this rules and there is no packet emitted by p1 at timestep 1"
 
     p "data at p1" if $test_verbose
     wl_peer[1].tick

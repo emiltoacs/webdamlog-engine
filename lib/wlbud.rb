@@ -552,7 +552,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
         packet.data.facts = ( diff_fact_to_add[dest] or {} )
         packet.data.rules = @rules_to_delegate[dest]
         packet.data.declarations = @relation_to_declare[dest]
-        packets_to_send << packet.serialize_for_channel
+        packets_to_send << packet.serialize_for_channel unless packet.data.empty?
       end
       if @options[:wl_test]
         @test_send_on_chan = DeepClone.clone(packets_to_send)

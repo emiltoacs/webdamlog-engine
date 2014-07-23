@@ -73,10 +73,7 @@ end
     # no new facts so no facts are sent
     runner1.tick
     assert_equal(
-      [["localhost:10001",
-          ["p1",
-            "1",
-            {:facts=>{}, :rules=>[], :declarations=>[], :facts_to_delete=>{}}]]],
+      [],
       runner1.test_send_on_chan)
     
     # simulate new fact received
@@ -103,10 +100,7 @@ end
     # no new facts are sent
     runner1.tick
     assert_equal(
-      [["localhost:10001",
-          ["p1",
-            "3",
-            {:facts=>{}, :rules=>[], :declarations=>[], :facts_to_delete=>{}}]]],
+      [],
       runner1.test_send_on_chan)
   end
   
