@@ -575,7 +575,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
       # delegations and relations to send ; and  
       @relation_to_declare.clear
       @rules_to_delegate.clear
-      @cached_facts = DeepClone.clone(sbuffer_facts.transform_inner_array_into_set)
+      @cached_facts = DeepClone.clone(WLTools::transform_first_inner_array_into_set(sbuffer_facts))
 
       if @options[:debug]
         puts "BEGIN display what I wrote in chan to be send"
@@ -615,7 +615,7 @@ engine is trying to write this new rule in an existing file: #{fullfilename}" if
     def compute_differential_facts old_facts, new_facts
       to_add = {}
       to_del = {}
-      old_facts.deep_diff_split_lookup new_facts
+      WLTools::deep_diff_split_lookup old_facts, new_facts
       
       #return to_add, to_del
       return new_facts

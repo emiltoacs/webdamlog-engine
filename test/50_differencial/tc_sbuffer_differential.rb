@@ -242,7 +242,7 @@ class TcHashDeepDiffSplitLookupTool < Test::Unit::TestCase
   include MixinTcWlTest
   
   def assert_deep_diff(diff, a, b)
-    assert_equal(diff, a.deep_diff_split_lookup(b))
+    assert_equal(diff, WLTools::deep_diff_split_lookup(a, b))
   end
   
   def test_no_difference
@@ -263,13 +263,13 @@ class TcHashDeepDiffSplitLookupTool < Test::Unit::TestCase
   def test_fully_different
     assert_deep_diff(
       [{"peer1"=> {
-          "rel1" => [["fact1"],["fact2"],["fact3"]].to_set ,
-          "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]].to_set }
-      },      
-      {"peer2"=> {
-          "rel3" => [["fact4"],["fact5"],["fact6"]],
-          "rel4" => [["fact14", "fact125"],["fact24", "fact225"],["fact34", "fact325"]]}
-      }],
+            "rel1" => [["fact1"],["fact2"],["fact3"]] ,
+            "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]] }
+        },      
+        {"peer2"=> {
+            "rel3" => [["fact4"],["fact5"],["fact6"]],
+            "rel4" => [["fact14", "fact125"],["fact24", "fact225"],["fact34", "fact325"]]}
+        }],
       
       {"peer1"=> {
           "rel1" => [["fact1"],["fact2"],["fact3"]].to_set ,
@@ -281,7 +281,62 @@ class TcHashDeepDiffSplitLookupTool < Test::Unit::TestCase
           "rel4" => [["fact14", "fact125"],["fact24", "fact225"],["fact34", "fact325"]]}
       }
     )
-  end  
+  end
+  
+  def test_simple_difference
+    assert_deep_diff(
+      [{"peer1"=>
+            {"rel1"=>[["fact3"]], "rel2"=>[["fact2", "fact22"], ["fact3", "fact32"]]}},
+        {"peer1"=>
+            {"rel1"=>[["fact6"]],
+            "rel2"=>[["fact24", "fact22"], ["fact3", "fact325"]]}}],
+      
+      {"peer1"=> {
+          "rel1" => [["fact1"],["fact2"],["fact3"]].to_set ,
+          "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]].to_set }
+      },
+      
+      {"peer1"=> {
+          "rel1" => [["fact1"],["fact2"],["fact6"]],
+          "rel2" => [["fact1", "fact12"],["fact24", "fact22"],["fact3", "fact325"]]}
+      }
+    )
+  end
+  
+  def test_complex_difference
+    assert_deep_diff(
+      [{ "peer1"=>
+            {"rel1"=>[["fact3"]], "rel2"=>[["fact2", "fact22"], ["fact3", "fact32"]]},
+          "peer2"=>
+            {"rel1"=>[["fact6"]],
+            "rel2"=>
+              [["fact1", "fact12"], ["fact24", "fact22"], ["fact3", "fact325"]]}},
+        { "peer1"=>
+            {"rel1"=>[["fact6"]], "rel2"=>[["fact24", "fact22"], ["fact3", "fact325"]]},
+          "peer3"=>
+            {"rel1"=>[["fact1"], ["fact2"], ["fact3"]],
+            "rel2"=>
+              [["fact211", "fact212"],
+              ["fact222", "fact223"],
+              ["fact331", "fact332"]]}}],
+      
+      { "peer1"=> {
+          "rel1" => [["fact1"],["fact2"],["fact3"]].to_set ,
+          "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]].to_set },
+        "peer2"=> {
+          "rel1" => [["fact6"]],
+          "rel2" => [["fact1", "fact12"],["fact24", "fact22"],["fact3", "fact325"]]}
+      },
+      
+      { "peer1"=> {
+          "rel1" => [["fact1"],["fact2"],["fact6"]],
+          "rel2" => [["fact1", "fact12"],["fact24", "fact22"],["fact3", "fact325"]]},
+        "peer3"=> {
+          "rel1" => [["fact1"],["fact2"],["fact3"]],
+          "rel2" => [["fact211", "fact212"],["fact222", "fact223"],["fact331", "fact332"]]}
+      }
+    )
+  end
 end
 
 class TcHashInternalToSet < Test::Unit::TestCase
@@ -292,11 +347,13 @@ class TcHashInternalToSet < Test::Unit::TestCase
       {"peer1"=> {
           "rel1" => [["fact1"],["fact2"],["fact3"]].to_set ,
           "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]].to_set }
-      },      
-      {"peer1" => {
-          "rel1" => [["fact1"],["fact2"],["fact3"]],
-          "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]] }.transform_inner_array_into_set
-      }
+      },
+      WLTools::transform_first_inner_array_into_set( 
+        {"peer1" => {
+            "rel1" => [["fact1"],["fact2"],["fact3"]],
+            "rel2" => [["fact1", "fact12"],["fact2", "fact22"],["fact3", "fact32"]] }
+        }
+      )
     )
-  end  
+  end
 end

@@ -73,6 +73,71 @@ module WLTools
     grouped
   end
 
+  # List the difference between two sbuffer 
+  # @return [Array] two hash listing the fact only in old and the facts only 
+  # in new
+  def self.deep_diff_split_lookup(old,new)
+    left = Hash.new{ |h,k| h[k]=Array.new }
+    right = Hash.new{ |h,k| h[k]=Array.new }     
+    lookup_table = DeepClone.clone old
+    # check each relations for each peers
+    (old.keys + new.keys).uniq.each do |key|
+      if old[key] != new[key]
+        if old[key].kind_of?(Hash) && new[key].kind_of?(Hash)
+          left[key], right[key] = deep_diff_split_lookup(old[key],new[key])
+        elsif old[key].kind_of?(Set) &&  new[key].kind_of?(Array)
+          # lookup facts          
+          new[key].each do |fact|
+            if lookup_table[key].include?(fact)
+              lookup_table[key].delete(fact)
+            else
+              right[key] << fact unless fact.nil?
+            end
+          end
+          left[key] = lookup_table[key].to_a unless lookup_table[key].empty?
+        elsif old[key].nil?
+          right[key] = new[key]
+        elsif new[key].nil?
+          left[key] = WLTools::transform_first_inner_set_into_array(lookup_table[key])
+        else
+          raise WLBud::WLError, "unexpected type of data to compared in \
+deep_diff_split_lookup: #{old[key].class} #{new[key].class}"
+        end
+      end
+      left.delete(key) if not left[key].nil? and left[key].empty?
+      right.delete(key) if not right[key].nil? and right[key].empty?
+    end
+    return left, right
+  end
+    
+  def self.transform_first_inner_array_into_set enum
+    res = {}
+    enum.each_pair do |key,value|
+      if value.kind_of? Hash
+        res[key] = transform_first_inner_array_into_set value
+      elsif value.kind_of?(Enumerable)
+        res[key] = value.to_set
+      else
+        res[key]= value
+      end
+    end
+    res
+  end
+  
+  def self.transform_first_inner_set_into_array enum
+    res = {}
+    enum.each_pair do |key,value|
+      if value.kind_of? Hash
+        res[key] = transform_first_inner_set_into_array value
+      elsif value.kind_of?(Set)
+        res[key] = value.to_a
+      else
+        res[key]= value
+      end
+    end
+    res
+  end
+  
   module SerializeObjState
     # ===return
     # a hash with variable name as key with their value as hash value
@@ -111,7 +176,7 @@ module WLTools
       return s
     end
   
-    # #Pretty print with id
+    # Pretty print with id
     def self.p_print_id(print_table)
       s =""
       if print_table[3]!=nil
